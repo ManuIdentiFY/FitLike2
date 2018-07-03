@@ -1,7 +1,7 @@
-function [bloc, parameters] = readsdfv1(path,filename)
+function [time, real, imag, parameters] = readsdfv1(path,filename)
 %
-% [BLOC, PARAMETERS] = READSDFV1(PATH,FILENAME) reads data from a Stelar file .sdf
-% version 1. It returns the data as DataUnit and the parameters as cells.
+% [TIME, REAl, IMAG, PARAMETERS] = READSDFV1(PATH,FILENAME) reads data from a Stelar file .sdf
+% version 1. 
 %
 % The number of DataUnit and cell is determined by the number of different
 % acquisitions in the Stelar file. Two acquisitions are different if one of
@@ -38,16 +38,19 @@ while 1
     %+ Get the header information   
     % Find the length of the header by reading a bloc and catch 'DATA'
     pos = ftell(fid); %memorize the position       
-    txt = textscan(fid,'%s',N_MAX_PARAMETERS,'delimiter','\r'); %read the bloc
-    if length(txt{1}) < N_MAX_PARAMETERS
+    header = textscan(fid,'%s',N_MAX_PARAMETERS,'delimiter','\r'); %read the bloc
+    
+    offset = find(startsWith(header{1},'ZONE'),1); %find the offset (all cells before 'ZONE')
+    nRow = find(startsWith(header{1},'DATA'),1) - offset + 1; %get the number of rows  by finding 'DATA' 
+    
+    if isempty(offset) || isempty(nRow) %eof
         % simplify the last structure if possible
         if length(parameters{iAcq}) > 1
             parameters{iAcq} = arrayofstruct2struct(parameters{iAcq});
         end
         break %end of the file
     end     
-    offset = find(startsWith(txt{1},'ZONE'),1); %find the offset (all cells before 'ZONE')
-    nRow = find(startsWith(txt{1},'DATA'),1) - offset + 1; %get the number of rows  by finding 'DATA'   
+  
     % Read the header
     fseek(fid,pos,'bof'); %replace the position
     hdr = textscan(fid, '%5s %s', nRow, 'delimiter', '\r','Headerlines',offset-1);
