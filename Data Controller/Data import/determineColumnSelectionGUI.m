@@ -31,7 +31,7 @@ NUMBER_LINE_TO_DISPLAYED = 15;
 % check input
 validateattributes(filename,{'char'},{});
 validateattributes(sequence,{'char'},{});
-validateattributes(ncol,{'numeric'},{'>',2}); %need at least two columns
+validateattributes(ncol,{'numeric'},{'>',1}); %need at least two columns
 validateattributes(data,{'numeric'},{'size',[NaN ncol]}); %need the same number of columns as ncol
 
 % limit the size of data to display if needed
@@ -157,11 +157,11 @@ if Cancelled
 elseif isempty(Answer.time)
     realcol = str2double(Answer.real);
     imagcol = str2double(Answer.imag);
-    timecol = [];
+    timecol = NaN;
 else
     realcol = str2double(Answer.real);
     imagcol = str2double(Answer.imag);
-    timecol = str2double(Answer.real);
+    timecol = str2double(Answer.time);
 end
 
 % if save options true, get the saveFile and fill it
@@ -171,23 +171,38 @@ if Answer.EnableSaveMode
     % IRCPMG   |  2   |    1    |    2    |   []
     %   NP     |  4   |    2    |    3    |   1 
     %  ...     | ...  |   ...   |   ...   |  ...
-    try 
-        % load the table 
-        saveObj = matfile(saveFile);
-        var = who(saveObj);
-        table = saveObj.(var{1});
-        % check if this setting is already in the table
-        if sum(strcmp(table.Sequence, sequence) & table.nCol == ncol) > 0
-            return
-        end
-        % add the new settings
-        newSettings = {sequence,ncol,realcol,imagcol,timecol};
-        table = [table; newSettings]; %#ok<NASGU>
-        % save the settings
-        save(saveFile, 'table')        
-    catch ME
-        rethrow(ME);
-    end   
+    listFile = dir();
+    if sum(strcmp({listFile.name}, saveFile)) == 0
+        % create the .mat file 
+        Sequence = {sequence};
+        nCol = ncol;
+        realIdx = realcol;
+        imagIdx = imagcol;
+        timeIdx = timecol;
+        
+        T = table(Sequence, nCol, realIdx, imagIdx, timeIdx); %#ok<NASGU>
+        
+        save(saveFile, 'T')
+    else        
+        % update the .mat file
+        try 
+            % load the table 
+            saveObj = load(saveFile);
+            var = fieldnames(saveObj);
+            T = saveObj.(var{1});
+            % check if this setting is already in the table
+            if sum(strcmp(T.Sequence, sequence) & T.nCol == ncol) > 0
+                return
+            end
+            % add the new settings
+            newSettings = {sequence,ncol,realcol,imagcol,timecol};
+            T = [T; newSettings]; %#ok<NASGU>
+            % save the settings
+            save(saveFile, 'T')        
+        catch ME
+            rethrow(ME);
+        end   
+    end
 end
 
     function checkInput(hObj, ncol)
@@ -218,7 +233,8 @@ end
         % get all the values set in the editbox (3)
         val = get(findobj(hObj.Parent.Parent.Children,'Style','edit'),'String');
         % if the new value is a doublon then the length of the unique values 
-        % is different from the length of the values 
+        % is different from the length of the values
+        val = val(~cellfun(@isempty,val)); %remove empty 
         if length(unique(val)) ~= length(val)
             hObj.String = '';
             % throw an error

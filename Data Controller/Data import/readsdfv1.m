@@ -1,137 +1,200 @@
-function [time, real, imag, parameters] = readsdfv1(path,filename)
+function [data, parameter] = readsdfv1(filename, formatFile)
 %
-% [TIME, REAl, IMAG, PARAMETERS] = READSDFV1(PATH,FILENAME) reads data from a Stelar file .sdf
-% version 1. 
+% [DATA, PARAMETER] = READSDFV1(FILENAME, FORMATFILE) read data from a 
+% Stelar file .sdf version 1. Version 1 is organised as pair of
+% header(parameter)/data for each "ZONE". FORMATFILE is a .mat file that
+% helps the file reading. If this .mat file does not exist, a new one is
+% created under the name FORMATFILE. See determineColumnSelectionGUI() for
+% further information about this file.
 %
-% The number of DataUnit and cell is determined by the number of different
-% acquisitions in the Stelar file. Two acquisitions are different if one of
-% the following condition is not fullfilled:
-% 1. The sequence are not the same (see the field "EXP")
-% 2. The size of the data is not consistent between the acquisitions 
-% 3. The parameter's fields are not the same
-% 
-% Notes:
-% When two acquisitions are the same, data (fields: x,y) are stacked along 
-% the third dimensions and parameters are concatenated.
+% Warning: always use the same FORMATFILE to avoid apparition of Data 
+% Helper GUI (and speed up the process). 
+%
+% READSDFV1 returns Stelar parameters as 1xN cell array of structure where N
+% corresponds to the number of experiment. Similarely, data is return as a
+% structure where each field is a 1xN cell array of 3D matrix (double).
+%
+% An experiment is defined by the succession (or not) of "ZONE" with
+% identical data size (BS, NBLK), identical parameter structure (fieldnames)
+% and identical sequence name (EXP field).
+%
+% READSDFV1 concatenates successive "ZONE" belonging to the same experiment 
+% along the third dimension resulting in a 3D matrix (for each data fields:
+% time, real, imag, ...).
+% For example: size(data.time) = [BS, NBLK, nZONE]. 
 %
 % Example:
-% path = 'myfolder/';
-% filename = 'stelar_data.sdf';
-% [bloc, parameters] = readsdfv1(path,filename);
+% formatFile = 'settings.mat';
+% filename = 'myfolder/stelar_data.sdf';
+% [data, parameter] = readsdfv1(filename, formatFile);
 %
-% See also DATAUNIT, READSDFV2
+% See also READSDFV2, DETERMINECOLUMNSELECTIONGUI
 %
-% Manuel Petit, May 2018
+% Manuel Petit, June 2018
 % manuel.petit@inserm.fr
 
-
 N_MAX_PARAMETERS = 150; % maximum number of parameter in the header
-
-bloc = DataUnit(); % preallocation 
-parameters = cell(1,1); %preallocation
 iAcq = 1; % number of acquisition
 
-fid = fopen([path filename], 'r'); % open the file in read only mode
+% open file and check if ok
+fid = fopen(filename, 'r'); % open the file in read only mode
+if fid == -1
+    errordlg('File not found!')
+    return
+end
 
-%% Read the file
+% get the name of the file
+[~,name,~] = fileparts(filename);
+
+% check the formatFile existence: to change if formatFile moved
+listFile = dir();
+if sum(strcmp({listFile.name}, formatFile)) == 0
+    formatFlag = 0;
+else
+    formatFlag = 1;
+end
+
+% loop over the acquisitions 
 while 1 
-    %+ Get the header information   
+    %% Get the header information   
     % Find the length of the header by reading a bloc and catch 'DATA'
     pos = ftell(fid); %memorize the position       
-    header = textscan(fid,'%s',N_MAX_PARAMETERS,'delimiter','\r'); %read the bloc
+    txt = textscan(fid,'%s',N_MAX_PARAMETERS,'delimiter','\r'); %read the bloc
     
-    offset = find(startsWith(header{1},'ZONE'),1); %find the offset (all cells before 'ZONE')
-    nRow = find(startsWith(header{1},'DATA'),1) - offset + 1; %get the number of rows  by finding 'DATA' 
+    offset = find(startsWith(txt{1},'ZONE'),1); %find the offset: 'ZONE'
+    nRow = find(startsWith(txt{1},'DATA'),1) - offset + 1; %get the number of rows  by finding 'DATA'  
     
-    if isempty(offset) || isempty(nRow) %eof
+    if isempty(offset) || isempty(nRow) %eof condition
         % simplify the last structure if possible
-        if length(parameters{iAcq}) > 1
-            parameters{iAcq} = arrayofstruct2struct(parameters{iAcq});
+        if length(parameter{iAcq}) > 1
+            parameter{iAcq} = arrayofstruct2struct(parameter{iAcq}); %#ok<AGROW>
         end
         break %end of the file
     end     
-  
-    % Read the header
+ 
+    % Read the header. Stelar .sdf files are organized as:
+    % [parameterName (4 characters), '=', value (n characters)]
     fseek(fid,pos,'bof'); %replace the position
     hdr = textscan(fid, '%5s %s', nRow, 'delimiter', '\r','Headerlines',offset-1);
     % Format the header's field
     hdr{1} = regexprep(hdr{1},'=',''); %remove the '=' symbol from the parameter's field
     hdr{1} = strtrim(hdr{1}); %deblank the input      
     % Format the header's values
-    isdouble = cellfun(@str2double, hdr{2}); 
+    isdouble = cellfun(@str2double, hdr{2}); % Really slow, need to be speed up
     hdr{2}(~isnan(isdouble)) = num2cell(isdouble(~isnan(isdouble)));
     % Create the header
     header = cell2struct(hdr{2},hdr{1},1); 
     % Add filename
-    header.FILE = filename;
+    header.FILE = name;
     
-    %+ Get the data 
+    %% Get the data 
     if header.NBLK == 0 % this happens when the sequence is not staggered (not over multiple fields such as PP, NP, etc...)
         header.NBLK = 1;
     end
-    pos = ftell(fid); %memorize the position  
+    pos = ftell(fid); %memorize the position     
     fgets(fid); %move to the next line
+    
     % count the number of column before reading
     ncol = numel(regexp(fgets(fid),'\d*'));
-    % set the delimiter according to the number of columns and the type
-    % of sequence (if CPMG, take column 2 and 3; if not 1 and 2)
-    switch ncol
-        case 2
-            format = '%f %f';
-        case 3
-            format = '%*f %f %f';
-        otherwise
-            % ask the user
-            % TO DO
-    end
+    
+    % create the format 
+    format = [repmat('%f ',1,ncol-1),'%f'];   
     % read the data
     fseek(fid,pos,'bof'); %replace the position
-    data = textscan(fid, format, ...
+    bloc = textscan(fid, format, ...
               header.NBLK*header.BS, 'delimiter',' ');
+    bloc = [bloc{:}]; % append columns
+    
+    % Use the formatFile to know which column corresponds to the real and
+    % imag signal. If unknown call GUI so user can do it
+    if ~formatFlag
+        % no formatFile exists: create it
+        % call a GUI to help user to select its columns
+        [realcol, imagcol, timecol] = determineColumnSelectionGUI(name,...
+            header.EXP, ncol, bloc, [], formatFile);
+        % check if formatFile has been created
+        if sum(strcmp({listFile.name}, formatFile))
+            formatFlag = 1;
+        end
+    else
+        % open the formatFile and get the table T
+        formatObj = load(formatFile);
+        var = fieldnames(formatObj);
+        T = formatObj.(var{1});    
+        % check if the sequence/format is already known
+        isKnown = strcmp(T.Sequence, header.EXP) & T.nCol == ncol;
+        if sum(isKnown)
+            % get the index
+            realcol = T.realIdx(isKnown);
+            imagcol = T.imagIdx(isKnown);
+            timecol = T.timeIdx(isKnown);
+        else
+            % call GUI
+            [realcol, imagcol, timecol] = determineColumnSelectionGUI(name,...
+                header.EXP, ncol, bloc, [], formatFile);
+        end
+    end
+    
+    % check output
+    if isempty(realcol)
+        errordlg('File not openned: no column index found!')
+        continue
+    end
+    
+    % select real and imag according to the index selected
+    % initialise as 3D to fit with output format
+    real = bloc(:,realcol);
+    imag = bloc(:,imagcol);   
     % format the data 
-    data = complex(data{1},data{2});
-    data = reshape(data,[header.BS,header.NBLK]);
+    real = reshape(real,[header.BS,header.NBLK]);
+    imag = reshape(imag,[header.BS,header.NBLK]);
     
     %+ Generate the time axis and other related data 
-    if isfield(header,'EDLY') % if an echo is used
-        ListDelay = header.SWT+2*header.EDLY; % delay between the readout pulse and the first measurement
-        time = header.EDLY*1e-6*(1:header.BS);
+    if isfield(header,'EDLY') % if echo used
+        header.DELAY = header.SWT+2*header.EDLY; % delay between the readout pulse and the first measurement
+        timeFactor = header.EDLY;
     else
-        ListDelay = header.SWT;           
-        time = header.DW*1e-6*(1:header.BS);
+        header.DELAY = header.SWT;
+        timeFactor = header.DW;
     end
-    header.DELAY = 1e-6*ListDelay;     
+    
+    if isnan(timecol)
+        time = timeFactor*1e-6*(1:header.BS);
+        time = repmat(time',1,header.NBLK); %just rep to obtain same dim as real and imag
+    else
+        time = bloc(:,timecol);
+        time = reshape(time,[header.BS, header.NBLK]);
+    end 
     
     %+ concatenate the data if the fields, the sequence and the data size are
     %the same
-    if isempty(parameters{iAcq})
+    if ~exist('parameter','var')
         % first loop
-        bloc(iAcq) = DataUnit('dataType','bloc','x',time','xLabel',...
-               'Time (us)','y',data,'yLabel','A.U.');  %creation of an object 'StelarData'
-        parameters{iAcq} = header;
-        continue
-    elseif isequal(fieldnames(parameters{iAcq}),fieldnames(header)) &&...
-            size(bloc(iAcq).y,1) == size(data,1) &&...
-            size(bloc(iAcq).y,2) == size(data,2) &&...
-            isequal(parameters{iAcq}.EXP,header.EXP) &&...
-            size(bloc(iAcq).x,1) == size(time',1)
+        data.time{iAcq} = time;
+        data.real{iAcq} = real;
+        data.imag{iAcq} = imag;
+        parameter{iAcq} = header; %#ok<AGROW>
+    elseif isequal(fieldnames(parameter{iAcq}),fieldnames(header)) &&...
+            size(data.time{iAcq},1) == size(time,1) &&...
+            size(data.time{iAcq},2) == size(time,2) &&...
+            isequal(parameter{iAcq}.EXP,header.EXP)
         % concatenate the acquisitions
-        bloc(iAcq).x = cat(3,bloc(iAcq).x,time');
-        bloc(iAcq).y = cat(3,bloc(iAcq).y,data);
-        resetmask(bloc(iAcq));
-        parameters{iAcq} = [parameters{iAcq} header];
+        data.time{iAcq} = cat(3,data.time{iAcq}, time);
+        data.real{iAcq} = cat(3,data.real{iAcq}, real);
+        data.imag{iAcq} = cat(3,data.imag{iAcq}, imag);
+        parameter{iAcq} = [parameter{iAcq} header]; %#ok<AGROW>
     else
         % simplify the previous structure if possible
-        if length(parameters{iAcq}) > 1
-            parameters{iAcq} = arrayofstruct2struct(parameters{iAcq});
+        if length(parameter{iAcq}) > 1
+            parameter{iAcq} = arrayofstruct2struct(parameter{iAcq}); %#ok<AGROW>
         end
         % create a new acquisition storage
         iAcq = iAcq + 1;
-        bloc(iAcq) = DataUnit('dataType','bloc','x',time','xLabel',...
-               'Time (us)','y',data,'yLabel','A.U.');  %creation of an object 'StelarData'
-        parameters{iAcq} = header;
+        data.time{iAcq} = time;
+        data.real{iAcq} = real;
+        data.imag{iAcq} = imag;
+        parameter{iAcq} = header; %#ok<AGROW>
     end
 end %while
-
 end
 
