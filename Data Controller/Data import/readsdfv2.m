@@ -1,5 +1,5 @@
 function [dataContent, parameter] = readsdfv2(fid)
-%
+
 % [BLOC, PARAMETERS] = READSDFV2(FID) reads data from a Stelar file .sdf
 % version 2. Use FOPEN to open the file and obtain FID. It returns the data
 % as DataUnit and the parameters as cells.
@@ -58,7 +58,7 @@ while 1
     if ~isempty(posParamSummary)||isempty(parameter(acquisitionNumber))
         % now store the incoming data and parameters into a new section.
         acquisitionNumber = acquisitionNumber+1;
-        zoneNumber = 0;
+        dispNumber = 0;
         fseek(fid,startPos,'bof'); % back to the 'PARAMETER SUMMARY' line
         % get the parameters into a new structure:
         parameter{acquisitionNumber} = text2structure(txt{1}(posParamSummary+1:posZone-1));
@@ -67,7 +67,7 @@ while 1
         
     % now extracting the data from each bloc, with the corresponding parameters 
     % starting with the additional parameters:
-    zoneNumber = zoneNumber + 1;
+    dispNumber = dispNumber + 1;
     paramZone = text2structure(txt{1}(posZone + 1 : posData -1));
     fieldName = fields(paramZone);
     % change fields names for consistency with previous versions
@@ -82,7 +82,7 @@ while 1
 %         end
 %     end
     for nField = 1:length(fieldName)
-        parameter{acquisitionNumber} = setfield(parameter{acquisitionNumber},{1},fieldName{nField},{zoneNumber},fieldCont{nField});
+        parameter{acquisitionNumber} = setfield(parameter{acquisitionNumber},{1},fieldName{nField},{dispNumber},fieldCont{nField});
     end
     
     % get the data
@@ -99,11 +99,21 @@ while 1
     end
     % store the data at the correct place
     fseek(fid,startPos,'bof');
-    nLines = parameter{acquisitionNumber}.BS * parameter{acquisitionNumber}.NBLK;
+    if isfield(parameter{acquisitionNumber},'BS')
+        bs = parameter{acquisitionNumber}.BS;
+    else
+        bs = 1;
+    end
+    if isfield(parameter{acquisitionNumber},'NBLK')
+        nblk = parameter{acquisitionNumber}.NBLK;
+    else
+        nblk = 1;
+    end
+    nLines = bs*nblk;
     data = textscan(fid,'%f %f %f %f',nLines,'delimiter',' ','HeaderLines',posData+1);
     for nField = 1:length(colName)
         c = getfield(dataContent,colName{nField});
-        c{acquisitionNumber}(zoneNumber,:) = data{nField};
+        c{acquisitionNumber}(:,:,dispNumber) = reshape(data{nField},bs,nblk);
         dataContent = setfield(dataContent,colName{nField},c);
     end
        
