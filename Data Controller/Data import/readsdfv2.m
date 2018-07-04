@@ -1,4 +1,4 @@
-function [bloc, parameters] = readsdfv2(fid)
+function [dataContent, parameter] = readsdfv2(fid)
 %
 % [BLOC, PARAMETERS] = READSDFV2(FID) reads data from a Stelar file .sdf
 % version 2. Use FOPEN to open the file and obtain FID. It returns the data
@@ -24,50 +24,92 @@ function [bloc, parameters] = readsdfv2(fid)
 %
 % Manuel Petit, May 2018
 % manuel.petit@inserm.fr
+%
+% Modified by L Broche 2018
+% l.broche@abdn.ac.uk
 
-
+%% Preparations and preallocations
+% the import startegy relies on finding key words at regular intervals
+% ('PARAMETERS SUMMARY', 'NMRD SEQUENCE NAME' and 'DATA'). For efficiency we have to suppose that
+% these two words are less than 150 lines apart for a given bloc.
 N_MAX_PARAMETERS = 150; % maximum number of parameter in the header
 
-bloc = DataUnit(); % preallocation 
-parameters = cell(1,1); %preallocation
-iAcq = 1; % number of acquisition
-
+% formating the output structure
+dataContent = struct();
+acquisitionNumber = 0; % index of the acquisition being processed
+frewind(fid); % read the file from the start
+ 
 %% Read the file
 while 1 
-    %+ Get the header information   
-    % Find the length of the header by reading a bloc and catch 'DATA'
-    pos = ftell(fid); %memorize the position       
-    txt = textscan(fid,'%s',N_MAX_PARAMETERS,'delimiter','\r'); %read the bloc
-    if length(txt{1}) < N_MAX_PARAMETERS
-        break %end of the file
-    end  
-    % Get the sequence name
-    seqpos = find(startsWith(txt{1},'SEQUENCE'),1);
-    seq = strtrim(txt{1}{seqpos}(15:end));
-    % Read the header
-    offset = find(startsWith(txt{1},'PARAMETER'),1)+1;
-    nRow = find(startsWith(txt{1},'ZONE'),1) - offset;
-    fseek(fid,pos,'bof'); %replace the position
-    hdr = textscan(fid, '%s %s', nRow, 'delimiter', '=','Headerlines',offset+2);
-    % Remove all the space
-    hdr = cellfun(@(x) regexprep(x, '\s+', ''),hdr,'UniformOutput',0);     
-    % Format the header's values
-    isdouble = cellfun(@str2double, hdr{2}); 
-    hdr{2}(~isnan(isdouble)) = num2cell(isdouble(~isnan(isdouble))); %convert to double if possible
-    % Create the header
-    header = cell2struct(hdr{2},hdr{1},1); 
+    startPos = ftell(fid); %memorize the position  % remember the position of the start of the current bloc
     
-    %+ Get the data 
-    if header.NBLK == 0 % this happens when the sequence is not staggered (not over multiple fields such as PP, NP, etc...)
-        header.NBLK = 1;
+    % Get the header information   
+    % Find the length of the header by reading a large section and catch 'DATA'
+    txt = textscan(fid,'%s',N_MAX_PARAMETERS,'delimiter','\n');
+    if feof(fid) % check for end file, exit if found
+        break 
+    end  
+    
+    % check the content of the headers.
+    posParamSummary = find(startsWith(txt{1},'PARAMETER SUMMARY'),1)+1;
+    posZone = find(startsWith(txt{1},'ZONE'),1);
+    posData = find(startsWith(txt{1},'DATA'),1);
+    
+    if ~isempty(posParamSummary)||isempty(parameter(acquisitionNumber))
+        % now store the incoming data and parameters into a new section.
+        acquisitionNumber = acquisitionNumber+1;
+        zoneNumber = 0;
+        fseek(fid,startPos,'bof'); % back to the 'PARAMETER SUMMARY' line
+        % get the parameters into a new structure:
+        parameter{acquisitionNumber} = text2structure(txt{1}(posParamSummary+1:posZone-1));
+
+    end
+        
+    % now extracting the data from each bloc, with the corresponding parameters 
+    % starting with the additional parameters:
+    zoneNumber = zoneNumber + 1;
+    paramZone = text2structure(txt{1}(posZone + 1 : posData -1));
+    fieldName = fields(paramZone);
+    % change fields names for consistency with previous versions
+    fieldName = replace(fieldName,'BR','BRLX');
+    fieldName = replace(fieldName,'T1MAX','T1MX');
+    % get the values
+    fieldCont = struct2cell(paramZone);
+%     if zoneNumber == 1 % initialise the fields
+%         for nField = 1:length(fieldName)
+%             parameter =...
+%                     setfield(parameter,{acquisitionNumber},fieldName{nField},{1},{}); %#ok<*SFLD>
+%         end
+%     end
+    for nField = 1:length(fieldName)
+        parameter{acquisitionNumber} = setfield(parameter{acquisitionNumber},{1},fieldName{nField},{zoneNumber},fieldCont{nField});
     end
     
-    %% TO DO: read the data and format the ouput
+    % get the data
+    colName = split(txt{1}{posData+1},[char(9) char(9)])';
+    colName{strncmp(colName,'TIME',4)} = 'TIME';  % remove imcompatible characters for field names
+    % make sure the field names are consistent with previous versions
+    colName = replace(colName,'REAL','real');
+    colName = replace(colName,'IMG','imag');
+    colName = replace(colName,'TIME','time');
+    for nField = 1:length(colName)
+        if ~isfield(dataContent,colName{nField}) % initialise the fields
+            dataContent = setfield(dataContent,colName{nField},cell(1,acquisitionNumber)); %#ok<*SFLD>
+        end
+    end
+    % store the data at the correct place
+    fseek(fid,startPos,'bof');
+    nLines = parameter{acquisitionNumber}.BS * parameter{acquisitionNumber}.NBLK;
+    data = textscan(fid,'%f %f %f %f',nLines,'delimiter',' ','HeaderLines',posData+1);
+    for nField = 1:length(colName)
+        c = getfield(dataContent,colName{nField});
+        c{acquisitionNumber}(zoneNumber,:) = data{nField};
+        dataContent = setfield(dataContent,colName{nField},c);
+    end
+       
     
 end %while
-bloc = 1;
-parameters = 1;
-end
+
 
 
 
