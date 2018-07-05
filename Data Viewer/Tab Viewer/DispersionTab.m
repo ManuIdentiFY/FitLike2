@@ -238,7 +238,7 @@ classdef DispersionTab < DisplayTab
             switch src.Tag
                 case 'DataCheckButton'
                     % get the handle to the data
-                    hFit = findobj(this.axe.Children,'Type','ErrorBar');
+                    hData = findobj(this.axe.Children,'Type','ErrorBar');
                     if src.Value
                         % reset the DataMarkerType/DataMaskedMarkerType
                         this.DataMarkerStyle = 'o';
@@ -255,11 +255,12 @@ classdef DispersionTab < DisplayTab
                         iconState = 'off';
                     end
                     % set markers
-                    set(hFit,'Marker',this.DataMarkerStyle);
-                    set(findobj(hFit,'UserData','Mask'),'Marker',this.DataMaskedMarkerStyle);
-                    % set the legend icons
-                    for i = 1:length(hFit)
-                        set(get(get(hFit(i),'Annotation'),'LegendInformation'),'IconDisplayStyle',iconState);
+                    set(hData,'Marker',this.DataMarkerStyle);
+                    set(findobj(hData,'UserData','Mask'),'Marker',this.DataMaskedMarkerStyle);
+                    % set the legend icons 
+                    hData = hData(cellfun(@isempty, get(hData,'UserData'))); % reset only data
+                    for i = 1:length(hData)
+                        set(get(get(hData(i),'Annotation'),'LegendInformation'),'IconDisplayStyle',iconState);
                     end
                     % reset legend
                     resetLegend(this);
@@ -311,11 +312,20 @@ classdef DispersionTab < DisplayTab
                     resetLegend(this);
                     
                 case 'DataMaskedCheckButton'
-                    if 1
-                        %TO DO
+                    % get the handle to the masked data
+                    hMaskedData = findobj(this.axe.Children,'Type','ErrorBar','-and','UserData','Mask');
+                    if src.Value
+                        % reset the marker
+                        this.DataMaskedMarkerStyle = '+'; 
+                        % reset the plot if user add data previously
+                        addPlot(this.FitLike);
                     else
-                        %TO DO
+                        % set invisible marker
+                        this.DataMaskedMarkerStyle = 'none'; 
                     end
+                    % set markers
+                    set(hMaskedData,'Marker',this.DataMaskedMarkerStyle);
+                    
                 case 'ResidualCheckButton'
                     if src.Value
                         % change the current axis to have 3 x 2

@@ -222,8 +222,10 @@ classdef DispersionTab < DisplayTab
                 % delete them
                 delete(this.axe.Children(idx));
             end  
+
             % delete residual
             removeResidual(this, fileID);
+            
             % hide legend if no more data
             if isempty(this.axe.Children)
                 legend(this.axe,'hide');
@@ -236,7 +238,7 @@ classdef DispersionTab < DisplayTab
             switch src.Tag
                 case 'DataCheckButton'
                     % get the handle to the data
-                    hFit = findobj(this.axe.Children,'Type','ErrorBar');
+                    hData = findobj(this.axe.Children,'Type','ErrorBar');
                     if src.Value
                         % reset the DataMarkerType/DataMaskedMarkerType
                         this.DataMarkerStyle = 'o';
@@ -253,11 +255,12 @@ classdef DispersionTab < DisplayTab
                         iconState = 'off';
                     end
                     % set markers
-                    set(hFit,'Marker',this.DataMarkerStyle);
-                    set(findobj(hFit,'UserData','Mask'),'Marker',this.DataMaskedMarkerStyle);
-                    % set the legend icons
-                    for i = 1:length(hFit)
-                        set(get(get(hFit(i),'Annotation'),'LegendInformation'),'IconDisplayStyle',iconState);
+                    set(hData,'Marker',this.DataMarkerStyle);
+                    set(findobj(hData,'UserData','Mask'),'Marker',this.DataMaskedMarkerStyle);
+                    % set the legend icons 
+                    hData = hData(cellfun(@isempty, get(hData,'UserData'))); % reset only data
+                    for i = 1:length(hData)
+                        set(get(get(hData(i),'Annotation'),'LegendInformation'),'IconDisplayStyle',iconState);
                     end
                     % reset legend
                     resetLegend(this);
@@ -309,6 +312,8 @@ classdef DispersionTab < DisplayTab
                     resetLegend(this);
                     
                 case 'DataMaskedCheckButton'
+                    % get the handle to the masked data
+                    hMaskedData = findobj(this.axe.Children,'Type','ErrorBar','-and','UserData','Mask');
                     if 1
                         %TO DO
                     else
@@ -316,10 +321,6 @@ classdef DispersionTab < DisplayTab
                     end
                 case 'ResidualCheckButton'
                     if src.Value
-                        % check if we have data to plot (i.e. fit data)
-                        if all(strcmp('line',get(this.axe.Children,'Type')) == 0)
-                            return
-                        end
                         % change the current axis to have 3 x 2
                         % subplot. Set the main axis in 1:4 subplot and
                         % create two axis (axeResScatter & axeResHist)
@@ -333,8 +334,13 @@ classdef DispersionTab < DisplayTab
                         this.axeResScatter.YGrid = 'on';
                         this.axeResHist.FontSize = 8;
                         this.axeResHist.NextPlot = 'replacechildren';
-                        % plot the residuals
-                        this = plotResidual(this);
+                        % check if we have data to plot (i.e. fit data)
+                        if all(strcmp('line',get(this.axe.Children,'Type')) == 0)
+                            return
+                        else
+                            % plot the residuals
+                            this = plotResidual(this);
+                        end
                     else
                         % delete the residual axis
                         delete(this.axeResScatter)
@@ -498,8 +504,7 @@ classdef DispersionTab < DisplayTab
             % check if no more children and clear axis
             if isempty(this.axeResScatter.Children)
                 cla(this.axeResHist)
-                this.axeResHistTie
-                return
+                this.axeResHist.Title = []; %reset title
             else
                 % update hist axis
                 residual = get(this.axeResScatter.Children,'YData');
