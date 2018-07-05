@@ -222,10 +222,8 @@ classdef DispersionTab < DisplayTab
                 % delete them
                 delete(this.axe.Children(idx));
             end  
-
             % delete residual
             removeResidual(this, fileID);
-            
             % hide legend if no more data
             if isempty(this.axe.Children)
                 legend(this.axe,'hide');
@@ -318,6 +316,10 @@ classdef DispersionTab < DisplayTab
                     end
                 case 'ResidualCheckButton'
                     if src.Value
+                        % check if we have data to plot (i.e. fit data)
+                        if all(strcmp('line',get(this.axe.Children,'Type')) == 0)
+                            return
+                        end
                         % change the current axis to have 3 x 2
                         % subplot. Set the main axis in 1:4 subplot and
                         % create two axis (axeResScatter & axeResHist)
@@ -331,13 +333,8 @@ classdef DispersionTab < DisplayTab
                         this.axeResScatter.YGrid = 'on';
                         this.axeResHist.FontSize = 8;
                         this.axeResHist.NextPlot = 'replacechildren';
-                        % check if we have data to plot (i.e. fit data)
-                        if all(strcmp('line',get(this.axe.Children,'Type')) == 0)
-                            return
-                        else
-                            % plot the residuals
-                            this = plotResidual(this);
-                        end
+                        % plot the residuals
+                        this = plotResidual(this);
                     else
                         % delete the residual axis
                         delete(this.axeResScatter)
@@ -501,7 +498,8 @@ classdef DispersionTab < DisplayTab
             % check if no more children and clear axis
             if isempty(this.axeResScatter.Children)
                 cla(this.axeResHist)
-                this.axeResHist.Title = []; %reset title
+                this.axeResHistTie
+                return
             else
                 % update hist axis
                 residual = get(this.axeResScatter.Children,'YData');
