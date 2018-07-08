@@ -67,25 +67,25 @@ while 1
                     end
                 end
             end
-            parameter{acquisitionNumber}.paramList.T1MX = parameter{acquisitionNumber}.paramList.T1MX*1e-6; % convert to seconds
-            parameter{acquisitionNumber}.paramList.BRLX = parameter{acquisitionNumber}.paramList.BRLX*1e6;  % convert to Hz
         end
         % now store the incoming data and parameters into a new section.
         acquisitionNumber = acquisitionNumber+1;
         dispNumber = 0;
         fseek(fid,startPos,'bof'); % back to the 'PARAMETER SUMMARY' line
         % get the parameters into a new structure:
-        parameter{acquisitionNumber} = ParamV2(text2structure(txt{1}(posParamSummary+1:posZone-1)));
+        parameter{acquisitionNumber} = text2structure(txt{1}(posParamSummary+1:posZone-1));
 
     end
         
     % now extracting the data from each bloc, with the corresponding parameters 
     % starting with the additional parameters:
     dispNumber = dispNumber + 1;
-    paramZone = ParamV2(text2structure(txt{1}(posZone + 1 : posData -1)));
+    paramZone = text2structure(txt{1}(posZone + 1 : posData -1));
+    fieldName = fields(paramZone);
     % change fields names for consistency with previous versions
-    paramZone = changeFieldName(paramZone,'BR','BRLX');
-    paramZone = changeFieldName(paramZone,'T1MAX','T1MX');
+    fieldName = replace(fieldName,'BR','BRLX');
+    fieldName = replace(fieldName,'T1MAX','T1MX');
+    paramZone = changeFieldName(paramZone,old,new)
     % get the values
 %     fieldCont = struct2cell(paramZone);
 %     for nField = 1:length(fieldName)

@@ -10,12 +10,13 @@ classdef DataUnit < handle
     % SEE ALSO BLOC, ZONE, DISPERSION, RELAXOBJ
     
     properties (Access = public)
-        x@double = []; % main measure X (time, Bevo,...)
-        xLabel@char = ''; % name of the  variable X ('time','Bevo',...)
-        y@double = []; % main measure Y ('R1','fid',...)
-        dy@double = []; % error bars on Y
-        yLabel@char = ''; % name of the variable Y ('R1','fid',...)
-        mask@logical; % mask the X and Y arrays
+        x@double = [];          % main measure X (time, Bevo,...)
+        xLabel@char = '';       % name of the  variable X ('time','Bevo',...)
+        y@double = [];          % main measure Y ('R1','fid',...)
+        dy@double = [];         % error bars on Y
+        yLabel@char = '';       % name of the variable Y ('R1','fid',...)
+        mask@logical;           % mask the X and Y arrays
+        parameter@ParamObj;       % list of parameters associated with the data
     end   
     
     methods 
@@ -61,6 +62,22 @@ classdef DataUnit < handle
             resetmask(obj);
         end %DataUnit
         
+        function x = getZoneAxis(obj)
+            if size(obj) == 1
+                x = getZoneAxis(obj.parameter);
+            else
+                x = arrayfun(@(x) getZoneAxis(x.parameter),obj,'Uniform',0);
+            end
+        end
+                
+        function x = getDispAxis(obj)
+            if size(obj) == 1
+                x = getDispAxis(obj.parameter);
+            else
+                x = arrayfun(@(x) getDispAxis(x.parameter),obj,'Uniform',0);
+            end
+        end
+        
         % Data formating: resetmask
         % Fill or adapt the mask to the "y" field 
         function obj = resetmask(obj)
@@ -85,7 +102,7 @@ classdef DataUnit < handle
     
      methods (Abstract)       
          % Data processing: method to process the data
-         obj = process(obj,varargin); %process
+%          obj = process(obj,varargin); %process
          
          % Data visualisation: method to plot the data
          h = plot(obj, idx); %plot
