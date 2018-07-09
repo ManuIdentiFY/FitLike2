@@ -55,7 +55,7 @@ if nargin > 1 % check if the file was given at the first place
         formatFlag = 1;
     end
 else
-    formatFlag = 0;
+    formatFlag = 0; % if the user does not have a format file, start the allocation process
 end
 
 % loop over the acquisitions 
@@ -65,8 +65,8 @@ while 1
     pos = ftell(fid); %memorize the position       
     txt = textscan(fid,'%s',N_MAX_PARAMETERS,'delimiter','\r'); %read the bloc
     
-    offset = find(startsWith(txt{1},'ZONE'),1); %find the offset: 'ZONE'
-    nRow = find(startsWith(txt{1},'DATA'),1) - offset + 1; %get the number of rows  by finding 'DATA'  
+    offset = find(cellfun(@(x) ~isempty(x),strfind(txt{1},'ZONE')),1); %find the offset: 'ZONE'
+    nRow = find(cellfun(@(x) ~isempty(x),strfind(txt{1},'DATA')),1) - offset + 1; %get the number of rows  by finding 'DATA'  
     
     if isempty(offset) || isempty(nRow) %eof condition
         % simplify the last structure if possible

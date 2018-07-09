@@ -60,9 +60,9 @@ while 1
     end  
     
     % check the content of the headers.
-    posParamSummary = find(startsWith(txt{1},'PARAMETER SUMMARY'),1)+1;
-    posZone = find(startsWith(txt{1},'ZONE'),1);
-    posData = find(startsWith(txt{1},'DATA'),1);
+    posParamSummary = find(cellfun(@(x) ~isempty(x),strfind(txt{1},'PARAMETER SUMMARY')),1)+1;  % cannot use startWith for compatibility reasons with version older than 2017a
+    posZone = find(cellfun(@(x) ~isempty(x),strfind(txt{1},'ZONE')),1);
+    posData = find(cellfun(@(x) ~isempty(x),strfind(txt{1},'DATA')),1);
     
     if ~isempty(posParamSummary)||isempty(parameter{acquisitionNumber})
         % finalise the previous acquisition
@@ -103,12 +103,12 @@ while 1
     parameter{acquisitionNumber} = merge(parameter{acquisitionNumber},paramZone);
     
     % get the data
-    colName = split(txt{1}{posData+1},[char(9) char(9)])';
+    colName = strsplit(txt{1}{posData+1},[char(9) char(9)])'; % cannot use split for compatibility reasons with version older than 2018a
     colName{strncmp(colName,'TIME',4)} = 'TIME';  % remove imcompatible characters for field names
     % make sure the field names are consistent with previous versions
-    colName = replace(colName,'REAL','real');
-    colName = replace(colName,'IMG','imag');
-    colName = replace(colName,'TIME','time');
+    colName = strrep(colName,'REAL','real');
+    colName = strrep(colName,'IMG','imag');
+    colName = strrep(colName,'TIME','time');
     for nField = 1:length(colName)
         if ~isfield(dataContent,colName{nField}) % initialise the fields
             dataContent = setfield(dataContent,colName{nField},cell(1,acquisitionNumber)); %#ok<*SFLD>
