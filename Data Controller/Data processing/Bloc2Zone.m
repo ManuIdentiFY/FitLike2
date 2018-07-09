@@ -43,7 +43,7 @@ classdef Bloc2Zone < ProcessDataUnit
             % finally, reshape the list of updated parameters and make a
             % list of adapted structure objects
             params = arrayofstruct2struct(paramFun);
-            fh = eval(['@' class(bloc.parameter)]);
+            fh = str2func(class(bloc.parameter));
             params = fh(params);
             params = reshape(params,size(y));
             params = merge(bloc.parameter,params);

@@ -48,7 +48,7 @@ classdef Zone2Disp < ProcessDataUnit
             else
                 params = paramFun{1};
             end
-            fh = eval(['@' class(zone.parameter)]);
+            fh = str2func(class(zone.parameter));
             params = fh(params);
             params = reshape(params,size(y));
             params = merge(zone.parameter,params);
