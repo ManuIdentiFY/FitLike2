@@ -29,8 +29,8 @@ classdef ParamV2 < ParamObj
                     end
                 case 'log'
                     for ind = 1:length(T1MAX)
-                        xstartnum = eval(replace(xstart,'T1MAX',num2str(T1MAX(ind))));
-                        xendnum = eval(replace(xend,'T1MAX',num2str(T1MAX(ind))));
+                        xstartnum = eval(strrep(xstart,'T1MAX',num2str(T1MAX(ind))));
+                        xendnum = eval(strrep(xend,'T1MAX',num2str(T1MAX(ind))));
                         x(:,ind) = logspace(log10(xstartnum),log10(xendnum),npts);
                     end
                 otherwise
