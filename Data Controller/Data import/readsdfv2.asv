@@ -29,14 +29,6 @@ function [dataContent, parameter] = readsdfv2(filename,varargin)
 % Modified by L Broche 2018
 % l.broche@abdn.ac.uk
 
-%% open the file and check the result
-
-fid = fopen(filename, 'r'); % open the file in read only mode
-if fid == -1
-    errordlg(['File ' filename ' not found!'])
-    return
-end
-
 %% Preparations and preallocations
 % the import startegy relies on finding key words at regular intervals
 % ('PARAMETERS SUMMARY', 'NMRD SEQUENCE NAME' and 'DATA'). For efficiency we have to suppose that
@@ -72,7 +64,7 @@ while 1
                 cont = getfield(parameter{acquisitionNumber},fname{ind});
                 if length(cont)>1 && iscell(cont)
                     if isnumeric(cont{1})
-                        parameter{acquisitionNumber} = setfield(parameter{acquisitionNumber},fname{ind},cell2mat(cont)); %#ok<AGROW>
+                        parameter{acquisitionNumber} = setfield(parameter{acquisitionNumber},fname{ind},cell2mat(cont));
                     end
                 end
             end
@@ -129,7 +121,7 @@ while 1
     nLines = bs*nblk;
     data = textscan(fid,'%f %f %f %f',nLines,'delimiter',' ','HeaderLines',posData+1);
     for nField = 1:length(colName)
-        c = getfield(dataContent,colName{nField}); %#ok<*GFLD>
+        c = getfield(dataContent,colName{nField});
         c{acquisitionNumber}(:,:,dispNumber) = reshape(data{nField},bs,nblk);
         dataContent = setfield(dataContent,colName{nField},c);
     end
@@ -150,7 +142,5 @@ if acquisitionNumber > 0
     end
 end
 
-%% Tidying up
 
-fclose(fid);
 

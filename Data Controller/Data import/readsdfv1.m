@@ -39,7 +39,7 @@ iAcq = 1; % number of acquisition
 % open file and check if ok
 fid = fopen(filename, 'r'); % open the file in read only mode
 if fid == -1
-    errordlg('File not found!')
+    errordlg(['File ' filename ' not found!'])
     return
 end
 
@@ -48,10 +48,14 @@ end
 
 % check the formatFile existence: to change if formatFile moved
 listFile = dir();
-if sum(strcmp({listFile.name}, formatFile)) == 0
-    formatFlag = 0;
+if nargin > 1 % check if the file was given at the first place
+    if sum(strcmp({listFile.name}, formatFile)) == 0
+        formatFlag = 0;
+    else
+        formatFlag = 1;
+    end
 else
-    formatFlag = 1;
+    formatFlag = 0;
 end
 
 % loop over the acquisitions 
@@ -196,5 +200,9 @@ while 1
         parameter{iAcq} = header; %#ok<AGROW>
     end
 end %while
+
+%% Tidying up
+fclose(fid);
+
 end
 
