@@ -44,8 +44,8 @@ classdef Monoexp < Zone2Disp
             ci = nlparci(coeff,residuals,'covar',cov);
             coeffError = coeff' - ci(:,1);
             %% Dispersion data
-            relaxRate = coeff(3); %get the relaxation rate
-            relaxRateError = coeffError(3); %get the model error on the relaxation rate
+            z = coeff(3); %get the relaxation rate
+            dz = coeffError(3); %get the model error on the relaxation rate
             %% Model structure
             paramFun.modelEquation = '(M_0-M_inf)*exp(-t*R_1)+M_inf';
             paramFun.modelHandle = fitModel;
@@ -53,9 +53,6 @@ classdef Monoexp < Zone2Disp
             paramFun.coeff = coeff;
             paramFun.coeffError = coeffError;
             paramFun.gof = gof;
-
-            z = coeff(3);
-            dz = coeffError(3);
         end
     end
         

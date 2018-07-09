@@ -1,23 +1,17 @@
-classdef Zone < DataUnit
-    %
-    % ZONE is a container for "zone" data from Stelar SPINMASTER
-    %
-    % SEE ALSO BLOC, ZONE, DISPERSION, DATAUNIT, RELAXOBJ
-       
-    properties (Access = public)
-            method = []% method use to get zone data from bloc parent
-            parent = []% allow to define a "bloc" parent
-            % See DataUnit for other properties
+classdef Exp < DataUnit
+    % this class describes the results of a series of measurements of
+    % dispersion curves. It may contain data such as dispersion slopes,
+    % quadrupolar peaks amplitude, etc... across a variety of samples. This
+    % class is what needs to be created to facilitate data export for
+    % further statistical analyses.
+    
+    properties
+        
     end
     
-    methods (Access = public)
-        % Constructor
-        % Zone can build structure or array of structure. Input format is
-        % equivalent to DataUnit: 
-        % cell(s) input: array of structure
-        % other: structure
-        function obj = Zone(varargin)
-            % check input, must be non empty and have always field/val
+    methods
+        function obj = Exp(varargin)
+                        % check input, must be non empty and have always field/val
             % couple
             if nargin == 0 || mod(nargin,2) 
                 % default value
@@ -48,21 +42,20 @@ classdef Zone < DataUnit
                         end                           
                     end
                 end
-            end      
+            end    
             obj = resetmask(obj);
-        end %Zone
+        end
         
-        % Data processing: process that allows to obtain "dispersion" data.
-        % In this case Disp container is created and the zone container is
-        % stored in "parent" field of dispersion.
-        function obj = process(obj,varargin)
+        
+        function plot(self)
             
-        end %process
+        end
         
-        % Data visualisation: plot()
-        function h = plot(obj, idx)
-           
-        end %plot
+        % Data export
+        
+        
+        % Basic stats
+        
     end
     
 end

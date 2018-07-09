@@ -49,7 +49,7 @@ classdef Disp < DataUnit
                     end
                 end
             end      
-            resetmask(obj);       
+            obj = resetmask(obj);
         end %Zone
         
         % Data processing: process that allows to obtain "dispersion" data.

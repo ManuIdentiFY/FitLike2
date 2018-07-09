@@ -1,0 +1,33 @@
+classdef Disp2Exp < ProcessDataUnit
+    
+    properties
+        functionHandle % function handle that points to the processing function. 
+                       % By default, it is the 'process' function within this object 
+                       % but this may be modified by the user to use a custom-made 
+                       % processing function.
+    end
+    
+    methods
+        
+        function self = Disp2Exp(varargin)
+            self@ProcessDataUnit;
+            functionHandle = @self.applyFit;
+        end
+        
+        function exp = makeExp(self,disp)
+            
+        end
+        
+        
+        % function that applies the processing function to one disp only.
+        % This is where the custom processing function is being called.
+        function [y,dy,params] = applyProcessFunction(self,disp)
+            
+        end
+        
+        function [z,dz,params] = process(
+        
+        
+    end
+    
+end
