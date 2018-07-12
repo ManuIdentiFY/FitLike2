@@ -93,24 +93,17 @@ classdef FitLike < handle
                         % read the file
                         [x,y,dy] = readsef(filename);
                         % format the output
-                        dispersion = Dispersion('x',x,'xLabel','Magnetic Field (MHz)',...
+                        dispersion = Dispersion('x',x,'xLabel','Magnetic Field (MHz'),...
                             'y',y,'dy',dy,'yLabel','Relaxation Rate R_1 (s^{-1})',...
                             'filename',file{i},'sequence','Unknown');
-                        % check if no doublons. If true, change filename?
-                        % remove files?
-                        % append them to the current data
-                        this.RelaxData = [this.RelaxData dispersion];
                     end
                 case 3 %mat
                     for i = 1:length(file)
                         filename = [path file{i}];
                         % read the .mat file
                         obj = load(filename);
-                        var = fieldnames(obj);
-                        % check if no doublons. If true, change filename?
-                        % remove files?
-                        % append them to the current data
-                        this.RelaxData = [this.RelaxData obj.(var{1})];
+                        % format the output
+                        % TO DO
                     end
             end
             % update FileManager
