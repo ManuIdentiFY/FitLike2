@@ -33,8 +33,8 @@ classdef DataUnit < handle
     properties (Access = public)
         filename@char = '';     % name of the file ('file1.sdf')
         sequence@char = '';     % name of the sequence ('IRCPMG')
-        dataset@char = '';      % name of the dataset('ISMRM2018')
-        label@char = '';        % label of the file ('control','tumour',...)
+        dataset@char = 'myDataset';      % name of the dataset('ISMRM2018')
+        label@char = '0';        % label of the file ('control','tumour',...)
     end
     
     % other properties
