@@ -1,17 +1,18 @@
-function [realcol, imagcol, timecol] = determineColumnSelectionGUI(filename, sequence, ncol, data, colname, saveFile)
+function [realcol, imagcol, timecol] = getformatdlg(filename, sequence, ncol, data, colname)
 %
-% DETERMINECOLUMNSELECTIONGUI(FILENAME, SEQUENCE, NCOL, DATA, COLNAME)
+% GETFORMATDLG(FILENAME, SEQUENCE, NCOL, DATA, COLNAME)
 % helps the user to select the columns in Stelar .sdf files corresponding
 % to the following properties:
 % * real: the real part of the signal
 % * imag: the imaginary part of the signal
 % * time (optional): the time-series associated
 %
-% DETERMINECOLUMNSELECTIONGUI opens a new window where the beginning of the
+% GETFORMATDLG opens a new window where the beginning of the
 % data file is displayed. The user enters the column index. 
 % 
-% DETERMINECOLUMNSELECTIONGUI allows to save the setting (specific sequence
-% associated with specific number of column) in a matlab file (saveFile).
+% GETFORMATDLG allows to save the setting (specific sequence
+% associated with specific number of column) in a matlab file
+% 'formatsettings.mat' (folder 'format')
 % This file is a table with 5 columns organized as:
 %   Sequence | nCol | realIdx | imagIdx | timeIdx
 %   IRCPMG   |  2   |    1    |    2    |   []
@@ -27,6 +28,13 @@ function [realcol, imagcol, timecol] = determineColumnSelectionGUI(filename, seq
 % manuel.petit@inserm.fr
 
 NUMBER_LINE_TO_DISPLAYED = 15;
+PATH = [pwd '\Data Controller\Data import\format\']; %search path for format 
+% settings .mat file
+
+% check if the folder 'format' exists and if false, create it
+if exist(PATH,'file') ~= 7
+    mkdir(PATH)
+end
 
 % check input
 validateattributes(filename,{'char'},{});
@@ -171,8 +179,7 @@ if Answer.EnableSaveMode
     % IRCPMG   |  2   |    1    |    2    |   []
     %   NP     |  4   |    2    |    3    |   1 
     %  ...     | ...  |   ...   |   ...   |  ...
-    listFile = dir();
-    if sum(strcmp({listFile.name}, saveFile)) == 0
+    if exist([PATH 'formatsettings.mat'],'file') ~= 2
         % create the .mat file 
         Sequence = {sequence};
         nCol = ncol;
@@ -182,12 +189,12 @@ if Answer.EnableSaveMode
         
         T = table(Sequence, nCol, realIdx, imagIdx, timeIdx); %#ok<NASGU>
         
-        save(saveFile, 'T')
+        save([PATH 'formatsettings.mat'], 'T')
     else        
         % update the .mat file
         try 
             % load the table 
-            saveObj = load(saveFile);
+            saveObj = load([PATH 'formatsettings.mat']);
             var = fieldnames(saveObj);
             T = saveObj.(var{1});
             % check if this setting is already in the table
@@ -198,7 +205,7 @@ if Answer.EnableSaveMode
             newSettings = {sequence,ncol,realcol,imagcol,timecol};
             T = [T; newSettings]; %#ok<NASGU>
             % save the settings
-            save(saveFile, 'T')        
+            save([PATH 'formatsettings.mat'], 'T')        
         catch ME
             rethrow(ME);
         end   

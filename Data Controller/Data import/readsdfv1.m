@@ -1,14 +1,11 @@
-function [data, parameter] = readsdfv1(filename, formatFile)
+function [data, parameter] = readsdfv1(filename)
 %
-% [DATA, PARAMETER] = READSDFV1(FILENAME, FORMATFILE) read data from a 
+% [DATA, PARAMETER] = READSDFV1(FILENAME) read data from a 
 % Stelar file .sdf version 1. Version 1 is organised as pair of
-% header(parameter)/data for each "ZONE". FORMATFILE is a .mat file that
-% helps the file reading. If this .mat file does not exist, a new one is
-% created under the name FORMATFILE. See determineColumnSelectionGUI() for
-% further information about this file.
-%
-% Warning: always use the same FORMATFILE to avoid apparition of Data 
-% Helper GUI (and speed up the process). 
+% header(parameter)/data for each "ZONE". If READSDFV1 encounters an
+% unkwnown data formatting (unknownnumber of column/unknown sequence), it
+% calls a gui to help the user to select the correct column index. See
+% getformatdlg() for further information.
 %
 % READSDFV1 returns Stelar parameters as 1xN cell array of structure where N
 % corresponds to the number of experiment. Similarely, data is return as a
@@ -24,17 +21,18 @@ function [data, parameter] = readsdfv1(filename, formatFile)
 % For example: size(data.time) = [BS, NBLK, nZONE]. 
 %
 % Example:
-% formatFile = 'settings.mat';
 % filename = 'myfolder/stelar_data.sdf';
-% [data, parameter] = readsdfv1(filename, formatFile);
+% [data, parameter] = readsdfv1(filename);
 %
-% See also READSDFV2, DETERMINECOLUMNSELECTIONGUI
+% See also READSDFV2, GETFORMATDLG
 %
 % Manuel Petit, June 2018
 % manuel.petit@inserm.fr
 
 N_MAX_PARAMETERS = 150; % maximum number of parameter in the header
 iAcq = 1; % number of acquisition
+PATH = [pwd '\Data Controller\Data import\format\']; %search path for format 
+% settings .mat file (See getinputdlg)
 
 % open file and check if ok
 fid = fopen(filename, 'r'); % open the file in read only mode
@@ -45,18 +43,6 @@ end
 
 % get the name of the file
 [~,name,~] = fileparts(filename);
-
-% check the formatFile existence: to change if formatFile moved
-listFile = dir();
-if nargin > 1 % check if the file was given at the first place
-    if sum(strcmp({listFile.name}, formatFile)) == 0
-        formatFlag = 0;
-    else
-        formatFlag = 1;
-    end
-else
-    formatFlag = 0; % if the user does not have a format file, start the allocation process
-end
 
 % loop over the acquisitions 
 while 1 
@@ -111,18 +97,14 @@ while 1
     
     % Use the formatFile to know which column corresponds to the real and
     % imag signal. If unknown call GUI so user can do it
-    if ~formatFlag
+    if exist([PATH 'formatsettings.mat'],'file') ~= 2
         % no formatFile exists: create it
         % call a GUI to help user to select its columns
-        [realcol, imagcol, timecol] = determineColumnSelectionGUI(name,...
-            header.EXP, ncol, bloc, [], formatFile);
-        % check if formatFile has been created
-        if sum(strcmp({listFile.name}, formatFile))
-            formatFlag = 1;
-        end
+        [realcol, imagcol, timecol] = getformatdlg(name,...
+            header.EXP, ncol, bloc, []);
     else
         % open the formatFile and get the table T
-        formatObj = load(formatFile);
+        formatObj = load([PATH 'formatsettings.mat']);
         var = fieldnames(formatObj);
         T = formatObj.(var{1});    
         % check if the sequence/format is already known
@@ -134,8 +116,8 @@ while 1
             timecol = T.timeIdx(isKnown);
         else
             % call GUI
-            [realcol, imagcol, timecol] = determineColumnSelectionGUI(name,...
-                header.EXP, ncol, bloc, [], formatFile);
+            [realcol, imagcol, timecol] = getformatdlg(name,...
+                header.EXP, ncol, bloc, []);
         end
     end
     
