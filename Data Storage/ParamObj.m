@@ -72,6 +72,13 @@ classdef ParamObj < handle
                 end
             end
         end %getfield
+
+        
+        function other = copy(self)
+            other = ParamObj;
+            other.paramList = self.paramList;
+        end
+        
         
         function self = setfield(self, field, value)
             if length(self) > 1 

@@ -63,7 +63,7 @@ classdef Bloc2Zone < ProcessDataUnit
             
             % generate the zone object
             zone = Zone('x',x,'y',y,'dy',dy,'parameter',params);
-                
+            zone = arrayfun(@(x,y) setfield(x,'parent',y),zone,bloc);
         end
     end
     

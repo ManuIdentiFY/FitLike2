@@ -67,8 +67,8 @@ classdef Zone2Disp < ProcessDataUnit
             [y,dy,params] = arrayfun(@self.applyProcessFunction,zone,'Uniform',0);
             
             % generate the zone object
-            disp = Disp('x',x,'y',y,'dy',dy,'parameter',params);
-                
+            disp = Dispersion('x',x,'y',y,'dy',dy,'parameter',params);
+            disp = arrayfun(@(x,y) setfield(x,'parent',y),disp,zone);
         end
     end
     

@@ -7,6 +7,11 @@ classdef Dispersion < DataUnit
     properties
         model = [] % cell array of DispersionModel object
         filter = [] % cell array of Filter object
+        parent = [] % allow to define a "zone" parent
+        model = [] % allow to add dispersion models
+        method = [] % method use to get dispersion data from zone parent
+%         mergeFlag@logical = false % flag for merged files
+%         averageFlag@logical = false %flag for averaged files
         % See DataUnit for other properties
     end
     

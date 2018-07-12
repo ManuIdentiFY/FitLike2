@@ -8,6 +8,7 @@ classdef Disp2Exp < ProcessDataUnit
         componentList  % cell array containing the list of models that have been
                        % added up to make this object. Empty if it is an
                        % original model.
+                       
     end
     
     methods
