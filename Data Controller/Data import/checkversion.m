@@ -11,5 +11,7 @@ if strcmp(deblank(line{1}),'VERSION')
 else
     ver = 1;
 end
+
+fclose(fid); %close file
 end
 
