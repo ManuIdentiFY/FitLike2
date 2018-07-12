@@ -9,8 +9,8 @@ classdef Bloc < DataUnit
     %
     % SEE ALSO BLOC, ZONE, DISPERSION, DATAUNIT, RELAXOBJ
     
-    properties
-        % See DataUnit for properties
+    properties 
+        % See DataUnit for other properties
     end
     
     methods (Access = public)
@@ -19,11 +19,6 @@ classdef Bloc < DataUnit
             % call DataUnit constructor
             obj = obj@DataUnit(varargin{:}); 
         end %Bloc
-        
-        % Data visualisation: plot()
-        function h = plot(obj, idx)
-            2;
-        end %plot
     end
     
 end

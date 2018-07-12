@@ -7,8 +7,9 @@ classdef DataUnit < handle
     % Notice that attributes for properties are defined directly avoiding
     % the need for further checking.
     %
-    % SEE ALSO BLOC, ZONE, DISPERSION, RELAXOBJ
+    % SEE ALSO BLOC, ZONE, DISPERSION
     
+    % file data
     properties (Access = public)
         x@double = [];          % main measure X (time, Bevo,...)
         xLabel@char = '';       % name of the  variable X ('time','Bevo',...)
@@ -16,8 +17,31 @@ classdef DataUnit < handle
         dy@double = [];         % error bars on Y
         yLabel@char = '';       % name of the variable Y ('R1','fid',...)
         mask@logical;           % mask the X and Y arrays
-        parameter@ParamObj;       % list of parameters associated with the data
     end   
+    
+    % file parameters
+    properties (Access = public)
+        parameter@ParamObj;       % list of parameters associated with the data
+    end
+    
+    % file processing
+    properties (Access = public)
+        process@ProcessDataUnit; % object use to process the data
+    end
+    
+    % file properties
+    properties (Access = public)
+        filename@char = '';     % name of the file ('file1.sdf')
+        sequence@char = '';     % name of the sequence ('IRCPMG')
+        dataset@char = '';      % name of the dataset('ISMRM2018')
+        label@char = '';        % label of the file ('control','tumour',...)
+    end
+    
+    % other properties
+    properties (Access = public, Hidden = true)
+        fileID@char = '';       % ID of the file: [dataset sequence filename] 
+        parent = [];            % parent of the object
+    end
     
     methods 
         % Constructor: obj = DataUnit('field1',val1,'field2','val2',...)
@@ -54,31 +78,32 @@ classdef DataUnit < handle
                         try 
                             [obj(1:length(varargin{ind+1})).(varargin{ind})] = deal(varargin{ind+1}{:});
                         catch ME
-                            error(['Wrong argument ''' varargin{ind} ''' or invalid value/attribute associated.'])
+                            error(['Wrong argument ''' varargin{ind} ''' or invalid attribute associated.'])
                         end                           
                     end
                 end
-            end      
+            end   
+            
+            % generate mask if missing
             resetmask(obj);
-        end %DataUnit
+            % generate fileID
+            generateID(obj)
+        end %DataUnit        
+    end % methods
+    
+    methods (Access = public)
         
-        function x = getZoneAxis(obj)
-            if size(obj) == 1
-                x = getZoneAxis(obj.parameter);
+        % Generate fileID field
+        function obj = generateID(obj)
+            if length(obj) > 1
+                ID = arrayfun(@(x) [x.dataset x.sequence x.filename], obj,...
+                    'UniformOutput',0);
+                [obj.fileID] = ID{:};            
             else
-                x = arrayfun(@(x) getZoneAxis(x.parameter),obj,'Uniform',0);
+                obj.fileID = [obj.dataset obj.sequence obj.filename];
             end
-        end
-                
-        function x = getDispAxis(obj)
-            if size(obj) == 1
-                x = getDispAxis(obj.parameter);
-            else
-                x = arrayfun(@(x) getDispAxis(x.parameter),obj,'Uniform',0);
-            end
-        end
+        end %generateID
         
-        % Data formating: resetmask
         % Fill or adapt the mask to the "y" field 
         function obj = resetmask(obj)
             % check if input is array of struct or just struct
@@ -96,17 +121,26 @@ classdef DataUnit < handle
                     obj.mask = true(size(obj.y));
                 end
             end
-        end %resetmask
-        
-    end %method
-    
-     methods (Abstract)       
-         % Data processing: method to process the data
-%          obj = process(obj,varargin); %process
-         
-         % Data visualisation: method to plot the data
-         h = plot(obj, idx); %plot
-         
-     end %method
+        end %resetmask       
+    end %methods
+     
+%     methods (Access = public)
+%         
+%         function x = getZoneAxis(obj)
+%             if size(obj) == 1
+%                 x = getZoneAxis(obj.parameter);
+%             else
+%                 x = arrayfun(@(x) getZoneAxis(x.parameter),obj,'Uniform',0);
+%             end
+%         end %getZoneAxis
+% 
+%         function x = getDispAxis(obj)
+%             if size(obj) == 1
+%                 x = getDispAxis(obj.parameter);
+%             else
+%                 x = arrayfun(@(x) getDispAxis(x.parameter),obj,'Uniform',0);
+%             end
+%         end %getDispAxis
+%     end %methods    
 end
 
