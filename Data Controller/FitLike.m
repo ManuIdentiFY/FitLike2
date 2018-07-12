@@ -4,7 +4,7 @@ classdef FitLike < handle
     %
     
     properties (Access = public)
-        RelaxObj % Model for the Presenter
+        RelaxData % Model for the Presenter
         FitLikeView % Main view for the Presenter
         FileManager % Other view for the Presenter (subView)
         DisplayManager % Other view for the Presenter (subView)
@@ -16,13 +16,7 @@ classdef FitLike < handle
     methods (Access = public)
         % Constructor
         function this = FitLike()
-            % add data
-            data = load('testdata.mat'); 
-            this.RelaxObj = data.relaxObj;
-            % Create a Model, passing the reference to the Presenter        
-            % this.RelaxObj = RelaxObj(this);
-
-            % Do the same with the subView(s)
+            % create subView
             this.FileManager = FileManager(this);
             this.DisplayManager = DisplayManager(this);
             % this.ProcessingManager = ProcessingManager(this);
@@ -54,7 +48,53 @@ classdef FitLike < handle
         %%% File Menu
         % Open function: allow to open new files or dataset (.sdf, .sef, .mat)
         function this = open(this)
-            
+            % open interface to select files
+            [file, path, indx] = uigetfile({'*.sdf','Stelar Raw Files (*.sdf)';...
+                                     '*.sef','Stelar Processed Files (*.sef)';...
+                                     '*.mat','FitLike Dataset (*.mat)'},...
+                                     'Select One or More Files', ...
+                                     'MultiSelect', 'on');
+            % check output
+            if isequal(file,0)
+                % user canceled
+                return
+            elseif ischar(file)
+                file = {file};
+            end
+            % switch depending on the type of file
+            switch indx
+                case 1 %sdf
+                    for i = 1:length(file)
+                        filename = [path file{i}];
+                        % check version and select the correct reader
+                        ver = checkversion(filename);
+                        if ver == 1
+                            [data, parameter] = readsdfv1(filename);
+                        else
+                            [data, parameter] = readsdfv2(filename);
+                        end
+                        % format the output
+                        % TO DO:
+                    end
+                case 2 %sef
+                    for i = 1:length(file)
+                        filename = [path file{i}];
+                        % read the file
+                        [x,y,dy] = readsef(filename);
+                        % format the output
+                        % TO DO
+                    end
+                case 3 %mat
+                    for i = 1:length(file)
+                        filename = [path file{i}];
+                        % read the .mat file
+                        obj = load(filename);
+                        % format the output
+                        % TO DO
+                    end
+            end
+            % update FileManager
+            % TO DO
         end %open
         
         % Remove funcion: allow to remove files, sequence, dataset
