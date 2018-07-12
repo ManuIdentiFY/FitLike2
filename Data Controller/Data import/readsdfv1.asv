@@ -55,6 +55,10 @@ while 1
     nRow = find(cellfun(@(x) ~isempty(x),strfind(txt{1},'DATA')),1) - offset + 1; %get the number of rows  by finding 'DATA'  
     
     if isempty(offset) || isempty(nRow) %eof condition
+        % simplify the last structure if possible
+        if length(parameter{iAcq}) > 1
+            parameter{iAcq} = arrayofstruct2struct(parameter{iAcq}); %#ok<AGROW>
+        end
         break %end of the file
     end     
  
@@ -182,13 +186,5 @@ end %while
 %% Tidying up
 fclose(fid);
 
-% simplify the last structure if possible
-if length(parameter{iAcq}) > 1
-    parameter{iAcq} = arrayofstruct2struct(parameter{iAcq});
-end
-
-% convert the parameter to ParamV1 object then cell array
-parameter = ParamV1(parameter);
-parameter = num2cell(parameter);
 end
 
