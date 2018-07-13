@@ -19,13 +19,6 @@ classdef FileManager < handle
             gui = buildFileManager();
             this.gui = guihandles(gui);
             
-            % Initialize FileManager with relaxObj
-            selection = false(size(this.FitLike.RelaxObj.dataset));
-            this.gui.table.Data = [num2cell(selection'),...
-                                   [this.FitLike.RelaxObj.dataset]',...
-                                   [this.FitLike.RelaxObj.sequence]',...
-                                   [this.FitLike.RelaxObj.filename]'];
-            
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
             set(this.gui.fig,  'closerequestfcn', ...
@@ -46,6 +39,37 @@ classdef FileManager < handle
             %clear out the pointer to the figure - prevents memory leaks
             this.gui = [];
         end  %deleteWindow   
+    end
+    
+    methods (Access = public)
+        % Add new data to the table
+        function this = addData(this, dataset, sequence, filename)
+            % check input type
+            if ischar(dataset) && ischar(sequence) && ischar(filename)
+                % add new row
+                this.gui.table.Data = [this.gui.table.Data;...
+                    [{false},dataset,sequence,filename]];
+            elseif iscell(dataset) && iscell(sequence) && iscell(filename)
+                % check if size is consistent
+                if isequal(length(dataset),length(sequence)) &&...
+                        isequal(length(dataset),length(filename))
+                    % create selection column
+                    selection = false(size(dataset));
+                    % add new row
+                    this.gui.table.Data = [this.gui.table.Data;...
+                        [num2cell(selection)',dataset',sequence',filename']];
+                else
+                    error('FileManager:addData','Input size is not consistent')
+                end
+            else
+                error('FileManager:addData','Input type is not consistent')
+            end
+        end %addData
+        
+        % Remove data from the table
+        function this = removeData(this, isDelete)
+            this.gui.table.Data(isDelete,:) = [];
+        end %removeData
     end
     
 end
