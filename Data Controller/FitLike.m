@@ -61,6 +61,8 @@ classdef FitLike < handle
             elseif ischar(file)
                 file = {file};
             end
+            % initialisation
+            bloc = [];
             % switch depending on the type of file
             switch indx
                 case 1 %sdf
@@ -76,16 +78,40 @@ classdef FitLike < handle
                         % get the data
                         y = cellfun(@(x,y) complex(x,y), data.real, data.imag,...
                             'UniformOutput',0);
-                        name = getfield(parameter,'FILE'); %#ok<GFLD>
-                        sequence = getfield(parameter,'EXP'); %#ok<GFLD>
+                        name = getfields(parameter,'FILE','ForceCellOutput','True');
+                        sequence = getfields(parameter,'EXP','ForceCellOutput','True');
                         % format the output
-                        bloc = Bloc('x',data.time,'xLabel','Time',...
-                            'y',y,'yLabel','Signal',...
+                        new_bloc = Bloc('x',data.time,'y',y,...
+                            'xLabel',repmat({'Time'},1,length(name)),...
+                            'yLabel',repmat({'Signal'},1,length(name)),...
+                            'parameter',num2cell(parameter),...
                             'filename',name,'sequence',sequence);
-                        % check if no doublons. If true, change filename?
-                        % remove files?
+                        % check if no doublons.
+                        if ~isempty(this.RelaxData)
+                            [~,idx,~] = intersect({new_bloc.fileID}, {this.RelaxData.fileID});
+                            if ~isempty(idx)
+                                listDuplicate = arrayfun(@(x) sprintf(['%s\t'...
+                                    '(Sequence: %s)'],x.filename,x.sequence),...
+                                    new_bloc(idx),'UniformOutput',0);
+                                answer = questdlg(sprintf(['The following files '...
+                                   'are already stored in FitLike:\n\n%s\nDo you '...
+                                   'still want to keep them or not?\n'...
+                                   'Note: Filename will be changed if Yes'],...
+                                   sprintf('%s \n',listDuplicate{:})),...
+                                   'Importation','Yes','No','No');
+                               if isempty(answer) || strcmp(answer,'No')
+                                   % delete duplicated
+                                   new_bloc(idx) = [];
+                               else
+                                   % rename bloc: add '_bis'
+                                   new_filename = arrayfun(@(x) [x.filename '_bis'],...
+                                       new_bloc(idx),'UniformOutput',0);
+                                   [new_bloc(idx).filename] = new_filename{:};
+                               end
+                            end
+                        end
                         % append them to the current data
-                        this.RelaxData = [this.RelaxData bloc];
+                        bloc = [bloc new_bloc];
                     end
                 case 2 %sef
                     for i = 1:length(file)
@@ -93,13 +119,13 @@ classdef FitLike < handle
                         % read the file
                         [x,y,dy] = readsef(filename);
                         % format the output
-                        dispersion = Dispersion('x',x,'xLabel','Magnetic Field (MHz)',...
+                        new_bloc = Dispersion('x',x,'xLabel','Magnetic Field (MHz)',...
                             'y',y,'dy',dy,'yLabel','Relaxation Rate R_1 (s^{-1})',...
                             'filename',file{i},'sequence','Unknown');
                         % check if no doublons. If true, change filename?
                         % remove files?
                         % append them to the current data
-                        this.RelaxData = [this.RelaxData dispersion];
+                        bloc = [bloc new_bloc];
                     end
                 case 3 %mat
                     for i = 1:length(file)
@@ -110,16 +136,24 @@ classdef FitLike < handle
                         % check if no doublons. If true, change filename?
                         % remove files?
                         % append them to the current data
-                        this.RelaxData = [this.RelaxData obj.(var{1})];
+                        bloc = [bloc obj.(var{1})];
                     end
             end
+            % append data to RelaxData
+            this.RelaxData = [this.RelaxData bloc];
             % update FileManager
-            % TO DO
+            addData(this.FileManager,...
+                {bloc.dataset}, {bloc.sequence}, {bloc.filename});
         end %open
         
         % Remove funcion: allow to remove files, sequence, dataset
         function this = remove(this)
-            
+            % check the selected files in FileManager
+            isSelected = [this.FileManager.gui.table.Data{:,1}];
+            % remove files in RelaxData 
+            this.RelaxData(isSelected) = [];
+            % update FileManager
+            removeData(this.FileManager, isSelected);
         end %remove
         
         % Export function: allow to export data (dispersion, model)
@@ -273,13 +307,13 @@ classdef FitLike < handle
             row = event.Indices(1);
             col = event.Indices(2);
             % check if files selected
-            if col
-                if val 
-                    addPlot(this);
-                else
-                    removePlot(this);
-                end
-            end
+%             if col
+%                 if val 
+%                     addPlot(this);
+%                 else
+%                     removePlot(this);
+%                 end
+%             end
         end %selectFile
     end   
     %% -------------------- DisplayManager Callback -------------------- %% 
