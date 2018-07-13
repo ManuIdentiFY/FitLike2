@@ -5,7 +5,7 @@ classdef ParamObj < handle
     end
     
     methods 
-        
+         
         function self = ParamObj(paramStruct)
             % varargin should be a parameter structure, which is copied
             % into the paramlist field.
@@ -22,19 +22,19 @@ classdef ParamObj < handle
         function self = reshape(self,dim)
             fname = fields(self.paramList);
             for ind = 1:length(fname)
-                val = getfield(self.paramList,fname{ind});
+                val = getfields(self.paramList,fname{ind});
                 if iscell(val) || isnumeric(val)
                     if (size(val,1)==dim(1) && size(val,2)==dim(2) && size(val,3)==dim(3))
                         val = reshape(val,dim);
                     end
                 end
-                self.paramList = setfield(self.paramList,fname{ind},val);
+                self.paramList = setfields(self.paramList,fname{ind},val);
             end
         end
         
         % Syntax: val = getfield(self, 'field')
         %         val = getfield(self, 'field', 'ForceCellOutput', 'True')
-        function value = getfield(self, field, varargin)
+        function value = getfields(self, field, varargin)
             % check if the field exist in all the parameter structures
             isfld = arrayfun(@(x) isfield(x.paramList,field), self);
             % check input size
@@ -80,7 +80,7 @@ classdef ParamObj < handle
         end
         
         
-        function self = setfield(self, field, value)
+        function self = setfields(self, field, value)
             if length(self) > 1 
                 % check if the field exist in all the parameter structures
                 isfld = arrayfun(@(x) isfield(x.paramList,field), self);
@@ -114,7 +114,7 @@ classdef ParamObj < handle
         end %setfield
         
         function self = changeFieldName(self,old,new)
-            self.paramList  = setfield(self.paramList ,new,getfield(self,old));
+            self.paramList  = setfields(self.paramList ,new,getfields(self,old));
             self.paramList = rmfield(self.paramList,old);
         end
         
@@ -123,18 +123,18 @@ classdef ParamObj < handle
             for indfname = 1:length(f2)
                 fname = f2(indfname);
                 fname = fname{1};
-                val2 = getfield(other,fname);
+                val2 = getfields(other,fname);
                 if isfield(self.paramList,fname)
-                    val1 = getfield(self.paramList,fname);
+                    val1 = getfields(self.paramList,fname);
                     if isnumeric(val1) && isnumeric(val2) %#ok<*GFLD>
-                        self.paramList = setfield(self.paramList,fname,[val1,val2]); %#ok<*SFLD>
+                        self.paramList = setfields(self.paramList,fname,[val1,val2]); %#ok<*SFLD>
                     elseif iscell(val1) && iscell(val2)
-                        self.paramList = setfield(self.paramList,fname,[val1,val2{:}]);
+                        self.paramList = setfields(self.paramList,fname,[val1,val2{:}]);
                     else
-                        self.paramList = setfield(self.paramList,fname,{val1,val2});
+                        self.paramList = setfields(self.paramList,fname,{val1,val2});
                     end
                 else
-                    self.paramList = setfield(self.paramList,fname,val2);
+                    self.paramList = setfields(self.paramList,fname,val2);
                 end
             end            
         end
