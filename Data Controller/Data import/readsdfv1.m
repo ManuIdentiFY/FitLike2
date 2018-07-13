@@ -189,6 +189,5 @@ end
 
 % convert the parameter to ParamV1 object then cell array
 parameter = ParamV1(parameter);
-parameter = num2cell(parameter);
 end
 
