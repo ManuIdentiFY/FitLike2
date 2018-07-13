@@ -23,7 +23,8 @@ classdef FitLikeView < handle
             set(this.gui.Open, 'callback', ...
                 @(src, event) this.FitLike.open());
             % Remove funcion
-            
+            set(this.gui.Remove, 'callback', ...
+                @(src, event) this.FitLike.remove());
             % Export function
             
             % Save function
