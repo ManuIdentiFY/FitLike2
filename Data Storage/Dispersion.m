@@ -20,16 +20,20 @@ classdef Dispersion < DataUnit
             % call DataUnit constructor
             obj = obj@DataUnit(varargin{:}); 
             % fill model field
-            if ~isempty(model) && size(obj) == 1
-                obj.model = model;
-            else
-                [obj.model] = model{:};
+            if ~isempty(model)
+                if size(obj) == 1
+                    obj.model = model;
+                else
+                    [obj.model] = model{:};
+                end
             end
             % fill filter field
-            if ~isempty(filter) && size(obj) == 1
-                obj.filter = filter;
-            else
-                [obj.filter] = filter{:};
+            if ~isempty(filter)
+                if size(obj) == 1
+                    obj.filter = filter;
+                else
+                    [obj.filter] = filter{:};
+                end
             end                              
         end %Dispersion
     end
