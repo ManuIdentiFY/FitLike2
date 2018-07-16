@@ -1,4 +1,4 @@
-classdef DataUnit < matlab.mixin.Heterogeneous
+classdef DataUnit < handle & matlab.mixin.Heterogeneous
     %
     % Abstract class that define container for all the Stelar SPINMASTER
     % relaxometer data (bloc, zone, dispersion).
@@ -80,15 +80,22 @@ classdef DataUnit < matlab.mixin.Heterogeneous
                     obj = repelem(obj,1,n);
                     % fill the properties
                     for ind = 1:2:nargin 
-                        [obj.(varargin{ind})] = deal(varargin{ind+1}{:});                          
+                        for i = 1:n
+                            obj(i).(varargin{ind+1}) = varargin{in
+                        try 
+                            %[obj.(varargin{ind})] = deal(varargin{ind+1}{:});
+                            [obj(1:length(varargin{ind+1})).(varargin{ind})] = deal(varargin{ind+1}{:});
+                        catch ME
+                            error(['Wrong argument ''' varargin{ind} ''' or invalid attribute associated.'])
+                        end                           
                     end
                 end
             end   
             
             % generate mask if missing
-            obj = resetmask(obj);
+            resetmask(obj);
             % generate fileID
-            obj = generateID(obj);
+            generateID(obj)
         end %DataUnit        
     end % methods
     
