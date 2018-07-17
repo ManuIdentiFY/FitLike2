@@ -1,4 +1,4 @@
-classdef DataUnit < matlab.mixin.Heterogeneous
+classdef DataUnit < handle & matlab.mixin.Heterogeneous
     %
     % Abstract class that define container for all the Stelar SPINMASTER
     % relaxometer data (bloc, zone, dispersion).
@@ -16,17 +16,17 @@ classdef DataUnit < matlab.mixin.Heterogeneous
         y@double = [];          % main measure Y ('R1','fid',...)
         dy@double = [];         % error bars on Y
         yLabel@char = '';       % name of the variable Y ('R1','fid',...)
-        mask@logical;           % mask the X and Y arrays
+        mask@logical = true(0);           % mask the X and Y arrays
     end   
     
     % file parameters
     properties (Access = public)
-        parameter@ParamObj;       % list of parameters associated with the data
+        parameter@ParamObj = ParamObj();       % list of parameters associated with the data
     end
     
     % file processing
     properties (Access = public)
-        process@ProcessDataUnit; % object use to process the data
+        process@ProcessDataUnit = ProcessDataUnit(); % object use to process the data
     end
     
     % file properties
@@ -77,18 +77,22 @@ classdef DataUnit < matlab.mixin.Heterogeneous
                 else
                     % initialise explicitely the array of object (required
                     % for heterogeneous array)
-                    obj = repelem(obj,1,n);
-                    % fill the properties
-                    for ind = 1:2:nargin 
-                        [obj.(varargin{ind})] = deal(varargin{ind+1}{:});                          
+                    % for loop required to create unique handle.
+                    for k = n:-1:1
+                        % initialisation required to create unique handle!
+                        obj(1,k) = DataUnit();
+                        % fill arguments
+                        for ind = 1:2:nargin 
+                            [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
+                        end
                     end
                 end
             end   
             
             % generate mask if missing
-            obj = resetmask(obj);
+            resetmask(obj);
             % generate fileID
-            obj = generateID(obj);
+            generateID(obj);
         end %DataUnit        
     end % methods
     
