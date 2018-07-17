@@ -69,10 +69,10 @@ while 1
         if acquisitionNumber > 0
             fname = fields(parameter{acquisitionNumber}.paramList);
             for ind = 1:length(fname)
-                cont = getfields(parameter{acquisitionNumber},fname{ind});
+                cont = getfield(parameter{acquisitionNumber},fname{ind});
                 if length(cont)>1 && iscell(cont)
                     if isnumeric(cont{1})
-                        parameter{acquisitionNumber} = setfields(parameter{acquisitionNumber},fname{ind},cell2mat(cont)); %#ok<AGROW>
+                        parameter{acquisitionNumber} = setfield(parameter{acquisitionNumber},fname{ind},cell2mat(cont)); %#ok<AGROW>
                     end
                 end
             end
@@ -111,7 +111,7 @@ while 1
     colName = strrep(colName,'TIME','time');
     for nField = 1:length(colName)
         if ~isfield(dataContent,colName{nField}) % initialise the fields
-            dataContent = setfields(dataContent,colName{nField},cell(1,acquisitionNumber)); %#ok<*SFLD>
+            dataContent = setfield(dataContent,colName{nField},cell(1,acquisitionNumber)); %#ok<*SFLD>
         end
     end
     % store the data at the correct place
@@ -129,9 +129,9 @@ while 1
     nLines = bs*nblk;
     data = textscan(fid,'%f %f %f %f',nLines,'delimiter',' ','HeaderLines',posData+1);
     for nField = 1:length(colName)
-        c = getfields(dataContent,colName{nField}); %#ok<*GFLD>
+        c = getfield(dataContent,colName{nField}); %#ok<*GFLD>
         c{acquisitionNumber}(:,:,dispNumber) = reshape(data{nField},bs,nblk);
-        dataContent = setfields(dataContent,colName{nField},c);
+        dataContent = setfield(dataContent,colName{nField},c);
     end
        
     
@@ -141,10 +141,10 @@ end %while
 if acquisitionNumber > 0
     fname = fields(parameter{acquisitionNumber}.paramList);
     for ind = 1:length(fname)
-        cont = getfields(parameter{acquisitionNumber}.paramList,fname{ind});
+        cont = getfield(parameter{acquisitionNumber}.paramList,fname{ind});
         if length(cont)>1 && iscell(cont)
             if isnumeric(cont{1})
-                parameter{acquisitionNumber} = setfields(parameter{acquisitionNumber},fname{ind},cell2mat(cont));
+                parameter{acquisitionNumber} = setfield(parameter{acquisitionNumber},fname{ind},cell2mat(cont));
             end
         end
     end

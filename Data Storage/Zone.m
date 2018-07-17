@@ -58,6 +58,13 @@ classdef Zone < DataUnit
             % generate fileID
             generateID(obj);
         end %Zone
+        
+        
+        function x = getDispAxis(self)
+            x = arrayfun(@(x) getDispAxis(x.parameter),self,'UniformOutput',0);
+        end
     end % methods
     
+    
+
 end

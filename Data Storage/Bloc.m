@@ -59,6 +59,10 @@ classdef Bloc < DataUnit
             % generate fileID
             generateID(obj);
         end %Bloc
+        
+        function x = getZoneAxis(self)
+            x = arrayfun(@(x) getZoneAxis(x.parameter),self,'UniformOutput',0);
+        end
     end
     
 end
