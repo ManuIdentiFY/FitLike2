@@ -2,7 +2,7 @@ classdef ParamFit < ParamObj
     
     % class used to handle the fit parameters so that they are
     % automatically updated when multiple contributions are present in the
-    % model
+    % model.
     
     properties
         

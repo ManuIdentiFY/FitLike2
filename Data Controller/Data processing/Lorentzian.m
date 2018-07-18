@@ -1,4 +1,4 @@
-classdef Lorentzian < FitModel   
+classdef Lorentzian < Disp2Exp 
     % Lorentzian model for freely-moving molecules.
     % from:
     % Understanding Spin Dynamics, page 20

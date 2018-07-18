@@ -49,7 +49,24 @@ classdef FitModel
         end
         
         function newObj = addModel(self,other)
-            
+            if length(other)>1
+                newObj = self;
+                for ind = 1:length(other)
+                    newObj = addModel(newObj,other(ind));
+                end
+            else
+                newObj = FitModel('modelName',       [self.modelName ' + ' other.modelName],...
+                                  'modelEquation',   [func2str(self.modelHandle) ' + '  func2str(other.modelHandle)],...
+                                  'modelHandle',     
+                newObj.variableName = {};   
+                newObj.parameterName = {};  
+                newObj.isFixed = {};        
+                newObj.minValue = {};       
+                newObj.maxValue = {};       
+                newObj.startPoint = {};     
+                newObj.bestValue = {};      
+                newObj.errorBar = {};       
+            end
         end
     end
 end
