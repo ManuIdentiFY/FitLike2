@@ -35,11 +35,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         sequence@char = '';     % name of the sequence ('IRCPMG')
         dataset@char = 'myDataset';      % name of the dataset('ISMRM2018')
         label@char = '0';        % label of the file ('control','tumour',...)
-    end
-    
-    % abstract file property
-    properties (Abstract)
-        displayName % name of the object ('dispersion','bloc','dispersion T1_{1}',...
+        % If multiT1/multiT2, the 
+        displayName = '';        % name to display in case of multiT1 or multiT2
     end
     
     % other properties

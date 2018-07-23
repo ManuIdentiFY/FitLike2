@@ -5,7 +5,8 @@ classdef Zone < DataUnit
     % SEE ALSO BLOC, ZONE, DISPERSION, DATAUNIT, RELAXOBJ
        
     properties 
-            % See DataUnit for other properties
+        displayName = 'zone';
+        % See DataUnit for other properties
     end
     
     methods (Access = public)

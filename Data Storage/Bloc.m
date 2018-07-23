@@ -10,6 +10,7 @@ classdef Bloc < DataUnit
     % SEE ALSO BLOC, ZONE, DISPERSION, DATAUNIT, RELAXOBJ
     
     properties 
+        displayName = 'bloc';
         % See DataUnit for other properties
     end
     
