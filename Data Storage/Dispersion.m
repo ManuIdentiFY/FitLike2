@@ -80,6 +80,17 @@ classdef Dispersion < DataUnit
         function export(obj,method)
             
         end %export
+        
+        % plotting function - needs to be improved
+        function plot(obj,varargin)
+            for ind1 = 1:size(obj.y,1)
+                for ind2 = 1:size(obj.y,2)
+                    loglog(obj.x,squeeze(obj.y(ind1,ind2,:)),varargin{:})
+                    hold on
+                end
+            end
+            hold off
+        end
     end
     
 end
