@@ -1,4 +1,4 @@
-classdef DisplayTab < uix.Container
+classdef DisplayTab < uix.Container & handle
     
     %
     % Abtract class that define the containers for the DisplayManager of
@@ -7,7 +7,7 @@ classdef DisplayTab < uix.Container
     
     % list of the components
     properties (Access = public)
-        FitLike % Presenter
+        FitLike % handle to Presenter
         grid % handle to grid
         box % handle to box
         axe % handle to the axis
