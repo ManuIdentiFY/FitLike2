@@ -597,7 +597,7 @@ classdef DispersionTab < DisplayTab
             end
         end %chooseMarker
         
-                % choose marker
+        % choose style
         function style = chooseFitStyle(this, fileID)
             % get handle to the children in main axis
             hPlot = this.axe.Children;
@@ -611,7 +611,7 @@ classdef DispersionTab < DisplayTab
             style = setdiff(this.FitLineStyle, {hPlot(TF).LineStyle}, 'stable');
             if isempty(style)
                 error('plotData:TooMuchDataPlot', ['Cannot display more than %d'...
-                    ' dispersion curves from the same file!'],length(this.FitLineStyle))
+                    ' fit models from the same file!'],length(this.FitLineStyle))
             else
                 style = style{1}; %get the first one
             end
