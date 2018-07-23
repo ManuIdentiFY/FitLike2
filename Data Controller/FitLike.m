@@ -86,32 +86,12 @@ classdef FitLike < handle
                             'yLabel',repmat({'Signal'},1,length(name)),...
                             'parameter',num2cell(parameter),...
                             'filename',name,'sequence',sequence);
-                        % check if no doublons.
+                        % check duplicates
                         if ~isempty(this.RelaxData)
-                            [~,idx,~] = intersect({new_bloc.fileID}, {this.RelaxData.fileID});
-                            if ~isempty(idx)
-                                listDuplicate = arrayfun(@(x) sprintf(['%s\t'...
-                                    '(Sequence: %s)'],x.filename,x.sequence),...
-                                    new_bloc(idx),'UniformOutput',0);
-                                answer = questdlg(sprintf(['The following files '...
-                                   'are already stored in FitLike:\n\n%s\nDo you '...
-                                   'still want to keep them or not?\n'...
-                                   'Note: Filename will be changed if Yes'],...
-                                   sprintf('%s \n',listDuplicate{:})),...
-                                   'Importation','Yes','No','No');
-                               if isempty(answer) || strcmp(answer,'No')
-                                   % delete duplicated
-                                   new_bloc(idx) = [];
-                               else
-                                   % rename bloc: add '_bis'
-                                   new_filename = arrayfun(@(x) [x.filename '_bis'],...
-                                       new_bloc(idx),'UniformOutput',0);
-                                   [new_bloc(idx).filename] = new_filename{:};
-                               end
-                            end
+                            new_bloc = checkDuplicates(this, new_bloc);
                         end
                         % append them to the current data
-                        bloc = [bloc new_bloc];
+                        bloc = [bloc new_bloc]; %#ok<AGROW>
                     end
                 case 2 %sef
                     for i = 1:length(file)
@@ -122,10 +102,12 @@ classdef FitLike < handle
                         new_bloc = Dispersion('x',x,'xLabel','Magnetic Field (MHz)',...
                             'y',y,'dy',dy,'yLabel','Relaxation Rate R_1 (s^{-1})',...
                             'filename',file{i},'sequence','Unknown');
-                        % check if no doublons. If true, change filename?
-                        % remove files?
+                        % check duplicates
+                        if ~isempty(this.RelaxData)
+                            new_bloc = checkDuplicates(this, new_bloc);
+                        end
                         % append them to the current data
-                        bloc = [bloc new_bloc];
+                        bloc = [bloc new_bloc]; %#ok<AGROW>
                     end
                 case 3 %mat
                     for i = 1:length(file)
@@ -136,7 +118,11 @@ classdef FitLike < handle
                         % check if no doublons. If true, change filename?
                         % remove files?
                         % append them to the current data
-                        bloc = [bloc obj.(var{1})];
+                        % check duplicates
+                        bloc = [bloc obj.(var{1})]; %#ok<AGROW>
+                        if ~isempty(this.RelaxData)
+                            new_bloc = checkDuplicates(this, new_bloc);
+                        end
                     end
             end
             % append data to RelaxData
@@ -144,6 +130,38 @@ classdef FitLike < handle
             % update FileManager
             addData(this.FileManager,...
                 {bloc.dataset}, {bloc.sequence}, {bloc.filename});
+                %%-------------------------------------------------------%%
+                % Check if duplicates are imported and let the user decides
+                % if we keep them and add '_bis' to their filename or just
+                % remove them from the current array of object "bloc".
+                function bloc = checkDuplicates(this, bloc)
+                    % check if duplicates have been imported
+                    [~,idx,~] = intersect({bloc.fileID}, {this.RelaxData.fileID});
+                    if ~isempty(idx)
+                        % create a cell array of string with:
+                        % 'filename' (Sequence: 'sequence')
+                        listDuplicate = arrayfun(@(x) sprintf(['%s\t'...
+                            '(Sequence: %s)'],x.filename,x.sequence),...
+                            bloc(idx),'UniformOutput',0);
+                        % ask the user what to do
+                        answer = questdlg(sprintf(['The following files '...
+                           'are already stored in FitLike:\n\n%s\nDo you '...
+                           'still want to keep them or not?\n'...
+                           'Note: Filename will be changed if Yes'],...
+                           sprintf('%s \n',listDuplicate{:})),...
+                           'Importation','Yes','No','No');
+                       if isempty(answer) || strcmp(answer,'No')
+                           % delete duplicated
+                           bloc(idx) = [];
+                       else
+                           % rename bloc: add '_bis'
+                           new_filename = arrayfun(@(x) [x.filename '_bis'],...
+                               bloc(idx),'UniformOutput',0);
+                           [bloc(idx).filename] = new_filename{:};
+                       end
+                    end
+                end %checkDuplicated
+                %%-------------------------------------------------------%%
         end %open
         
         % Remove funcion: allow to remove files, sequence, dataset
@@ -304,16 +322,16 @@ classdef FitLike < handle
         function selectFile(this, ~, event)
             % get the new values
             val = event.EditData;
-            row = event.Indices(1);
+            %row = event.Indices(1);
             col = event.Indices(2);
             % check if files selected
-%             if col
-%                 if val 
-%                     addPlot(this);
-%                 else
-%                     removePlot(this);
-%                 end
-%             end
+            if isequal(col,1)
+                if isequal(val,1)
+                    %addPlot(this);
+                else
+                    %removePlot(this);
+                end
+            end
         end %selectFile
     end   
     %% -------------------- DisplayManager Callback -------------------- %% 
@@ -358,70 +376,45 @@ classdef FitLike < handle
         end %removeTab
         
         % Add plot to the current tab/axis
-        function this = addPlot(this)
+        function this = addPlot(this, hData)
             % get the handle of the selected tab
-            h = this.DisplayManager.gui.tab.SelectedTab; 
-            % check the selected data
-            selection = [this.FileManager.gui.table.Data{:,1}];
-            % get the corresponding data
-            data = this.RelaxObj.data(selection);
-            label = this.RelaxObj.filename(selection);
-            seq = this.RelaxObj.sequence(selection);
-            dataset = this.RelaxObj.dataset(selection);
+            hTab = this.DisplayManager.gui.tab.SelectedTab; 
             % select an action according to this type
-            switch class(h.Children)
+            switch class(hTab.Children)
                 case 'EmptyTab'
                     % if empty just replace the empty tab by the adapted
                     % tab
-                    if isa(data,'Dispersion')
-                         % add a new container to this tab and delete the
-                         % other
-                         DispersionTab(this, h);
-                         delete(h.Children(2));
-                         % check for type input and remove non consistent
-                         % ones
-                         % TO DO
+                    if isa(hData,'Dispersion')
+                         % add Dispersion tab and delete the empty one
+                         DispersionTab(this, hTab);
+                         delete(hTab.Children(2));
                          % call plot of this tab
-                         addPlot(h.Children, {data.x}, {data.y}, {data.dy},...
-                             label,strcat(dataset,seq,label),{data.mask},{data.model});
+                         addPlot(hTab.Children, hData, [1 1], 1);
                     elseif isa(data,'Zone') || isa(data,'Bloc')
                         
                     else 
                         disp('Error!')
                     end                   
                 case 'DispersionTab'
-                    % check if input are consistent
-                    % TO DO
                     % add to current tab/axis
-                    addPlot(h.Children, {data.x}, {data.y}, {data.dy},...
-                         label,strcat(dataset,seq,label),{data.mask},{data.model});
+                    addPlot(hTab.Children, hData, [1 1], 1);
             end            
         end %addPlot
         
         % Remove plot from the current tab/axis
-        function this = removePlot(this)
+        function this = removePlot(this, fileID)
             % get the handle of the selected tab
-            h = this.DisplayManager.gui.tab.SelectedTab; 
-            % check the selected data
-            selection = [this.FileManager.gui.table.Data{:,1}];
-            % get the fileID of the selected data
-            fileID = strcat(this.RelaxObj.dataset(selection),...
-                this.RelaxObj.sequence(selection),...
-                this.RelaxObj.filename(selection));
-            % get the list of the current axis
-            listFileID = getFileID(h.Children);
-            % setdiff
-            fileID = setdiff(listFileID,fileID);
+            hTab = this.DisplayManager.gui.tab.SelectedTab; 
             % remove these lines
-            removePlot(h.Children, fileID);
+            removePlot(hTab.Children, fileID);
         end %removePlot
         
         % update plot
         function this = updatePlot(this,src)
             % get the handle of the selected tab
-            h = this.DisplayManager.gui.tab.SelectedTab; 
+            hTab = this.DisplayManager.gui.tab.SelectedTab; 
             % call the update function of the concerned tab
-            update(h.Children, src);
+            update(hTab.Children, src);
         end %updatePlot
     end
     %% ------------------ ProcessingManager Callback ------------------- %%
