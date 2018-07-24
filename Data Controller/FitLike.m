@@ -78,8 +78,8 @@ classdef FitLike < handle
                         % get the data
                         y = cellfun(@(x,y) complex(x,y), data.real, data.imag,...
                             'UniformOutput',0);
-                        name = getfields(parameter,'FILE','ForceCellOutput','True');
-                        sequence = getfields(parameter,'EXP','ForceCellOutput','True');
+                        name = getfield(parameter,'FILE','ForceCellOutput','True');
+                        sequence = getfield(parameter,'EXP','ForceCellOutput','True');
                         % format the output
                         new_bloc = Bloc('x',data.time,'y',y,...
                             'xLabel',repmat({'Time'},1,length(name)),...
@@ -129,7 +129,8 @@ classdef FitLike < handle
             this.RelaxData = [this.RelaxData bloc];
             % update FileManager
             addData(this.FileManager,...
-                {bloc.dataset}, {bloc.sequence}, {bloc.filename});
+                {bloc.dataset}, {bloc.sequence},...
+                {bloc.filename}, {bloc.displayName});
                 %%-------------------------------------------------------%%
                 % Check if duplicates are imported and let the user decides
                 % if we keep them and add '_bis' to their filename or just
@@ -167,11 +168,12 @@ classdef FitLike < handle
         % Remove funcion: allow to remove files, sequence, dataset
         function this = remove(this)
             % check the selected files in FileManager
-            isSelected = [this.FileManager.gui.table.Data{:,1}];
+            fileID = getIDofSelectedNodes(this.FileManager);
             % remove files in RelaxData 
-            this.RelaxData(isSelected) = [];
+            [~,idx,~] = intersect({this.RelaxData.fileID},fileID);
+            this.RelaxData(idx) = [];
             % update FileManager
-            removeData(this.FileManager, isSelected);
+            removeData(this.FileManager);
         end %remove
         
         % Export function: allow to export data (dispersion, model)
