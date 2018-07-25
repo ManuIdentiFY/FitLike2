@@ -205,7 +205,6 @@ classdef FileManager < handle
                 % check if we change nodes or not
                 if src.Parent ~= target.Parent
                     % set invisible
-                    hParent = src.Parent;
                     tree.Visible = 'off';
                     % De-parent
                     src.Parent = [];
@@ -243,15 +242,15 @@ classdef FileManager < handle
                 
                 if updateFlag   
                     % update source ID
-                    src.Value = strrep(src.Value, hParent.Name, src.Parent.Name);
-                    src.Parent.Value = [src.Parent.Value src.Value];
+                    src.Value = strrep(src.Value, src.hParent.Name, hChildren.Parent.Name);
+                    hChildren.Parent.Value = [hChildren.Parent.Value hChildren.Value];
                     % delete old parent if no more children
                     if isempty(hParent.Children)
                         delete(hParent)
                     end
-                    % call FitLike to update RelaxData
-                    % TO DO
-                end
+%                     % call FitLike to update RelaxData
+%                     % TO DO
+%                 end
             end
         end %DragNodeCallback
         
