@@ -66,16 +66,15 @@ classdef FitLike < handle
             % switch depending on the type of file
             switch indx
                 case 1 %sdf
-                    % enter dataset
                     if isempty(this.RelaxData)
                         dataset = inputdlg({'Enter a dataset name:'},...
-                            'Create dataset',[1 70],{'myDataset'});
+                            'Create dataset',[1 35],'myDataset');
                     else
                         % ask user in which dataset we need to put files
-                        ans = questdlg('Where do you want to import your data?',...
+                        answer = questdlg('Where do you want to import your data?',...
                             'Importation','Existing dataset','New dataset',...
                             'Existing dataset');
-                        switch ans
+                        switch answer
                             case 'Existing dataset'
                                 list = unique({this.RelaxData.dataset});
                                 [indx,~] = listdlg('PromptString','Select a dataset',...
@@ -84,18 +83,13 @@ classdef FitLike < handle
                                 dataset = list(indx);
                             case 'New dataset'
                                 dataset = inputdlg({'Enter a dataset name:'},...
-                              'Create dataset',[1 70],{'myDataset'});
+                              'Create dataset',[1 35],'myDataset');
                             otherwise 
                                 return
                         end
                     end
                     % check dataset output
-                    if isempty(dataset)
-                        return
-                    elseif ischar(dataset)
-                        dataset = {dataset};
-                    end
-                        
+                    if isempt
                     % loop over the files
                     for i = 1:length(file)
                         filename = [path file{i}];
@@ -116,8 +110,7 @@ classdef FitLike < handle
                             'xLabel',repmat({'Time'},1,length(name)),...
                             'yLabel',repmat({'Signal'},1,length(name)),...
                             'parameter',num2cell(parameter),...
-                            'filename',name,'sequence',sequence,...
-                            'dataset',repmat(dataset,1,length(name)));
+                            'filename',name,'sequence',sequence);
                         % check duplicates
                         if ~isempty(this.RelaxData)
                             new_bloc = checkDuplicates(this, new_bloc);
@@ -126,36 +119,6 @@ classdef FitLike < handle
                         bloc = [bloc new_bloc]; %#ok<AGROW>
                     end
                 case 2 %sef
-                    % enter dataset
-                    if isempty(this.RelaxData)
-                    dataset = inputdlg({'Enter a dataset name:'},...
-                        'Create dataset',[1 70],{'myDataset'});
-                    else
-                        % ask user in which dataset we need to put files
-                        ans = questdlg('Where do you want to import your data?',...
-                            'Importation','Existing dataset','New dataset',...
-                            'Existing dataset');
-                        switch ans
-                            case 'Existing dataset'
-                                list = unique({this.RelaxData.dataset});
-                                [indx,~] = listdlg('PromptString','Select a dataset',...
-                                    'SelectionMode','single',...
-                                    'ListString',list);
-                                dataset = list(indx);
-                            case 'New dataset'
-                                dataset = inputdlg({'Enter a dataset name:'},...
-                              'Create dataset',[1 70],{'myDataset'});
-                            otherwise 
-                                return
-                        end
-                    end
-                    % check dataset output
-                    if isempty(dataset)
-                        return
-                    elseif ischar(dataset)
-                        dataset = {dataset};
-                    end
-                    % loop over the files
                     for i = 1:length(file)
                         filename = [path file{i}];
                         % read the file
@@ -163,7 +126,7 @@ classdef FitLike < handle
                         % format the output
                         new_bloc = Dispersion('x',x,'xLabel','Magnetic Field (MHz)',...
                             'y',y,'dy',dy,'yLabel','Relaxation Rate R_1 (s^{-1})',...
-                            'filename',file{i},'sequence','Unknown','dataset',dataset);
+                            'filename',file{i},'sequence','Unknown');
                         % check duplicates
                         if ~isempty(this.RelaxData)
                             new_bloc = checkDuplicates(this, new_bloc);
@@ -207,20 +170,20 @@ classdef FitLike < handle
                             '(Sequence: %s)'],x.filename,x.sequence),...
                             bloc(idx),'UniformOutput',0);
                         % ask the user what to do
-                        answer = questdlg(sprintf(['The following files '...
+                        ans = questdlg(sprintf(['The following files '...
                            'are already stored in FitLike:\n\n%s\nDo you '...
                            'still want to keep them or not?\n'...
                            'Note: Filename will be changed if Yes'],...
                            sprintf('%s \n',listDuplicate{:})),...
                            'Importation','Yes','No','No');
-                       if strcmp(answer,'Yes')
+                       if isempty(ans) || strcmp(ans,'No')
+                           % delete duplicated
+                           bloc(idx) = [];
+                       else
                            % rename bloc: add '_bis'
                            new_filename = arrayfun(@(x) [x.filename '_bis'],...
                                bloc(idx),'UniformOutput',0);
                            [bloc(idx).filename] = new_filename{:};
-                       else
-                           % delete duplicated
-                           bloc(idx) = [];
                        end
                     end
                 end %checkDuplicated
