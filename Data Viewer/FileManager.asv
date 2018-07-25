@@ -149,39 +149,39 @@ classdef FileManager < handle
                 % Get index or source and target
                 idxTarget = find(hChildren == target);
                 idxSource = find(hChildren == src);
-                
                 % check if we change nodes or not
                 if src.Parent ~= target.Parent
                     % store parent handle for updating
-                    hParent = src.Parent;
-                    
+                    hSrcParent = src.Parent;
                     % check if target type is the same as source type
                     if ~strcmp(src.Value, target.Value)
                         hChildren = target.Children;
-                        new_order = [NaN 1:numel(hChildren)];
-                    else
-                        new_order = [1:(idxTarget-1) NaN idxTarget:numel(hChildren)];
-                    end
-                    
+                    end   
                     % check if duplicate
-                    tf = strcmp({hChildren.Name}, src.Name);
-                    if ~all(tf == 0)
-                        % throw warning
-                        msg = sprintf(['You can not drop your %s as is in this %s '...
-                            'because it already contains the same %s: %s.'],src.Value,...
-                            hParent.Value, src.Value, src.Name);
-                        warndlg(msg, 'Warning: duplicate');
+                    tf = isDuplicate(hChildren, src, target);
+                    if tf
                         return
                     end
-                    
                     % De-parent
                     src.Parent = [];
-                    % reorder children
-                    FileManager.stackNodes(tree, hChildren, new_order, src);
-                    
+                    % check if target type is the same as source type
+                    if ~strcmp(src.Value, target.Value)
+                        % file to sequence or sequence to dataset: target
+                        % is the new parent
+                        src.Parent = target;
+                        % reorder children to get the new children in first
+                        % position
+                        n = numel(target.Children);
+                        FileManager.stackNodes(tree, target.Children,[n, 1:n-1]);
+                    else
+                        % prepare re-ordering
+                        new_order = [1:(idxTarget-1) NaN idxTarget:numel(hChildren)];
+                        % reorder children
+                        FileManager.stackNodes(tree, hChildren, new_order, src);
+                    end
                     % delete old parent if no more children
-                    if isempty(hParent.Children)
-                        delete(hParent)
+                    if isempty(hSrcParent.Children)
+                        delete(hSrcParent)
                     end
                 else                 
                     % prepare re-ordering
@@ -190,6 +190,19 @@ classdef FileManager < handle
                     new_order(idxSource) = idxTarget;
                     % reorder children
                     FileManager.stackNodes(tree, hChildren, new_order);
+                end
+            end
+            
+            function isDuplicate(hChildren, src, target)
+                % check if duplicate
+                stf = strcmp({hChildren.Name}, src.Name);
+                if ~all(stf == 0)
+                    % throw warning
+                    wmsg = sprintf(['You can not drop your %s as is in this %s '...
+                        'because it already contains the same %s: %s.'],src.Value,...
+                        src.Parent.Value, target.Value, target.Name);
+                    warndlg(wmsg, 'Warning: duplicate');
+                    return
                 end
             end
         end %DragNodeCallback
