@@ -193,6 +193,8 @@ classdef FitLike < handle
             addData(this.FileManager,...
                 {bloc.dataset}, {bloc.sequence},...
                 {bloc.filename}, {bloc.displayName});
+            % update ProcessingManager
+            updateTree(this.ProcessingManager);
                 %%-------------------------------------------------------%%
                 % Check if duplicates are imported and let the user decides
                 % if we keep them and add '_bis' to their filename or just
@@ -236,6 +238,8 @@ classdef FitLike < handle
             this.RelaxData(idx) = [];
             % update FileManager
             removeData(this.FileManager);
+            % update ProcessingManager
+            updateTree(this.ProcessingManager);
         end %remove
         
         % Export function: allow to export data (dispersion, model)
@@ -459,9 +463,9 @@ classdef FitLike < handle
         function hideWindowPressed(this, src)
             % determine the figure concerned and call showWindow() to close
             % it
-            state.Checked = 'on';
-            state.Tag = strrep(src.Name,' ',''); %just remove space
-            showWindow(this,state);
+            tag = strrep(src.Name,' ',''); %just remove space
+            src = this.FitLikeView.gui.(tag);
+            showWindow(this, src);
         end %hideWindowPressed     
     end    
 end
