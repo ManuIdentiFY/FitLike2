@@ -72,10 +72,10 @@ classdef FitLike < handle
                             'Create dataset',[1 70],{'myDataset'});
                     else
                         % ask user in which dataset we need to put files
-                        ans = questdlg('Where do you want to import your data?',...
+                        res = questdlg('Where do you want to import your data?',...
                             'Importation','Existing dataset','New dataset',...
                             'Existing dataset');
-                        switch ans
+                        switch res
                             case 'Existing dataset'
                                 list = unique({this.RelaxData.dataset});
                                 [indx,~] = listdlg('PromptString','Select a dataset',...
@@ -132,10 +132,10 @@ classdef FitLike < handle
                         'Create dataset',[1 70],{'myDataset'});
                     else
                         % ask user in which dataset we need to put files
-                        ans = questdlg('Where do you want to import your data?',...
+                        res = questdlg('Where do you want to import your data?',...
                             'Importation','Existing dataset','New dataset',...
                             'Existing dataset');
-                        switch ans
+                        switch res
                             case 'Existing dataset'
                                 list = unique({this.RelaxData.dataset});
                                 [indx,~] = listdlg('PromptString','Select a dataset',...
@@ -230,7 +230,7 @@ classdef FitLike < handle
         % Remove funcion: allow to remove files, sequence, dataset
         function this = remove(this)
             % check the selected files in FileManager
-            fileID = getIDofSelectedNodes(this.FileManager);
+            fileID = Checkbox2fileID(this.FileManager);
             % remove files in RelaxData 
             [~,idx,~] = intersect({this.RelaxData.fileID},fileID);
             this.RelaxData(idx) = [];
