@@ -33,8 +33,8 @@ classdef FileManager < handle
             % Make the tree
             this.gui.tree = CheckboxTree('Parent',this.gui.fig,...
                 'Editable',true, 'DndEnabled',true,...
-                'NodeDraggedCallback', @(s,e) FileManager.DragDrop_Callback(s,e),...
-                'NodeDroppedCallback', @(s,e) FileManager.DragDrop_Callback(s,e),...
+                'NodeDraggedCallback', @(s,e) FileManager.DragDrop_Callback(this, s,e),...
+                'NodeDroppedCallback', @(s,e) FileManager.DragDrop_Callback(this, s,e),...
                 'Tag','tree','RootVisible',false);           
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
@@ -182,7 +182,7 @@ classdef FileManager < handle
         % *File can be dropped in sequence or file
         % *Sequence can be dropped in dataset or sequence
         % *Dataset can be dropped in dataset
-        function DropOk = DragDrop_Callback(tree, event)
+        function DropOk = DragDrop_Callback(this, tree, event)
             % Is this the drag or drop part?
             DoDrop = ~(nargout); % The drag callback expects an output, drop does not
 
@@ -260,6 +260,8 @@ classdef FileManager < handle
                     % reorder children
                     FileManager.stackNodes(tree, hChildren, new_order, []);
                 end
+                % update ProcessingManager
+                updateTree(this.FitLike.ProcessingManager);
             end
         end %DragNodeCallback
         
