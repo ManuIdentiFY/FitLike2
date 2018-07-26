@@ -258,7 +258,7 @@ classdef FileManager < handle
                     new_order(idxTarget) = idxSource; 
                     new_order(idxSource) = idxTarget;
                     % reorder children
-                    FileManager.stackNodes(tree, hChildren, new_order);
+                    FileManager.stackNodes(tree, hChildren, new_order, []);
                 end
             end
         end %DragNodeCallback
