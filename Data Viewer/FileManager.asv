@@ -152,7 +152,27 @@ classdef FileManager < handle
             end %for
         end %Checkbox2fileID
         
-        % 
+        % check the nodes that match fileID 
+        function this = fileID2Checkbox(this, fileID)
+            % check input 
+            if size(fileID,2) ~= 1
+                fileID = fileID';
+            end
+            % split the fileID 
+            str = split(fileID,'@');
+            % format output
+            str = {str(:,1),str(:,2),str(:,3),str(:,4)};
+            [dataset, sequence,filename,displayName] = str{:};
+            % get tree root
+            hRoot = this.gui.tree.Root;
+            % loop over the fileID
+            for k = 1:numel(dataset)
+                hNodes = hRoot;
+                while isempty(hNodes.Children)
+                    tf = strcmp(str{k,iLevel},{hNodes.Children.Name})
+                end
+            end
+        end %fileID2Checkbox
     end
     
     % Methods to help tree construction/modification

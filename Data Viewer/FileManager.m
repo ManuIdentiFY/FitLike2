@@ -153,8 +153,24 @@ classdef FileManager < handle
         end %Checkbox2fileID
         
         % check the nodes that match fileID 
-        function this = fileID2Checkbox(this)
-            
+        function this = fileID2Checkbox(this, fileID)
+            % check input 
+            if size(fileID,2) ~= 1
+                fileID = fileID';
+            end
+            % split the fileID 
+            str = split(fileID,'@');
+            % get tree root
+            hRoot = this.gui.tree.Root;
+            % loop over the fileID
+            for k = 1:numel(dataset)
+                hNodes = hRoot;
+                for iLevel = 1:size(str,2)
+                    tf = strcmp(str{k,iLevel},{hNodes.Children.Name});
+                    hNodes = hNodes.Children(tf);
+                end
+                hNodes.Checked = 1;
+            end
         end %fileID2Checkbox
     end
     
