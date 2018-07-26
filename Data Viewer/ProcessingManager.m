@@ -19,11 +19,21 @@ classdef ProcessingManager < handle
             gui = buildProcessingManager();
             this.gui = guihandles(gui);     
             
+            % Set the first tab
+            ProcessTab(FitLike, uitab(this.gui.tab),'Pipeline1');
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
             set(this.gui.fig,  'closerequestfcn', ...
                 @(src, event) this.FitLike.hideWindowPressed(src));    
             
+            set(this.gui.AddPipelinePushButton, 'callback',...
+                @(src, event) addProcessTab(this));
+            
+            set(this.gui.RemovePipelinePushButton, 'callback',...
+                @(src, event) removeProcessTab(this));
+            
+            set(this.gui.RenamePipelinePushButton, 'callback',...
+                @(src, event) renameProcessTab(this));
         end %ProcessingManager
         
         % Destructor
@@ -63,6 +73,40 @@ classdef ProcessingManager < handle
                 end
             end
         end %updateTree
+        
+        % Add ProcessTab
+        function this = addProcessTab(this)
+            % count tab
+            nTab = numel(this.gui.tab.Children) + 1;
+            % add new tab
+            ProcessTab(this.FitLike, uitab(this.gui.tab),['Pipeline',num2str(nTab)]);
+        end
+        
+        % Remove ProcessTab
+        function this = removeProcessTab(this)
+            % check tab state
+            if numel(this.gui.tab.Children) < 2
+                return
+            else
+                % delete current tab
+                delete(this.gui.tab.SelectedTab);
+            end
+        end
+        
+        % Remame ProcessTab
+        function this = renameProcessTab(this)
+            % get the index of the selected tab
+            idx = find(this.gui.tab.Children == this.gui.tab.SelectedTab);
+            % open inputdlg
+            new_name = inputdlg({'Enter a new pipeline name:'},...
+                'Rename Pipeline',[1 70],{['Pipeline',num2str(idx)]});
+            % check output and assign new name
+            if isempty(new_name)
+                return
+            else
+                this.gui.tab.SelectedTab.Title = new_name{1};
+            end
+        end
     end   
 end
 

@@ -19,11 +19,21 @@ classdef ProcessingManager < handle
             gui = buildProcessingManager();
             this.gui = guihandles(gui);     
             
+            % Set the first tab
+            ProcessTab(FitLike, uitab(this.gui.tab),'Pipeline1');
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
             set(this.gui.fig,  'closerequestfcn', ...
                 @(src, event) this.FitLike.hideWindowPressed(src));    
             
+            set(this.gui.AddPipelinePushButton, 'callback',...
+                @(src, event) addProcessTab(this));
+            
+            set(this.gui.RemovePipelinePushButton, 'callback',...
+                @(src, event) removeProcessTab(this));
+            
+            set(this.gui.RenamePipelinePushButton, 'callback',...
+                @(src, event) renameProcessTab(this));
         end %ProcessingManager
         
         % Destructor
@@ -52,8 +62,50 @@ classdef ProcessingManager < handle
             % get the tree from FileManager
             copy(hChildren, hParent);
             % delete all relaxObj: just select files
-            
+            for k = 1:numel(hParent.Children)
+                hDataset = hParent.Children(k);
+                for j = 1:numel(hDataset.Children)
+                    hSequence = hDataset.Children(j);
+                    for i = 1:numel(hSequence.Children)
+                        hFile = hSequence.Children(i);
+                        delete(hFile.Children)
+                    end
+                end
+            end
         end %updateTree
+        
+        % Add ProcessTab
+        function this = addProcessTab(this)
+            % count tab
+            nTab = numel(this.gui.tab.Children);
+            % add new tab
+            ProcessTab(this.FitLike, uitab(this.gui.tab),['Pipeline',num2str(nTab)]);
+        end
+        
+        % Remove ProcessTab
+        function this = removeProcessTab(this)
+            % check tab state
+            if numel(this.gui.tab.Children) < 2
+                return
+            else
+                % delete current tab
+                delete(this.gui.tab.SelectedTab);
+            end
+        end
+        
+        % Remame ProcessTab
+        function this = remameProcessTab(this)
+            % get the index of the selected tab
+            idx= find(this.gui.tab.Children == this.gui.tab.SelectedTab);
+            % open inputdlg
+            new_name = inputdlg({'Enter a new pipeline name:'},...
+                'Rename Pipeline',[1 200],{'Pipeline',num2str(idx)});
+            % check output and assign new name
+            if isempty(new_name)
+                return
+            else
+                
+        end
     end   
 end
 
