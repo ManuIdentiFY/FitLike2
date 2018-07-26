@@ -52,16 +52,7 @@ classdef ProcessingManager < handle
             % get the tree from FileManager
             copy(hChildren, hParent);
             % delete all relaxObj: just select files
-            for k = 1:numel(hParent.Children)
-                hDataset = hParent.Children(k);
-                for j = 1:numel(hDataset.Children)
-                    hSequence = hDataset.Children(j);
-                    for i = 1:numel(hSequence.Children)
-                        hFile = hSequence.Children(i);
-                        delete(hFile.Children)
-                    end
-                end
-            end
+            
         end %updateTree
     end   
 end
