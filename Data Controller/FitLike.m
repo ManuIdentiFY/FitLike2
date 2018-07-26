@@ -8,7 +8,7 @@ classdef FitLike < handle
         FitLikeView % Main view for the Presenter
         FileManager % Other view for the Presenter (subView)
         DisplayManager % Other view for the Presenter (subView)
-%         ProcessingManager % Other view for the Presenter  (subView)
+        ProcessingManager % Other view for the Presenter  (subView)
 %         ModelManager % Other view for the Presenter (subView)
 %         AcquisitionManager % Other view for the Presenter (subView)
     end
@@ -19,7 +19,7 @@ classdef FitLike < handle
             % create subView
             this.FileManager = FileManager(this);
             this.DisplayManager = DisplayManager(this);
-            % this.ProcessingManager = ProcessingManager(this);
+            this.ProcessingManager = ProcessingManager(this);
             % this.ModelManager = ModelManager(this);
             % this.AcquisitionManager = AcquisitionManager(this);
 
@@ -33,7 +33,7 @@ classdef FitLike < handle
            this.FitLikeView.deleteWindow();
            this.FileManager.deleteWindow();
            this.DisplayManager.deleteWindow();
-%          this.ProcessingManager.deleteWindow();
+           this.ProcessingManager.deleteWindow();
 %          this.ModelManager.deleteWindow();
 %          this.AcquisitionManager.deleteWindow();
 
@@ -323,53 +323,13 @@ classdef FitLike < handle
         %%% Display Menu
         % Show/Hide FileManager, DisplayManager, Processing Manager,...
         function showWindow(this, src)
-            % determine the figure concerned
-            switch src.Tag
-                case 'FileManager'
-                    % check if figure already displayed
-                    if strcmp(src.Checked,'on')
-                        this.FileManager.gui.fig.Visible = 'off';
-                        this.FitLikeView.gui.FileManager.Checked = 'off';
-                    else
-                        this.FileManager.gui.fig.Visible = 'on';
-                        this.FitLikeView.gui.FileManager.Checked = 'on';
-                    end
-                case 'DisplayManager'
-                    % check if figure already displayed
-                    if strcmp(src.Checked,'on')
-                        this.DisplayManager.gui.fig.Visible = 'off';
-                        this.FitLikeView.gui.DisplayManager.Checked = 'off';
-                    else
-                        this.DisplayManager.gui.fig.Visible = 'on';
-                        this.FitLikeView.gui.DisplayManager.Checked = 'on';
-                    end
-                case 'ProcessingManager'
-                    % check if figure already displayed
-                    if strcmp(src.Checked,'on')
-                        this.ProcessingManager.gui.fig.Visible = 'off';
-                        this.FitLikeView.gui.ProcessingManager.Checked = 'off';
-                    else
-                        this.ProcessingManager.gui.fig.Visible = 'on';
-                        this.FitLikeView.gui.ProcessingManager.Checked = 'on';
-                    end
-                case 'ModelManager'
-                    % check if figure already displayed
-                    if strcmp(src.Checked,'on')
-                        this.ModelManager.gui.fig.Visible = 'off';
-                        this.FitLikeView.gui.ModelManager.Checked = 'off';
-                    else
-                        this.ModelManager.gui.fig.Visible = 'on';
-                        this.FitLikeView.gui.ModelManager.Checked = 'on';
-                    end
-                case 'AcquisitionManager'
-                    % check if figure already displayed
-                    if strcmp(src.Checked,'on')
-                        this.AcquisitionManager.gui.fig.Visible = 'off';
-                        this.FitLikeView.gui.AcquisitionManager.Checked = 'off';
-                    else
-                        this.AcquisitionManager.gui.fig.Visible = 'on';
-                        this.FitLikeView.gui.AcquisitionManager.Checked = 'on';
-                    end
+            % according to the current visibility, change it
+            if strcmp(src.Checked,'on')
+                src.Checked = 'off';
+                this.(src.Tag).gui.fig.Visible = 'off';
+            else
+                src.Checked = 'on';
+                this.(src.Tag).gui.fig.Visible = 'on';
             end
         end %showWindow
 
