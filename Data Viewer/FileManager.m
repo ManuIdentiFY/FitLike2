@@ -102,17 +102,70 @@ classdef FileManager < handle
         end %removeData
         
         % Get the fileID list of the selected nodes
-        function fileID = getIDofSelectedNodes(this)
+        function fileID = Checkbox2fileID(this)
             % get the list of the selected nodes
-            hSelected = this.gui.tree.CheckedNodes;           
-            % get fileID by checking the value of the checked node
-            fileID = [hSelected.Value];
-        end %getIDofSelectedNodes
+            hSelected = this.gui.tree.CheckedNodes;  
+            % initialise fileID
+            fileID = [];
+            % loop over the selected nodes
+            for k = 1:numel(hSelected)
+                % get the nodeID by looking at its ancestor
+                hAncestor = hSelected(k);
+                nodeID = hAncestor.Name;
+                while ~isempty(hAncestor.Parent.Parent)
+                    hAncestor = hAncestor.Parent;
+                    nodeID = [hAncestor.Name,'@',nodeID]; %#ok<AGROW>
+                end
+                % find all the descendant
+                currentID = nodeID;
+                hDescendant = hSelected(k).Children(1);
+                stopFlag = 1;
+                idx = 1;
+                while stopFlag
+                    % go to the object at the same tree level
+                    hDescendant = hDescendant.Parent.Children(idx);
+                    % move to the next level until reaching relaxObj
+                    while ~isempty(hDescendant.Children)                      
+                        currentID = [currentID,'@',hDescendant.Name]; %#ok<AGROW>
+                        hDescendant = hDescendant.Children(1);
+                    end
+                    % store the relaxObj found
+                    fileID = [fileID, {[currentID,'@',hDescendant.Name]}]; %#ok<AGROW>
+                    % find the index of the current obj
+                    idx = find(hDescendant.Parent.Children == hDescendant);
+                    % check if other branch at the same level
+                    while numel(hDescendant.Parent.Children) == idx && stopFlag
+                        % no more object at this level, go back
+                        hDescendant = hDescendant.Parent;
+                        % reset the index
+                        idx = find(hDescendant.Parent.Children == hDescendant);
+                        % remove the current level name
+                        currentID = currentID(1:end-numel(hDescendant.Name)-1);
+                        % check if we reach the end of the selection
+                        if hDescendant == hSelected(k) 
+                            stopFlag = 0;
+                        end
+                    end
+                    % increment to reach the nex branch
+                    idx = idx + 1;
+                end % while
+            end %for
+        end %Checkbox2fileID
+        
+        % check the nodes that match fileID 
+        function this = fileID2Checkbox(this)
+            
+        end %fileID2Checkbox
     end
     
+    % Methods to help tree construction/modification
     methods (Access = public, Static = true)
-        % this function determines if the dragged target is valid or not.
-        % All target are valid except relaxObj.
+        % this function determines if the dragged target is valid or not
+        % and drop the object.
+        % *User can drag dataset, sequence and file
+        % *File can be dropped in sequence or file
+        % *Sequence can be dropped in dataset or sequence
+        % *Dataset can be dropped in dataset
         function DropOk = DragDrop_Callback(tree, event)
             % Is this the drag or drop part?
             DoDrop = ~(nargout); % The drag callback expects an output, drop does not
@@ -198,18 +251,18 @@ classdef FileManager < handle
         % insert at the position indicates by 'NaN'.
         % Example: hNodes = stackNodes(tree, hNodes,[1 3 2]);
         %          hNodes = stackNodes(tree, hNodes,[1 3 NaN 4),newNode);
-        function stackNodes(tree, hNodes, new_order, varargin)
+        function stackNodes(tree, hNodes, new_order, newNode)
             % check if a new node need to be inserted
-            if isempty(varargin) && numel(hNodes) == numel(new_order)
+            if isempty(newNode) && numel(hNodes) == numel(new_order)
                 % re-order nodes
                 hNodes = hNodes(new_order);
                 % re-parent to finish the process
                 FileManager.reparentNodes(tree, hNodes, hNodes(1).Parent);  
-            elseif isa(varargin{1},'uiextras.jTree.CheckboxTreeNode')
+            elseif isa(newNode,'uiextras.jTree.CheckboxTreeNode')
                 % get parent
                 hParent = hNodes(1).Parent;
                 % stack new node
-                hNodes = [hNodes varargin{1}];
+                hNodes = [hNodes newNode];
                 % replace scalar '0'
                 new_order(isnan(new_order)) = numel(hNodes);
                 % re-order nodes
@@ -229,12 +282,7 @@ classdef FileManager < handle
             tree.Visible = 'on';
         end %reparentNodes
         
-        % Check node existence and create it if needed. This function looks
-        % in the parent handle node the children's name and check if the
-        % wanted name exists or not. If is exists checkNodeExistence return
-        % the corresponding children handle. If it does not,
-        % checkNodeExistence create a new Children in hParent with the
-        % wanted name and return the new children handle.
+        % Check node existence and create it if needed. 
         % this function also take an icon and a type (dataset, sequence,...)
         % that will be add to the new children.
         function hChildren = checkNodeExistence(hParent, nodeName, icon, type)
