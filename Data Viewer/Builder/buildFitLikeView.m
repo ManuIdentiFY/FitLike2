@@ -6,7 +6,7 @@ function fig = buildFitLikeView()
 % Menu Manager
 fig = figure('Name','FitLike','NumberTitle','off',...
     'MenuBar','none','Units',...
-    'normalized','Position',[0.25 0.9 0.5 0],...
+    'normalized','Position',[0.25 0.91 0.5 0],...
     'Tag','menu');
 
 % +File menu
@@ -52,7 +52,7 @@ uimenu( filterMenu, 'Label', 'Boxplot','Tag','Boxplot');
 displayMenu = uimenu( fig, 'Label', 'Display');
 uimenu(displayMenu, 'Label', 'FileManager','Tag','FileManager','Checked','on');
 uimenu(displayMenu, 'Label', 'DisplayManager','Tag','DisplayManager','Checked','on');
-uimenu(displayMenu, 'Label', 'ProcessingManager','Tag','ProcessingManager','Checked','on');
+uimenu(displayMenu, 'Label', 'ProcessingManager','Tag','ProcessingManager','Checked','off');
 uimenu(displayMenu, 'Label', 'ModelManager','Tag','ModelManager','Checked','on');
 uimenu(displayMenu, 'Label', 'AcquisitionManager','Tag','AcquisitionManager','Checked','off');
 
