@@ -1,4 +1,4 @@
-classdef ProcessDataUnit < handle
+classdef ProcessDataUnit
 % this class defines the structure and general attibute of all the objects
 % that are used to process the data units. It aims at facilitating
 % operations on the processing functions, to streamline the creation of

@@ -17,6 +17,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         dy@double = [];         % error bars on Y
         yLabel@char = '';       % name of the variable Y ('R1','fid',...)
         mask@logical = true(0);           % mask the X and Y arrays
+        processingMethod@ProcessDataUnit;  % stores the processing objects that are associated with the data unit
     end   
     
     % file parameters
@@ -93,7 +94,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             resetmask(obj);
             % generate fileID
             generateID(obj);
-        end %DataUnit        
+        end %DataUnit       
+        
+        
     end % methods
     
     methods (Access = public, Sealed = true)

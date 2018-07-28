@@ -52,6 +52,7 @@ classdef Disp2Exp < ProcessDataUnit
         
         % provide a function handle that is the sum of all the function
         % handles in the array of objects
+        % quite ugly, but this works.
         function [fh,varName,parName,lowVal,highVal,startVal,fixedVal] = addModels(self)
             
             varName = self(1).variableName;
@@ -64,41 +65,48 @@ classdef Disp2Exp < ProcessDataUnit
             
             % collect all the parameters
             parName = {};
-            str = '@(';
-            for i = 1:length(varName)
-                str = [str, varName{i} ];
-            end
+            str = '@(x,c) ';
+%             for i = 1:length(varName)
+%                 str = [str, varName{i} ];
+%             end
+%             for indc = 1:length(self)
+%                 contribName = ['cont' num2str(indc) '_'];
+%                 for i = 1:length(self(indc).parameterName)
+%                     parName{end+1} = [contribName self(indc).parameterName{i}];
+%                     str = [str ',' parName{end}]; %#ok<*AGROW>
+%                 end
+%             end
+%             str = [str 'self(1).modelHandle(x'];
+%             for i = 2:length(varName)
+%                 str = [str ',' varName{i}];
+%             end
+%             for i = 1:length(self(1).parameterName)
+%                 str = [str ',c(' num2str(i) ')'];
+%             end
+%             str = [str ')'];
+            indpar = 0;
             for indc = 1:length(self)
-                contribName = ['cont' num2str(indc) '_'];
-                for i = 1:length(self(indc).parameterName)
-                    parName{end+1} = [contribName self(indc).parameterName{i}];
-                    str = [str ',' parName{end}]; %#ok<*AGROW>
+%                 contribName = ['cont' num2str(indc) '_'];
+                if indc > 1
+                    str = [str ' + '];
                 end
-            end
-            str = [str ') self(1).modelHandle(' varName{1}];
-            for i = 2:length(varName)
-                str = [str ',' varName{i}];
-            end
-            for i = 1:length(self(1).parameterName)
-                str = [str ',cont1_' self(1).parameterName{i}];
-            end
-            str = [str ')'];
-
-            for indc = 2:length(self)
-                contribName = ['cont' num2str(indc) '_'];
-                str = [str ' + self(' num2str(indc) ').modelHandle(' varName{1}];
-                for i = 2:length(varName)
-                    str = [str ',' varName{i}];
-                end
+                str= [str 'self(' num2str(indc) ').modelHandle(x'];
+%                 for i = 2:length(varName)
+%                     str = [str ',' varName{i}];
+%                 end
                 for i = 1:length(self(indc).parameterName)
-                    str = [str ',' contribName self(indc).parameterName{i}];
+                    indpar = indpar+1;
+                    str = [str ',c(' num2str(indpar) ')'];
                 end
                 str = [str ')'];
             end
 
             % make the function handle with all variables and parameters:
             fh = eval(str);  % cannot use str2func because of indexing. Grrrr....
-            lowVal,highVal,startVal,fixedVal
+            lowVal = [self.minValue];
+            highVal = [self.maxValue];
+            startVal = [self.startPoint];
+            fixedVal = [self.isFixed];
         end
         
         % sets a function handle into the log space
@@ -124,45 +132,39 @@ classdef Disp2Exp < ProcessDataUnit
         % dispersion objects
         function [y,dy,params] = applyProcessFunction(self,disp)
             % Add the models together
+            fitpar = struct;
             if length(self)>1
-                [fh,var,par,low,high,start,fixed] = addModels(self);
-                
+                [fitpar.fh,fitpar.var,fitpar.par,fitpar.low,fitpar.high,fitpar.start,fitpar.fixed] = addModels(self);
             else
-                fh = self.modelHandle;
-                var = self.variableName;
-                par = self.parameterName;
-                low = self.minValue;
-                high = self.maxValue;
-                start = self.startPoint;
-                fixed = self.isFixed;
+                fitpar.fh = self.modelHandle;
+                fitpar.var = self.variableName;
+                fitpar.par = self.parameterName;
+                fitpar.low = self.minValue;
+                fitpar.high = self.maxValue;
+                fitpar.start = self.startPoint;
+                fitpar.fixed = self.isFixed;
             end
             
             % apply the model to the object in the log space
-            
-            
+            dispindex = num2cell(1:length(disp),1);
+            [y, dy, params] = cellfun(@(x,y,i) process(self,x,y,fitpar,i),{disp.x},{disp.y},dispindex,'Uniform',0);
+                        
             % Gather the result and store it in the corresponding
             % contribution
             
+            
         end
         
-        function [z,dz,params] = process(self,x,y,paramObj,index)
+        % perform the fit from the sum of all contributions on one of the
+        % Disp objects
+        function [z,dz,params] = process(self,x,y,fitpar,index)
             
             
             
-            fhlog = makeLogFunction(self,fh);
-            
-            
-            T1MX = paramObj.T1MX(index);
-            
-            LIMIT_RELAX = [0.02 1.7]; % in s, Corresponds to the hardware limit 
-            % Exponential fit
-            fitModel = @(c, x)((c(1)-c(2))*exp(-x*c(3))+c(2)); %exponential model
-
+            fhlog = makeLogFunction(self,fitpar.fh);
             opts = statset('nlinfit');
-            opts.Robust = 'on';
-
-            startPoint = [y(1),y(end),1/T1MX]; 
-            [coeff,residuals,~,cov,MSE] = nlinfit(x,y,fitModel,startPoint,opts); %non-linear least squares fit
+            opts.Robust = 'on'; 
+            [coeff,residuals,~,cov,MSE] = nlinfit(x,squeeze(y)',fhlog,fitpar.start,opts); %non-linear least squares fit
 
 
             %% Goodness of fit
@@ -185,7 +187,8 @@ classdef Disp2Exp < ProcessDataUnit
             paramFun.modelHandle = fitModel;
             paramFun.parameterName = {'M_0','M_inf','R_1'};
             paramFun.coeff = coeff;
-            paramFun.coeffError =
+            paramFun.coeffError = coeffError;
+            paramFun.gof = gof;
         end
         
         
