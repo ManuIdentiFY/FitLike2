@@ -42,6 +42,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     properties (Access = public, Hidden = true)
         fileID@char = '';       % ID of the file: [dataset sequence filename] 
         parent = [];            % parent of the object
+        children = [];          % children of the object
     end
     
     methods 
@@ -104,11 +105,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % Generate fileID field
         function obj = generateID(obj)
             if length(obj) > 1
-                ID = arrayfun(@(x) [x.dataset x.sequence x.filename], obj,...
-                    'UniformOutput',0);
+                ID = strcat({obj.dataset}, {obj.sequence},...
+                    {obj.filename},repmat({'@'},1,numel({obj.dataset})),...
+                    {obj.displayName});
                 [obj.fileID] = ID{:};            
             else
-                obj.fileID = [obj.dataset obj.sequence obj.filename];
+                obj.fileID = [obj.dataset, obj.sequence,...
+                    obj.filename,'@', obj.displayName];
             end
         end %generateID
         

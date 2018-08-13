@@ -70,7 +70,8 @@ classdef FitLikeView < handle
             set(this.gui.DisplayManager, 'callback',...
                 @(src,event) this.FitLike.showWindow(src));           
             % Hide/Show function: ProcessingManager
-            
+            set(this.gui.ProcessingManager, 'callback',...
+                @(src,event) this.FitLike.showWindow(src));  
             % Hide/Show function: ModelManager
             
             % Hide/Show function: AcquisitionManager

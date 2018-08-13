@@ -10,6 +10,7 @@ classdef Bloc < DataUnit
     % SEE ALSO BLOC, ZONE, DISPERSION, DATAUNIT, RELAXOBJ
     
     properties 
+        displayName = 'bloc';
         % See DataUnit for other properties
     end
     
@@ -27,11 +28,7 @@ classdef Bloc < DataUnit
             if ~iscell(varargin{2})
                 % struct
                 for ind = 1:2:nargin
-                    try 
-                        obj.(varargin{ind}) = varargin{ind+1};
-                    catch ME
-                        error(['Wrong argument ''' varargin{ind} ''' or invalid value/attribute associated.'])
-                    end                           
+                    obj.(varargin{ind}) = varargin{ind+1};                       
                 end   
             else
                 % array of struct

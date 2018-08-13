@@ -2,30 +2,43 @@ classdef DispersionTab < DisplayTab
     %
     % Class that design containers for dispersion data
     %
-    % SEE ALSO DISPLAYTAB, DISPLAYMANAGER
+    % SEE ALSO DISPLAYTAB, DISPLAYMANAGER, DISPERSION
     
-    % set display properties
+    
+    % Data: Dispersion
+    properties (Access = public)
+        hDispersion = [] % handle array to Dispersion data (see class Dispersion)
+    end
+    
+    % Fit: model selected
+    properties (Access = public)
+        selectedModel = ''; % cell array of string (handle)
+    end
+    
+    % Display properties
     properties (Access = public)
         % Dispersion data settings
         DataLineStyle = 'none';
-        DataMarkerStyle = 'o';
+        DataMarkerStyle = {'o','^','s','>','*','p'}; % 6 plots from the same file at the same time
         DataMarkerSize = 2;
         % Dispersion data masked settings
         DataMaskedMarkerStyle = '+';
         % Dispersion fit settings
-        FitLineStyle = '-';
+        FitLineStyle = {'-','--',':','-.'}; % 4 models from the same plot at the same time
         FitMarkerStyle = 'none';
         % Dispersion colors
-        Color = [];
+        Color = get(groot,'defaultAxesColorOrder');
+        accumColor = zeros(1,size(Color,1)); % help to know whick color to assign to a new plot
     end
     
-    % new axis (residuals)
+    % Axis properties (residuals)
     properties (Access = public)
         axeResScatter = [] % axis for the scatter plot (residuals)
         axeResHist = [] % axis for the histogram (residuals)
+        mainAxisPosition = [0.09 0.09 0.86 0.86]; %position of the main axis
     end
     
-    % list of new components
+    % New components
     properties (Access = public)
         DataCheckButton % check button to display data
         ErrorCheckButton % check button to display error
@@ -33,8 +46,6 @@ classdef DispersionTab < DisplayTab
         FitCheckButton % check button to display fit
         ResidualCheckButton % check button to display residual
         MaskCheckButton % check button to display masked data
-        RadioButtonRaw % radio button to display raw data
-        RadioButtonFilter % radio button to display filtered data
     end
     
     methods (Access = public)
@@ -48,7 +59,7 @@ classdef DispersionTab < DisplayTab
             new_axe = copyobj(this.axe, this.axe.Parent);
             delete(this.axe);
             this.axe = subplot(3,2,1:6, new_axe);
-            this.axe.Position = [0.09 0.09 0.86 0.86]; %reset Position
+            this.axe.Position = this.mainAxisPosition; %reset Position
             
             % add new components to the tab
             % add a panel in box to display options
@@ -112,233 +123,110 @@ classdef DispersionTab < DisplayTab
 
             % set heights                  
             this.box.Heights = [-10 -1];
-            % set the color 
-            this.Color = get(this.axe,'colororder');
         end
     end
     
     % Abstract methods
     methods (Access = public)
-        % Add new dispersion data to the current axis.
-        % fileID is a unique identifier for the file to plot
-        % label is the name of the file that appear in the legend
-        % addPlot() select the data to plot by looking at their fileID
-        % avoiding doublons. It also check for visualisation settings
-        % (data, error, legend, masked data, fit, residual).
-        function this = addPlot(this, x, y, dy, label, fileID, mask, fitobj)
-            % check if we need to plot error and replace by array of nan if
-            % false
-            if ~this.ErrorCheckButton.Value 
-                dy = cellfun(@(x) nan(length(x),1), x, 'UniformOutput',0);
-            end
-            % loop over the lines
-            for i = length(fileID):-1:1   
-                % set the color
-                color = chooseColor(this, fileID{i});
-                
-                % depending on the DataCheckButton Or ErrorCheckButton, show the data
-                if (this.DataCheckButton.Value || this.ErrorCheckButton.Value) &&...
-                        isempty(findobj(this.axe.Children,'Type','ErrorBar','Tag',fileID{i}))                      
-                     % plot data 
-                     errorbar(this.axe,x{i}(mask{i}),y{i}(mask{i}),dy{i}(mask{i}),...
-                        'DisplayName', label{i},...
-                        'Color',color,...
-                        'LineStyle',this.DataLineStyle,...
-                        'Marker',this.DataMarkerStyle,...
-                        'MarkerSize',this.DataMarkerSize,...
-                        'MarkerFaceColor','auto',...
-                        'Tag',fileID{i}); 
-                end
-                
-                % depending on the MaskCheckButton, show the masked data
-                if this.MaskCheckButton.Value &&...
-                        isempty(findobj(this.axe.Children,...
-                        'Type','ErrorBar','Tag',fileID{i},'UserData','Mask'))
-                    % plot the masked data with no error (nan)
-                    h = errorbar(this.axe,x{i}(~mask{i}),y{i}(~mask{i}),...
-                        nan(size(x{i}(~mask{i}))),...
-                        'Color',color,...
-                        'LineStyle',this.DataLineStyle,...
-                        'Marker',this.DataMaskedMarkerStyle,...
-                        'MarkerSize',this.DataMarkerSize,...
-                        'MarkerFaceColor','auto',...
-                        'UserData','Mask',...
-                        'Tag',fileID{i}); 
-                    % avoid this plot in legend by setting the
-                    % IconDisplayStyle to 'off'
-                    set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-                end               
-                
-                % depending on the FitCheckButton, show the fit if
-                % possible
-                if this.FitCheckButton.Value && ~isempty(fitobj{i}) &&...
-                        isempty(findobj(this.axe.Children,'Type','Line','Tag',fileID{i}))
-                    % get the y-value using the fitobj and increase the 
-                    % number of point to obtain better visualisation
-                    % ensure you dont repeat point by geting the middle point
-                    % each time
-                    x_add = diff(x{i}/2); % get the interval between x pts
-                    x_fit{i} = sort([x{i} x{i}(1:end-1)+x_add]); %add it
-                    y_fit{i} = fitobj{i}(x_fit{i});
-                    % change the displayed name and add the rsquare
-                    fitName = sprintf('Fit: %s (R^2 = 0.99)',label{i});
-                    % plot
-                    plot(this.axe, x_fit{i}, y_fit{i},...
-                    'DisplayName', fitName,...
-                    'Color',color,...
-                    'LineStyle',this.FitLineStyle,...
-                    'Marker',this.FitMarkerStyle,...
-                    'Tag',fileID{i}); 
-                end                   
-            end % loop
-            
-            % check if residuals need to be displayed
-            if this.ResidualCheckButton.Value 
-               plotResidual(this); 
+        % Add new data to the tab using handle. hData must be a Dispersion
+        % object. 
+        function this = addPlot(this, hData)
+            % check input handle object if Dispersion
+            if ~isa(hData,'Dispersion')
+                return
             end
             
-            % check if legend is required
-            if this.LegendCheckButton.Value
-                resetLegend(this);
-            end
-        end %addPlot()                     
-        
-        % Remove data from the current axis
-        function this = removePlot(this, fileID)
-            % loop over the file to delete
-            for i = 1:length(fileID)
-                % get the corresponding line handle(s)
-                currentFileID = get(this.axe.Children,'Tag');
-                idx = strcmp(fileID{i},currentFileID);
-                % delete them
-                delete(this.axe.Children(idx));
-            end  
+            % append data
+            this.hDispersion = [this.hDispersion hData];
+            
+            % + data
+            plotData(this, hData);
 
-            % delete residual
-            removeResidual(this, fileID);
+            % + fit
+            plotFit(this, hData);
             
-            % hide legend if no more data
-            if isempty(this.axe.Children)
-                legend(this.axe,'hide');
-            end
-        end %removePlot()
+            % + residuals
+            plotResidual(this);
+            
+            % reorder Children
+            sortChildren(this);
+            % reset legend
+            resetLegend(this);
+        end %addPlot
         
+        % Remove data from the tab:
+        %   *Delete children in main axis
+        %   *Delete children in residual axis
+        %   *Delete data handle
+        function this = removePlot(this, fileID)
+                % delete corresponding line handle(s) in main axis
+                idx = strcmp(fileID, get(this.axe.Children,'Tag'));
+                delete(this.axe.Children(idx));               
+            
+                % delete data handle
+                idx = strcmp(fileID, {this.hDispersion.fileID});
+                delete(this.hDispersion(idx));
+                
+                % delete associated residual
+                removeResidual(this, fileID, []);
+                
+                % clear axis if no more data
+                if isempty(this.axe.Children)
+                    cla(this.axe, 'reset');
+                    % clear pointer - prevent memory leaks
+                    this.hDispersion = [];
+                end
+        end %removePlot
+                
         % Update the current axis visualisation settings
         function this = update(this, src)
-            % depending on the source, change the plot
+            % depending on the source, update axis
             switch src.Tag
                 case 'DataCheckButton'
-                    % get the handle to the data
-                    hData = findobj(this.axe.Children,'Type','ErrorBar');
                     if src.Value
-                        % reset the DataMarkerType/DataMaskedMarkerType
-                        this.DataMarkerStyle = 'o';
-                        this.DataMaskedMarkerStyle = '+'; 
-                        % reset the legend icons
-                        iconState = 'on';
                         % reset data
-                        addPlot(this.FitLike);
+                        plotData(this, [], []);
                     else
-                        % set invisible DataMarkerType/DataMaskedMarkerType
-                        this.DataMarkerStyle = 'none';
-                        this.DataMaskedMarkerStyle = 'none';
-                        % set the legend icons to 'off'
-                        iconState = 'off';
+                        % delete data
+                        delete(findobj(this.axe.Children,'Type','ErrorBar'));
                     end
-                    % set markers
-                    set(hData,'Marker',this.DataMarkerStyle);
-                    set(findobj(hData,'UserData','Mask'),'Marker',this.DataMaskedMarkerStyle);
-                    % set the legend icons 
-                    hData = hData(cellfun(@isempty, get(hData,'UserData'))); % reset only data
-                    for i = 1:length(hData)
-                        set(get(get(hData(i),'Annotation'),'LegendInformation'),'IconDisplayStyle',iconState);
-                    end
-                    % reset legend
-                    resetLegend(this);
                     
                 case 'ErrorCheckButton'
                     if src.Value
-                        % need to delete and replot (error data
-                        % has been erased previously)
-                        delete(findobj(this.axe.Children,'Type','ErrorBar'));
-                        addPlot(this.FitLike);
+                        % reset error
+                        plotErrorData(this, [], []);
                     else
                         % just replace the error by an empty array
                         set(findobj(this.axe.Children,'Type','ErrorBar'),...
                             'YNegativeDelta',[],'YPositiveDelta',[]);
                     end
-                    % reset legend
-                    resetLegend(this);
                     
                 case 'LegendCheckButton'
-                    if src.Value 
-                        resetLegend(this);
-                    else
-                        legend(this.axe,'hide');
+                    if ~src.Value 
+                        legend(this.axe,'off');
                     end  
                     
                 case 'FitCheckButton'
-                    % get the handle to fit data
-                    hFit = findobj(this.axe.Children,'Type','Line');
                     if src.Value
-                        % set default LineStyle
-                        this.FitLineStyle = '-';
-                        % reset the legend icons
-                        iconState = 'on';
-                        % reset the plot if user add data previously
-                        addPlot(this.FitLike);  
+                        % reset fit
+                        plotFit(this, [], []);  
                     else
-                       % set invisible LineStyle
-                       this.FitLineStyle = 'none';
-                       % set the legend icons visibility to 'off'
-                       iconState = 'off';
+                        % delete data
+                        delete(findobj(this.axe.Children,'Type','Line'));
                     end
-                    % set marker
-                    set(hFit,'LineStyle',this.FitLineStyle); 
-                    % set icons
-                    for i = 1:length(hFit)
-                        set(get(get(hFit(i),'Annotation'),'LegendInformation'),'IconDisplayStyle',iconState);
-                    end
-                    % reset legend
-                    resetLegend(this);
                     
-                case 'DataMaskedCheckButton'
-                    % get the handle to the masked data
-                    hMaskedData = findobj(this.axe.Children,'Type','ErrorBar','-and','UserData','Mask');
+                case 'MaskCheckButton'
                     if src.Value
-                        % reset the marker
-                        this.DataMaskedMarkerStyle = '+'; 
-                        % reset the plot if user add data previously
-                        addPlot(this.FitLike);
+                        % reset masked data
+                        plotMaskedData(this, [], []);
                     else
-                        % set invisible marker
-                        this.DataMaskedMarkerStyle = 'none'; 
+                        % delete data
+                        delete(findobj(this.axe.Children,'Type','Scatter'));
                     end
-                    % set markers
-                    set(hMaskedData,'Marker',this.DataMaskedMarkerStyle);
                     
                 case 'ResidualCheckButton'
                     if src.Value
-                        % change the current axis to have 3 x 2
-                        % subplot. Set the main axis in 1:4 subplot and
-                        % create two axis (axeResScatter & axeResHist)
-                        % in the last subplots.
-                        subplot(3,2,1:4, this.axe);
-                        this.axeResScatter = subplot(3,2,5);
-                        this.axeResHist = subplot(3,2,6);
-                        % set axis properties
-                        this.axeResScatter.FontSize = 8;
-                        this.axeResScatter.NextPlot = 'add';
-                        this.axeResScatter.YGrid = 'on';
-                        this.axeResHist.FontSize = 8;
-                        this.axeResHist.NextPlot = 'replacechildren';
-                        % check if we have data to plot (i.e. fit data)
-                        if all(strcmp('line',get(this.axe.Children,'Type')) == 0)
-                            return
-                        else
-                            % plot the residuals
-                            this = plotResidual(this);
-                        end
+                        plotResidual(this, [], []);
                     else
                         % delete the residual axis
                         delete(this.axeResScatter)
@@ -347,193 +235,387 @@ classdef DispersionTab < DisplayTab
                         subplot(3,2,1:6, this.axe);
                         this.axe.Position = [0.09 0.09 0.86 0.86];
                     end
-            end %switch            
+            end %switch  
+            
+            % reset the axis
+            resetAxis(this);
         end %update
+    
     end
     
-    % Other methods
-    methods (Access = public)  
-        %Reset legend: sort the input and hide legend if nothing is
-        %actually displayed
-        function this = resetLegend(this)
-            % check the LegendCheckButton
-            if ~this.LegendCheckButton.Value
+    % Plot methods: data, mask, fit, residual
+    methods (Access = public)
+        % Add dispersion data to the main axis. 
+        function this = plotData(this, hData) 
+            % check if we need to plot something
+            if ~this.DataCheckButton.Value
                 return
             end
-            % do some check to know if legend is required
-            if isempty(this.axe.Children)  
-                % if no data displayed, hide the legend
-                legend(this.axe,'hide');
-            elseif ~this.ErrorCheckButton.Value &&...
-                    ~this.DataCheckButton.Value && ~this.FitCheckButton.Value
-                % If nothing need to be displayed, hide the legend
-                legend(this.axe,'hide');
-            elseif ~this.ErrorCheckButton.Value &&...
-                    ~this.DataCheckButton.Value && isempty(findobj(this.axe,'Type','Line'))
-                % If no data need to be displayed and no fit are stored,
-                % hide the legend
-                legend(this.axe,'hide');
-            elseif length(this.axe.Children) > 1
-                % sort the axis children according to their tag (fileID)
-                % use also the type to sort the data and the fit in the
-                % same order (like: data1 fit1 data2 fit2 data3 fit3...and
-                % not data1 fit1 fit2 data2 data3 fit3...)
-                currentFileID = get(findobj(this.axe.Children),'Tag');
-                currentType = get(findobj(this.axe.Children),'Type');
-                [~,idx] = sort(strcat(currentFileID,currentType));
-                this.axe.Children = this.axe.Children(flipud(idx));
-                % show legend and use 'AutoUpdate' to fit with the new
-                % children order
-                legend(this.axe,'show');
-            else
-                legend(this.axe,'show');
-            end
-        end %resetLegend
-        
-        % This function choose a color for the plot following this rules:
-        % *always follow the same order (Matlab color order)
-        % *keep previous plot as they are
-        % It also handles the color coupling between data, masked data and
-        % fit.
-        function color = chooseColor(this, fileID)
-            % check if current axis is empty
-            if isempty(this.axe.Children)
-                color = this.Color(1,:);
-            elseif ~isempty(findobj(this.axe.Children,'Tag',fileID))
-                % see if another file with same Tag is currently
-                % plotted and get its color (data, mask or fit)
-                color = get(findobj(this.axe.Children,'Tag',fileID),'Color');
-                if iscell(color)
-                    color = color{1}; %prevent if multiple
+            
+            % check if we plot error or not
+            if ~this.ErrorCheckButton.Value
+                % loop over the data
+                for k = 1:length(hData)
+                    % choose color
+                    color = chooseColor(this, hData(k).fileID);
+                    % choose marker
+                    marker = chooseMarker(this, hData(k).fileID);
+                    % plot
+                    errorbar(this.axe,...
+                            hData(k).x(hData(k).mask),...
+                            hData(k).y(hData(k).mask),...
+                            [],...
+                            'DisplayName', hData(k).filename,...
+                            'Color',color,...
+                            'LineStyle',this.DataLineStyle,...
+                            'Marker',marker,...
+                            'MarkerSize',this.DataMarkerSize,...
+                            'MarkerFaceColor','auto',...
+                            'Tag',[hData(k).fileID,'@',hData(k).DisplayName]); 
                 end
             else
-                % count the apparition of the colors in the Matlab
-                % color index order and set the one that appear the
-                % less and is the first according to the order.
-                colorcount = zeros(size(this.Color,1),1);
-                color = get(findobj(this.axe.Children),'Color');
-                for iColor = 1:length(color)
-                    [~,idx,~] = intersect(this.Color,color{iColor},'rows');
-                    colorcount(idx) = colorcount(idx) + 1;
+                % loop over the data
+                for k = 1:length(hData)
+                    % choose color
+                    color = chooseColor(this, hData(k).fileID);
+                    % choose marker
+                    marker = chooseDataMarker(this, hData(k).fileID);
+                    % plot
+                    errorbar(this.axe,...
+                            hData(k).x(hData(k).mask),...
+                            hData(k).y(hData(k).mask),...
+                            hData(k).dy(hData(k).mask),...
+                            'DisplayName', hData(k).filename,...
+                            'Color',color,...
+                            'LineStyle',this.DataLineStyle,...
+                            'Marker',marker,...
+                            'MarkerSize',this.DataMarkerSize,...
+                            'MarkerFaceColor','auto',...
+                            'Tag',[hData(k).fileID,'@',hData(k).displayName]); 
                 end
-                % take the one that appear the less
-                [~,idxColor] = min(colorcount);
-                % set as new color
-                color = this.Color(idxColor,:);
             end
-        end %chooseColor
+            
+            % + plot masked data
+            plotMaskedData(this, hData)   
+        end %plotData  
         
-        % Plot the residuals in two other axis. Create them if needed. 
+        % Add masked data
+        function this = plotMaskedData(this, hData) 
+            % check if we need to plot something
+            if ~this.MaskCheckButton.Value
+                return
+            end
+            
+            % plot
+            for k = 1:length(hData)
+                % choose color
+                color = chooseColor(this, hData(k).fileID);
+                % plot
+                h = scatter(this.axe,...
+                    hData(k).x(~hData(k).mask),...
+                    hData(k).y(~hData(k).mask),...
+                    'Color',color,...
+                    'Marker',this.DataMaskedMarkerStyle,...
+                    'SizeData',this.DataMarkerSize,...
+                    'MarkerFaceColor','auto',...
+                    'Tag',[hData(k).fileID,'@',hData(k).displayName]);
+                % remove this plot from legend
+                set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+            end
+        end %plotMaskedData
+        
+        % Add fit
+        function this = plotFit(this, hData) 
+            % check if we need to plot something
+            if ~this.FitCheckButton.Value || isempty(this.selectedModel)
+                return
+            end
+            
+            % loop over the files
+            for k = 1:length(hData)
+                % init color
+                color = [];
+                % get x-values
+                x = hData(k).x(hData(k).mask);
+                % calculate yfit values and increase the  number of 
+                % point to obtain better visualisation. Ensure you dont 
+                % repeat point by geting the middle point each time
+                x_add = diff(x/2); % get the interval between x pts
+                x_fit = sort([x, x(1:end-1)+x_add]); %add it
+                
+                % loop over the models
+                for iModel = 1:length(this.selectedModel)
+                    % check if the model exists in the file
+                    TF = strcmp(this.selectedModel{iModel}, {hData(k).model.modelName});
+                    if all(TF == 0)
+                        continue
+                    end
+                    % get y-values
+                    y_fit = hData(k).model(TF).fitobj(x_fit);
+                    
+                    % change the displayed name and add the rsquare
+                    fitName = sprintf('%s: %s (R^2 = %.3f)',...
+                        this.selectedModel{iModel}, hData(k).filename,...
+                        hData(k).model(TF).gof.rsquare);
+                    
+                    % choose color if required
+                    if isempty(color)
+                        color = chooseColor(this, hData(k).fileID);
+                    end
+                    % choose style
+                    style = chooseFitStyle(this, hData(k).fileID);
+                    
+                    % plot
+                    plot(this.axe, x_fit, y_fit,...
+                        'DisplayName', fitName,...
+                        'Color',color,...
+                        'LineStyle',style,...
+                        'Marker',this.FitMarkerStyle,...
+                        'Tag',[hData(k).fileID,'@',hData(k).displayName],...
+                        'UserData',this.selectedModel{iModel}); 
+                end
+            end
+        end %plotFit
+        
+        % Remove fit
+        function this = removeFit(this, modelName)
+            % get the corresponding fit handle(s)
+            idx = strcmp(modelName, get(this.axe.Children,'UserData'));
+            % delete them
+            delete(this.axe.Children(idx));
+            
+            % delete it residuals if needed
+            if ~isempty(this.axeResScatter)
+                removeResidual(this, [], modelName)
+            end
+        end %removeFit
+        
+        % Add residual data
         function this = plotResidual(this)
-            % set the difference between the data/fit in main axis and the
-            % current residual plots
-            hPlot = this.axe.Children;
-            currentFileID = get(findobj(hPlot,'Type','Line'),'Tag');
-            if ischar(currentFileID)
-               currentFileID = {currentFileID};
-            end
-            oldFileID = get(this.axeResScatter.Children,'Tag');
-            [~,idx] = setdiff(currentFileID, oldFileID);
-            % loop over the plot to add
-            for i = 1:length(idx)
-               % get the index of the data to add
-               isAdd = strcmp(get(hPlot,'Tag'),currentFileID{idx(i)});
-
-               isFit = isAdd & strcmpi(get(hPlot,'Type'),'Line');
-               isRaw = isAdd & ~isFit & cellfun(@isempty,get(hPlot,'UserData'));
-               % get the data to add                                       
-               x = hPlot(isRaw).XData;
-               y = hPlot(isRaw).YData;
-               % select the yfit fitting with x;
-               [~,isXFit,~] = intersect(hPlot(isFit).XData,x);
-               yfit = hPlot(isFit).YData(isXFit);
-               % calculate the residuals
-               residual = y - yfit;
-
-               % add it to the scatter axis
-               plot(this.axeResScatter,x,residual,...
-                        'LineStyle','none',...
-                        'Color',get(hPlot(isRaw),'Color'),...
-                        'Marker','o',...
-                        'MarkerFaceColor',get(hPlot(isRaw),'Color'),...
-                        'MarkerSize',2,...
-                        'Tag',currentFileID{idx(i)});        
-            end %for 
-            
-            % axis settings
-            this.axeResScatter.XScale = this.axe.XScale;
-            this.axeResScatter.XLim = [-inf inf];
-            this.axeResScatter.XLabel.String = this.axe.XLabel.String;
-            this.axeResScatter.YLabel.String = 'Residues (s^{-1})';
-            
-           % update hist axis 
-           residual = get(this.axeResScatter.Children,'YData');
-           if iscell(residual)
-               residual = [residual{:}]; %append residuals
-           end
-           histogram(this.axeResHist,residual)
-           % add legend to see if gaussian
-           [gauss, pval] = chi2gof(residual,'cdf',@normcdf); 
-           if gauss
-               txt = sprintf('Gaussian profile (p=%.3f)',pval);
-           else
-               txt = sprintf('Non-Gaussian profile (p=%.3f)',pval);
-           end
-           % legend settings         
-           title(this.axeResHist,txt);
-           % axis settings
-           this.axeResHist.XLabel.String = this.axeResScatter.YLabel.String;  
-        end %plotResidual
-        
-        % Remove residuals 
-        function this = removeResidual(this,fileID)
-            % check if axis exists
-            if isempty(this.axeResScatter)
+            % check if we need to plot something
+            if ~this.ResidualCheckButton.Value 
                 return
             end
-            % remove the corresponding plot
-            for i = 1:length(fileID)
-                 % get the corresponding line handle(s)
-                currentFileID = get(this.axeResScatter.Children,'Tag');
-                idx = strcmp(fileID{i},currentFileID);
-                % delete them
-                delete(this.axeResScatter.Children(idx));             
+            
+            % get the handle to the plot(s)
+            hPlot = this.axe.Children;
+            % get fileID
+            hfileID = unique({hPlot.fileID});
+            
+            % check if residual axis exists
+            if isempty(this.axeResScatter)
+                % move the main axis
+                subplot(3,2,1:4, this.axe);
+                % create the axis
+                this.axeResScatter = subplot(3,2,5);
+                this.axeResHist = subplot(3,2,6);
+                % axis settings
+                this.axeResScatter.NextPlot = 'add';              
             end
+            
+            % loop over the plot
+            for k = 1:length(hfileID)
+                % check if possible to plot residual
+                hData = hPlot(strcmp(hfileID{k}, {hPlot.fileID}) &&...
+                    strcmpi('ErrorBar', {hPlot.Type}));
+                hFit = hPlot(strcmp(hfileID{k}, {hPlot.fileID}) &&...
+                    strcmpi('Line', {hPlot.Type}));
+                
+                if isempty(hData) || isempty(hFit)
+                    continue
+                end
+                
+                % make intersection between x from data and x from fit
+                x = hData.XData;
+                [~,idxx,~] = intersect(x, this.hFit(1).XData);
+                
+                % loop over the models
+                for iModel = 1:length(hFit)                    
+                    % calculate residuals
+                    residual = hData.YData - hFit(iModel).YData(idxx); 
+                    % plot and set color, marker identical to data
+                    % use fileID from data but add the model specification
+                    % as userdata field
+                    plot(this.axeResScatter, x, residual,...
+                        'LineStyle','none',...
+                        'Color',hData.Color,...
+                        'Marker',hData.Marker,...
+                        'MarkerFaceColor','auto',...
+                        'MarkerSize',2,...
+                        'Tag',hData.Tag,...
+                        'UserData',hFit(iModel).UserData); 
+                end % loop model
+            end %loop plot
+            
+            % update the histogram
+            makeResidualHistogram(this);
+        end %plotResidual  
+        
+        % Remove residual data.
+        function this = removeResidual(this, fileID, modelName)
+            % check input
+            if isempty(fileID) 
+                TF_fileID = true(1);
+            else
+                TF_fileID = strcmp(fileID, get(this.axeResScatter.Children,'Tag'));
+            end
+            
+            if isempty(modelName)
+                TF_modelName = true(1);
+            else
+                TF_modelName = strcmp(modelName, get(this.axeResScatter.Children,'UserData'));
+            end
+            
+            % delete them
+            toDelete = TF_fileID & TF_modelName;
+            delete(this.axeResScatter.Children(toDelete));             
             
             % check if no more children and clear axis
             if isempty(this.axeResScatter.Children)
                 cla(this.axeResHist)
                 this.axeResHist.Title = []; %reset title
             else
-                % update hist axis
-                residual = get(this.axeResScatter.Children,'YData');
-                if iscell(residual)
-                    residual = [residual{:}]; %append residuals
-                end
-                histogram(this.axeResHist,residual)
-                % add legend to see if gaussian
-                [gauss, pval] = chi2gof(residual,'cdf',@normcdf); 
-                if gauss
-                    txt = sprintf('Gaussian profile (p=%.3f)',pval);
-                else
-                    txt = sprintf('Non-Gaussian profile (p=%.3f)',pval);
-                end
-                % legend settings
-                title(this.axeResHist,txt);
-                % axis settings
-                this.axeResHist.XLabel.String = this.axeResScatter.YLabel.String;  
+                % update histogram
+                makeResidualHistogram(this);
             end
         end %removeResidual
         
-        %Get fileID
-        function listFileID = getFileID(this)
-            % get all the fileID by looking at the 'Tag'
-            if ~isempty(this.axe.Children)
-                listFileID = get(findobj(this.axe.Children),'Tag');
-            else
-                listFileID = [];
+        % Add an histogram of the residuals
+        function this = makeResidualHistogram(this)
+            % get all the residuals 
+            residual = get(this.axeResScatter.Children,'YData');
+            if iscell(residual)
+               residual = [residual{:}]; %append residuals
             end
-        end %getFileID
+            % make an histogram
+            histogram(this.axeResHist,residual)
+            % add legend to see if gaussian
+            [gauss, pval] = chi2gof(residual,'cdf',@normcdf); 
+            if gauss
+               if pval < 0.001
+                   txt = 'Gaussian profile (p<0.001)';
+               else
+                   txt = sprintf('Gaussian profile (p=%.3f)',pval);
+               end
+            else
+               txt = sprintf('Non-Gaussian profile (p=%.3f)',pval);
+            end
+            % legend settings         
+            title(this.axeResHist,txt); 
+            % axis settings
+            this.axeResHist.XLabel.String = this.axeResScatter.YLabel.String;  
+        end %makeResidualHistogram
+    end
+    
+    % Other function
+    methods (Access = public)
+        % this function sort the axis children according to their tag
+        % as well as their type (data1 fit1 data2 fit2 ...)
+        function this = sortChildren(this)
+            % get the fileID and the type
+            fileID = get(this.axe.Children,'Tag');
+            type = get(this.axe.Children,'Type');
+            % concatenate and sort
+            [~,idx] = sort(strcat(fileID, type));
+            % re-order children
+            this.axe.Children = this.axe.Children(flipud(idx));
+        end %sortChildren
+        
+        % reset the legend if needed and check if unique names are
+        % displayed. If not, set an unique name by adding the field
+        % 'displayName' from hDispersion array handle.
+        function this = resetLegend(this)
+            % check if legend exists
+            if isempty(this.axe.Legend)
+                % check if legend should exist
+                if this.LegendCheckButton.Value && ~isempty(this.axe.Children)
+                    legend(this.axe,'show')
+                end
+            else              
+                if ~this.LegendCheckButton.Value || isempty(this.axe.Children)
+                    % check if legend should be deleted
+                    legend(this.axe,'off')
+                else
+                    % check if legend should be updated: duplicates?
+                    leg = this.axe.Legend.String;
+                    [uniqueLeg, ~, idx] = unique(leg);
+                    if length(leg) ~= length(uniqueLeg)
+                        % find duplicates
+                        occ = histc(idx, 1:numel(uniqueLeg));
+                        duplicateLeg = uniqueLeg(occ > 1);
+                        % loop over duplicates and update their DisplayName
+                        for k = 1:length(duplicateLeg)
+                            % find the corresponding line and handle
+                            % TO DO
+                        end
+                    end
+                end
+            end                           
+        end %resetLegend
+        
+        % choose plot color:
+        % This function following these rules:
+        % *always follow the same order (Color, Marker, Style order)
+        % *keep previous plot as they are
+        function color = chooseColor(this, fileID)
+            % get handle to the children in main axis
+            hPlot = this.axe.Children;
+            % get their fileID
+            hPlotID = cellfun(@(x) strsplit(x,'@'), {hPlot.Tag}, 'UniformOutput',0);
+            hPlotID = cellfun(@(x) x{1}, hPlotID, 'UniformOutput',0);
+            % check if other plot have the same fileID
+            isSameFile = strcmp(fileID, hPlotID);
+            idxColor = find(isSameFile);
+            % choose color 
+            if ~isempty(idxColor)
+                color = hPlot(idxColor(1)).Color;
+            else
+                [~,idxColor] = min(this.accumColor);
+                color = this.Color(idxColor,:); 
+                % increment accumColor
+                this.accumColor(idxColor) = this.accumColor(idxColor) + 1;
+            end       
+        end %chooseColor
+        
+        % choose marker
+        function marker = chooseDataMarker(this, fileID)
+            % get handle to the children in main axis
+            hPlot = this.axe.Children;
+            % get their fileID
+            hPlotID = cellfun(@(x) strsplit(x,'@'), {hPlot.Tag}, 'UniformOutput',0);
+            hPlotID = cellfun(@(x) x{1}, hPlotID, 'UniformOutput',0);
+            % check if other plot have the same fileID and same type
+            TF = strcmp(fileID, hPlotID) & strcmpi('ErrorBar',{hPlot.Type});
+            % setdiff between the current markers and the ones defined in
+            % properties
+            marker = setdiff(this.DataMarkerStyle, {hPlot(TF).Marker}, 'stable');
+            if isempty(marker)
+                error('plotData:TooMuchDataPlot', ['Cannot display more than %d'...
+                    ' dispersion curves from the same file!'],length(this.DataMarkerStyle))
+            else
+                marker = marker{1}; %get the first one
+            end
+        end %chooseMarker
+        
+        % choose style
+        function style = chooseFitStyle(this, fileID)
+            % get handle to the children in main axis
+            hPlot = this.axe.Children;
+            % get their fileID
+            hPlotID = cellfun(@(x) strsplit(x,'@'), {hPlot.Tag}, 'UniformOutput',0);
+            hPlotID = cellfun(@(x) x{1}, hPlotID, 'UniformOutput',0);
+            % check if other plot have the same fileID and same type
+            TF = strcmp(fileID, hPlotID) & strcmpi('Line',{hPlot.Type});
+            % setdiff between the current markers and the ones defined in
+            % properties
+            style = setdiff(this.FitLineStyle, {hPlot(TF).LineStyle}, 'stable');
+            if isempty(style)
+                error('plotData:TooMuchDataPlot', ['Cannot display more than %d'...
+                    ' fit models from the same file!'],length(this.FitLineStyle))
+            else
+                style = style{1}; %get the first one
+            end
+        end %chooseFitStyle
     end   
 end
 

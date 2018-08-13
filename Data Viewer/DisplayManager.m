@@ -16,8 +16,11 @@ classdef DisplayManager < handle
             this.FitLike = FitLike;
                       
             % Make the figure
-            gui = buildDisplayManager();
-            this.gui = guihandles(gui);
+            this.gui.fig = figure('Name','Display Manager','NumberTitle','off',...
+                'MenuBar','none','ToolBar','figure','DockControls','off',...
+                'Units','normalized','Position',[0.25 0.1 0.5 0.75]);
+            % Make a tab group
+            this.gui.tab = uitabgroup(this.gui.fig,'Position',[0 0 1 1]);
             
             % Add an empty tab and one with the mention "+"
             EmptyTab(FitLike, uitab(this.gui.tab));
