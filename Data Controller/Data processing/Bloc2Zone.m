@@ -60,7 +60,7 @@ classdef Bloc2Zone < ProcessDataUnit
             x = getZoneAxis(bloc); % raw x-axis (needs to be repmat to fit the dimension of y)
             x = repmat(x,size(cellz)); % make sure that all cell arrays are consistent
             params = repmat({params},size(cellz));
-            zone = Zone('x',x,'y',cellz,'dy',celldz,'parameter',params);
+            zone = Zone('x',x,'y',cellz,'dy',celldz,'parameter',params,'legendTag',self.legendTag);
             
             % link the children and parent objects
             zone = arrayfun(@(x) setfield(x,'parent',bloc),zone);

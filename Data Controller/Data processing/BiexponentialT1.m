@@ -10,6 +10,7 @@ classdef BiexponentialT1 < Zone2Disp
             self.functionName = 'Biexponential fit';      % character string, name of the model, as appearing in the figure legend
             self.labelY = 'R_1 (s^{-1})';                   % string, labels the Y-axis data in graphs
             self.labelX = 'Evolution field (MHz)';          % string, labels the X-axis data in graphs
+            self.legendTag = {'Long T1 component','Short T1 component'};  % strings associated with the legend in the display graph
         end
     end
 

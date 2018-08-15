@@ -6,6 +6,7 @@ classdef BiexponentialT2 < Bloc2Zone
             self.functionName = 'Biexponential T2 decay';     % character string, name of the model, as appearing in the figure legend
             self.labelY = 'Average magnitude (A.U.)';       % string, labels the Y-axis data in graphs
             self.labelX = 'Evolution time (s)';             % string, labels the X-axis data in graphs
+            self.legendTag = {'Long T2 component','Short T2 component'}; % strings associated with the legend in the display graph
         end
 
         % this is where you should put the algorithm that processes the raw

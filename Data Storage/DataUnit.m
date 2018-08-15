@@ -18,6 +18,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         yLabel@char = '';       % name of the variable Y ('R1','fid',...)
         mask@logical = true(0);           % mask the X and Y arrays
         processingMethod@ProcessDataUnit;  % stores the processing objects that are associated with the data unit
+        legendTag@char;         % char array to place in the legend associated with the data
     end   
     
     % file parameters
@@ -97,6 +98,15 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             generateID(obj);
         end %DataUnit       
         
+        
+        % collect the display names from all the parents in order to get
+        % the entire history of the processing chain, for precise legends
+        function legendStr = collectLegend(self)
+            legendStr = self.legendTag;
+            if ~isempty(self.parent.legendTag)
+                legendStr = [legendStr ', ' collectLegend(self.parent)];
+            end
+        end
         
     end % methods
     
