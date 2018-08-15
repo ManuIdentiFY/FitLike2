@@ -56,6 +56,10 @@ while 1
     % Find the length of the header by reading a large section and catch 'DATA'
     txt = textscan(fid,'%s',N_MAX_PARAMETERS,'delimiter','\n');
     if feof(fid) % check for end file, exit if found
+        if acquisitionNumber>0
+            parameter{acquisitionNumber}.paramList.T1MX = parameter{acquisitionNumber}.paramList.T1MX*1e-6; % convert to seconds
+            parameter{acquisitionNumber}.paramList.BRLX = parameter{acquisitionNumber}.paramList.BRLX*1e6;  % convert to Hz
+        end
         break 
     end  
     

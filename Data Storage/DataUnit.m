@@ -108,18 +108,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             end
         end
         
-        % merge two datasets together
-        function self = merge(self)
-            n = ndims(self(1).x); % always concatenate over the last dimension (evolution fields), the others should have the same number of inputs
-            self(1).x = cat(n,self(1).x, self(2).x);
-            self(1).y = cat(n,self(1).y, self(2).y);
-            self(1).dy = cat(n,self(1).dy, self(2).dy);
-            self(1).mask = cat(n,self(1).mask, self(2).mask);
-            self(1).parameter = merge(self(1).parameter,self(2).parameter);
-            if length(self) > 2
-                self = merge(self([1 3:end]));
-            else
-                self = self(1);
+        % make a copy of an object
+        function other = copy(self)
+            fh = str2func(class(self));
+            other = fh();
+            fld = fields(self);
+            for ind = 1:length(fld)
+                other.(fld{ind}) = self.(fld{ind});
             end
         end
         

@@ -103,6 +103,12 @@ classdef Disp2Exp < ProcessDataUnit
 %             self.modelHandle = eval(str); % str2func does not work in this case
         end        
         
+        % the function above can be greatly simplified by wrapping function
+        % handles (TODO)
+        function self = makeFunctionHandle2(self)
+            
+        end
+        
         % update the sub models with the best fit values
         function self = updateSubModel(self,bestValue,errorBar,gof)
             indStart = 1;

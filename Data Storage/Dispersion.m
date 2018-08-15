@@ -64,15 +64,22 @@ classdef Dispersion < DataUnit
     end
     
     methods (Access = public)        
-        % Merge several Dispersion object. If Dispersion objects are
-        % already merged (parent = 1xN Dispersion) then unmerged them.
-        function obj = merge(obj) 
-            
-        end %merge
+        % Merge several Dispersion object.
+        function selfMerged = merge(self)
+            selfMerged = copy(self(1));
+            selfMerged.x = [self(1).x(:); self(2).x(:)];
+            selfMerged.y = [self(1).y(:); self(2).y(:)];
+            selfMerged.dy = [self(1).dy(:); self(2).dy(:)];
+            selfMerged.mask = [self(1).mask(:); self(2).mask(:)];
+            selfMerged.parameter = merge(self(1).parameter,self(2).parameter);
+            if length(self) > 2
+                selfMerged = merge([selfMerged self(3:end)]);
+            end
+        end
         
         % Average several Dispersion object data (X, Y) and create a new
         % Dispersion object
-        function obj = average(obj)
+        function self = average(self)
             
         end %average
         

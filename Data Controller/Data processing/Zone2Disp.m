@@ -63,7 +63,7 @@ classdef Zone2Disp < ProcessDataUnit
             x = getDispAxis(zone); % raw x-axis (needs to be repmat to fit the dimension of y)
             x = repmat(x,size(cellz)); % make sure that all cell arrays are consistent
             params = repmat({params},size(cellz));
-            dispersion = Zone('x',x,'y',cellz,'dy',celldz,'parameter',params,'legendTag',self.legendTag);
+            dispersion = Dispersion('x',x,'y',cellz,'dy',celldz,'parameter',params,'legendTag',self.legendTag);
             
             % link the children and parent objects
             dispersion = arrayfun(@(x) setfield(x,'parent',zone),dispersion);
