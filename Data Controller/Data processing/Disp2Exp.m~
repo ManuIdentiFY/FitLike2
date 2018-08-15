@@ -108,15 +108,12 @@ classdef Disp2Exp < ProcessDataUnit
             indStart = 1;
             indLim = length(self.parameterName);
             self.bestValue = bestValue(indStart:indLim); % update the values corresponding to the model in the current object
-            self.errorBar = errorBar(indStart:indLim);
-            self.gof = gof;
+            self.errorBar = errorbar(
             for indsub = 1:length(self.subModel) % otherwise, pass the other values to the corresponding submodel
                 indStart = indLim + 1;
                 indLim = indLim + length(self.subModel(indsub).parameterName);
                 self.subModel(indsub) = updateSubModel(self.subModel(indsub),...
-                                                       bestValue(indStart:indLim),...
-                                                       errorBar(indStart:indLim),...
-                                                       gof);
+                                                       bestValue(indStart:indLim));
             end
         end
         

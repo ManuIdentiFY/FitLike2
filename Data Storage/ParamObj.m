@@ -126,12 +126,16 @@ classdef ParamObj < handle
                 val2 = getfield(other,fname);
                 if isfield(self.paramList,fname)
                     val1 = getfield(self.paramList,fname);
-                    if isnumeric(val1) && isnumeric(val2) %#ok<*GFLD>
-                        self.paramList = setfield(self.paramList,fname,[val1,val2]); %#ok<*SFLD>
-                    elseif iscell(val1) && iscell(val2)
-                        self.paramList = setfield(self.paramList,fname,[val1,val2{:}]);
-                    else
-                        self.paramList = setfield(self.paramList,fname,{val1,val2});
+                    try
+                        if isnumeric(val1) && isnumeric(val2) %#ok<*GFLD>
+                            self.paramList = setfield(self.paramList,fname,[val1,val2]); %#ok<*SFLD>
+                        elseif iscell(val1) && iscell(val2)
+                            self.paramList = setfield(self.paramList,fname,[val1,val2]);
+                        else
+                            self.paramList = setfield(self.paramList,fname,{val1,val2});
+                        end
+                    catch
+                        self.paramList = setfield(self.paramList,fname,val2); % in case of an incompatibility, erase the old value altogether
                     end
                 else
                     self.paramList = setfield(self.paramList,fname,val2);

@@ -64,7 +64,7 @@ classdef Bloc2Zone < ProcessDataUnit
             
             % link the children and parent objects
             zone = arrayfun(@(x) setfield(x,'parent',bloc),zone);
-            bloc.children = [bloc.children zone];
+            bloc = arrayfun(@(x) setfield(bloc,'children',y),zone);
         end
         
         % TO DO: make some test functions
@@ -77,8 +77,7 @@ classdef Bloc2Zone < ProcessDataUnit
             
             % generate the data to populate the zone object
             [zone,bloc] = arrayfun(@self.applyProcessFunction,bloc,'Uniform',0);
-            zone = [zone{:}]; % back to array of objects
-            bloc = [bloc{:}];
+            
         end
     end
     

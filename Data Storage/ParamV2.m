@@ -37,7 +37,7 @@ classdef ParamV2 < ParamObj
                     error(['Type of acquisition not known (' algo ').'])
             end
             % make sure the dimensions are consistent (tau, nT2, BRLX)
-            x = reshape(x,size(x,1),1,size(x,2));
+            x = reshape(x,size(x,1),size(x,2));
         end
         
         function x = getDispAxis(self)
