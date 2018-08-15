@@ -77,9 +77,9 @@ classdef ProcessingManager < handle
         % Add ProcessTab
         function this = addProcessTab(this)
             % count tab
-            nTab = numel(this.gui.tab.Children) + 1;
+            nTab = numel(this.gui.tab.Children);
             % add new tab
-            ProcessTab(this.FitLike, uitab(this.gui.tab),['Pipeline',num2str(nTab)]);
+            ProcessTab(this.FitLike, uitab(this.gui.tab),['Pipeline',num2str(nTab + 1)]);
         end
         
         % Remove ProcessTab
