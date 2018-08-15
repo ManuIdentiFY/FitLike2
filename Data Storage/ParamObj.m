@@ -120,6 +120,8 @@ classdef ParamObj < handle
         
         function self = merge(self,other)
             f2 = fieldnames(other.paramList);
+            % place the exeptions here
+            
             for indfname = 1:length(f2)
                 fname = f2(indfname);
                 fname = fname{1};
@@ -140,7 +142,9 @@ classdef ParamObj < handle
                 else
                     self.paramList = setfield(self.paramList,fname,val2);
                 end
-            end            
+            end    
+            % treat the exceptions here
+            
         end
                 
         function x = struct2cell(self)
