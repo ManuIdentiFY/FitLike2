@@ -1,7 +1,6 @@
-classdef FitModel
+classdef DispersionModel
     
     properties
-        
         modelName = '';        % character string, name of the model, as appearing in the figure legend
         modelEquation = '';    % character string, equation that relates the Larmor frequency (Hz) to the parameters to R1 (s^{-1})
         modelHandle;           % function handle that refers to the equation, or to any other function defined by the user
@@ -17,12 +16,56 @@ classdef FitModel
     end
     
     methods
-        function self = FitModel(varargin)
+        % constructor
+        function self = DispersionModel(varargin)
             for i = 1:2:length(varargin)
                 if isprop(model,varargin{i})
                     self.(varargin{i}) = varargin{i+1};
                 end
             end
+            % set the default values for all the fields
+            if isempty(self.modelName)
+                warning('Model name not assigned. Please provide a name to the model, using the field ''modelName'' in the m-file. Choosing a random name.')
+                self.modelName = ['Model ' num2str(round(1e9*rand(1,1)))];
+            end
+            if isemtpy(self.modelEquation)
+                if isempty(self.modelHandle)
+                    error('Equation not provided. You must provide an equation to the model using the field ''modelEquation'' in the m-file.')
+                else
+                    self.modelEquation = func2str(self.modelHandle);
+                end
+            end
+            if isempty(self.modelHandle)
+                self = makeFunctionHandle(self);
+            end
+            if isempty(self.variableName)
+                warning('Variable name missing. Assuming it is the last input. Please add its name to the field ''variableName''.')
+                handleStr = func2str(self.modelHandle);
+                ind = strfind(handleStr,')');
+                inputList = handleStr(1:ind(1)); % isolate the @(...) part
+                ind = strfind(handleStr,',');
+                self.variableName = {inputList(ind+1:end-1)}; % and get the last input
+            end
+            if ~iscell(self.variableName)
+                self.variableName = {self.variableName};
+            end
+            if isemtpy(self.parameterName)
+                warning('Parameters names missing, using random names. Please add them to the field ''parameterName''.')
+                for i = 2:length(nargin(self.modelHandle))
+                    self.parameterName{i-1} = ['param' num2str(i)];
+                end
+            end
+            if isempty(self.isFixed)
+                self.isFixed = zeros(size(self.parameterName));
+            end
+            if isempty(self.minValue)
+                self.minValue = -Inf*ones(size(self.parameterName));
+            end
+            if isemtpy(maxValue = {};         % array of values, maximum values reachable for each parameter, respective to the order of parameterName
+        startPoint = {};       % array of values, starting point for each parameter, respective to the order of parameterName 
+        bestValue = {};        % array of values, estimated value found from the fit.
+        errorBar = {};         % 2 x n array of values, provide the 95% confidence interval on the estimated fit values (lower and upper errors)
+        fitobj = [];           % fitting object created after the model is used for fitting.
         end
         
         function self = makeFunctionHandle(self)
@@ -57,7 +100,7 @@ classdef FitModel
             else
                 newObj = FitModel('modelName',       [self.modelName ' + ' other.modelName],...
                                   'modelEquation',   [func2str(self.modelHandle) ' + '  func2str(other.modelHandle)],...
-                                  'modelHandle',     
+                                  'modelHandle',     @(x) ones(size(x)));
                 newObj.variableName = {};   
                 newObj.parameterName = {};  
                 newObj.isFixed = {};        

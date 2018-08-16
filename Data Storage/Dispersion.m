@@ -6,7 +6,8 @@ classdef Dispersion < DataUnit
     
     properties
         displayName = 'dispersion';
-        model = [] % cell array of DispersionModel object
+        model = [];  % DispersionModel object that sums up all the contributions from the sub-model list
+        subModel = [] % cell array of DispersionModel object
         filter = [] % cell array of Filter object
         % See DataUnit for other properties
     end
