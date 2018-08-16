@@ -17,7 +17,7 @@ classdef ParamObj < handle
                         self(i).paramList = paramStruct;
                     end
                 else
-                    [self(1:length(paramStruct)).paramList] = deal(paramStruct{:}); 
+                    [self(1:length(parameter)).paramList] = deal(parameter{:}); 
                 end
             end
         end

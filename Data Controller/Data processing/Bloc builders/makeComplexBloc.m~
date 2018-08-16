@@ -5,6 +5,4 @@ function blocList = makeComplexBloc(data,param)
 % readers
         
 blocList = Bloc('y',cellfun(@(x,y) x+1i*y,data.real,data.imag,'UniformOutput',0),'x',data.time);
-for i = 1:length(blocList)
-    blocList(i).parameter = param(i);
-end
+

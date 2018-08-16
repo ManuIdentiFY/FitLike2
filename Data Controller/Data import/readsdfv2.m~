@@ -54,22 +54,9 @@ while 1
     
     % Get the header information   
     % Find the length of the header by reading a large section and catch 'DATA'
-    txt = textscan(fid,'%s',N_MAX_PARAMETERS,'delimiter','\n');
-    if feof(fid) % check for end file, exit if found
-        if acquisitionNumber>0
-            parameter(acquisitionNumber).paramList.T1MX = parameter(acquisitionNumber).paramList.T1MX*1e-6; % convert to seconds
-            parameter(acquisitionNumber).paramList.BRLX = parameter(acquisitionNumber).paramList.BRLX*1e6;  % convert to Hz
-            parameter(acquisitionNumber).paramList.FILE = filename;
-            parameter(acquisitionNumber).paramList.EXP = seqName;
-        end
-        break 
-    end  
+    txt = textscan(fid,'%s',N_MAX_PARAMETERS,'delimiter','\n'); 
     
     % check the content of the headers.
-    posSeqName = find(cellfun(@(x) ~isempty(x),strfind(txt{1},'NMRD SEQUENCE NAME:'))); 
-    if ~isempty(posSeqName)
-        [~,seqName] = fileparts(txt{1}{posSeqName}(21:end));
-    end
     posParamSummary = find(cellfun(@(x) ~isempty(x),strfind(txt{1},'PARAMETER SUMMARY')),1)+1;  % cannot use startWith for compatibility reasons with version older than 2017a
     posZone = find(cellfun(@(x) ~isempty(x),strfind(txt{1},'ZONE')),1);
     posData = find(cellfun(@(x) ~isempty(x),strfind(txt{1},'DATA')),1);
@@ -88,8 +75,8 @@ while 1
             end
             parameter(acquisitionNumber).paramList.T1MX = parameter(acquisitionNumber).paramList.T1MX*1e-6; % convert to seconds
             parameter(acquisitionNumber).paramList.BRLX = parameter(acquisitionNumber).paramList.BRLX*1e6;  % convert to Hz
-            parameter(acquisitionNumber).paramList.FILE = filename;
-            parameter(acquisitionNumber).paramList.EXP = seqName;
+            parameter(acquisitionNumber).paramList.FILE = '';
+            parameter(acquisitionNumber).paramList.EXP = '';
         end
         % now store the incoming data and parameters into a new section.
         acquisitionNumber = acquisitionNumber+1;
