@@ -43,26 +43,27 @@ classdef ParamV1 < ParamObj
             % depending on the format generate the inversion time values           
             switch BGRD
                 case 'LIST'
-                    blst = regexp(parameters.BLST,'[;:]','split'); %split the field BLST
+                    blst = regexp(self.paramList.BLST,'[;:]','split'); %split the field BLST
                     Ti = eval(blst{1}); %time start vector
                     Te = eval(blst{2}); %time end vector   
                     if strcmp(blst{3},'LOG')
-                       invtime = logspace(log10(Ti),log10(Te),NBLK); %create all the time vectors
+                       invtime = arrayfun(@(ti,te)logspace(log10(ti),log10(te),NBLK),Ti,Te,'UniformOutput',0); %create all the time vectors
                     else %'LIN'
-                       invtime = linspace(Ti,Te,NBLK); %create all the time vectors
+                       invtime = arrayfun(@(ti,te)linspace(ti,te,NBLK),Ti,Te,'UniformOutput',0); %create all the time vectors
                     end                
                 case 'LOG'
-                    Ti = eval(parameters.BINI);
-                    Te = eval(parameters.BEND);
-                    invtime = logspace(log10(Ti),log10(Te),NBLK); %create all the time vectors
+                    Ti = eval(self.paramList.BINI);
+                    Te = eval(self.paramList.BEND);
+                    invtime = arrayfun(@(ti,te)logspace(log10(ti),log10(te),NBLK),Ti,Te,'UniformOutput',0); %create all the time vectors
                 case 'LIN'
-                    Ti = eval(parameters.BINI);
-                    Te = eval(parameters.BEND);
-                    invtime = linspace(Ti,Te,NBLK); %create all the time vectors
+                    Ti = eval(self.paramList.BINI);
+                    Te = eval(self.paramList.BEND);
+                    invtime = arrayfun(@(ti,te)linspace(ti,te,NBLK),Ti,Te,'UniformOutput',0); %create all the time vectors
                 otherwise
                     error('getZoneAxis:MissingParameters',['BGRD parameter'...
                         'seems absent from the parameter structure'])
             end %switch
+            invtime = cell2mat(invtime')';
         end
         
         % GETDISPAXIS(SELF) get the magnetic fields

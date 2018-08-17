@@ -63,7 +63,8 @@ classdef Bloc2Zone < ProcessDataUnit
             zone = Zone('x',x,'y',cellz,'dy',celldz,'parameter',params,'legendTag',self.legendTag);
             
             % link the children and parent objects
-            zone = arrayfun(@(x) setfield(x,'parent',bloc),zone);
+            zone = arrayfun(@(x) setfield(x,'parent',bloc),zone,'UniformOutput',0); %#ok<SFLD>
+            zone = [zone{:}];
             bloc.children = [bloc.children zone];
         end
         
