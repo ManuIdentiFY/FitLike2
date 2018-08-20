@@ -17,7 +17,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         dy@double = [];         % error bars on Y
         yLabel@char = '';       % name of the variable Y ('R1','fid',...)
         mask@logical = true(0);           % mask the X and Y arrays
-        processingMethod@ProcessDataUnit;  % stores the processing objects that are associated with the data unit
         legendTag@char;         % char array to place in the legend associated with the data
         subUnitList@DataUnit;          % stores DataUnits of the same type to merge data sets while keeping unmerge capabilities
     end   
@@ -29,7 +28,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     
     % file processing
     properties (Access = public)
-        process@ProcessDataUnit = ProcessDataUnit(); % object use to process the data
+        processingMethod@ProcessDataUnit = ProcessDataUnit(); % stores the processing objects that are associated with the data unit
     end
     
     % file properties

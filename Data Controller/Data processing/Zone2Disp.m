@@ -66,7 +66,8 @@ classdef Zone2Disp < ProcessDataUnit
             dispersion = Dispersion('x',x,'y',cellz,'dy',celldz,'parameter',params,'legendTag',self.legendTag);
             
             % link the children and parent objects
-            dispersion = arrayfun(@(x) setfield(x,'parent',zone),dispersion);
+            dispersion = arrayfun(@(x) setfield(x,'parent',zone),dispersion,'UniformOutput',0);
+            dispersion = [dispersion{:}];
             zone.children = [zone.children dispersion];
         end
         

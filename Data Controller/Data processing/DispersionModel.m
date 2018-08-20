@@ -16,6 +16,9 @@ classdef DispersionModel
         errorBar;         % 2 x n array of values, provide the 95% confidence interval on the estimated fit values (lower and upper errors)
         gof;              % structure that contains all the info required about the goodness of fit
         fitobj;           % fitting object created after the model is used for fitting.
+        
+        % Additional display models custom defined by the user
+        submodels@DispersionModel;  % Visualisation functions user-defined to simplify the analysis of the fit results (TODO)
     end
     
     methods

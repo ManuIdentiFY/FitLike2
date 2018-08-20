@@ -21,7 +21,6 @@ classdef Monoexp < Zone2Disp
         function [z,dz,paramFun] = process(self,x,y,paramObj,index) %#ok<*INUSD,*INUSL>
             T1MX = paramObj.T1MX(index);
             
-            LIMIT_RELAX = [0.02 1.7]; % in s, Corresponds to the hardware limit 
             % Exponential fit
             fitModel = @(c, x)((c(1)-c(2))*exp(-x*c(3))+c(2)); %exponential model
 
@@ -29,9 +28,16 @@ classdef Monoexp < Zone2Disp
             opts.Robust = 'on';
 
             startPoint = [y(1),y(end),1/T1MX]; 
-            [coeff,residuals,~,cov,MSE] = nlinfit(x,y,fitModel,startPoint,opts); %non-linear least squares fit
-
-
+            try
+                [coeff,residuals,~,cov,MSE] = nlinfit(x,y,fitModel,startPoint,opts); %non-linear least squares fit
+            catch ME
+                disp(ME.message)
+                coeff = startPoint;
+                residuals = zeros(size(y));
+                cov = zeros(length(startPoint),length(startPoint));
+                MSE = 0;
+            end
+                
             %% Goodness of fit
             sst = sum((y-mean(y)).^2); %sum of square total
             sse = sum(residuals.^2); %sum of square error

@@ -189,5 +189,10 @@ end
 
 % convert the parameter to ParamV1 object then cell array
 parameter = ParamV1(parameter);
+
+% if ~iscell(parameter)
+%     parameter = {parameter};
+% end
+
 end
 
