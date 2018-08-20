@@ -157,13 +157,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         
     end %methods
     
-    % The methods described below are used to enable the merge capabilities
-    % of the DataUnit object. They work by re-directing any quiry for the
-    % x, y, dy and mask fields towards the list of sub-objects. Any
-    % modification in here must take care to avoid recursive calls and to
-    % limit the processing time, as these fields are used extensively
-    % during processing.
-    % LB 20/08/2018
     methods
         % check that new objects added to the list are of the same type as
         % the main object
@@ -177,9 +170,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         
         % function that gathers the data from the sub-units and place them
         % in the correct field
-        function value = gatherSubData(self,fieldName)
+        function [self, value] = gatherSubData(self,fieldName)
             value = [self.subUnitList.(fieldName)];
-%             self.(fieldName) = value;
+            self.(fieldName) = value;
         end
         
         % function that spreads the data from the contained object to the
@@ -197,70 +190,55 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % consistently with their own object type. (see Matlab help on
         % 'Modify Property Values with Access Methods')
         function self = set.x(self,value)
+            % make sure the dimensions are consistent
+            if length(self.x)~=length(value)
+                error('Dimensions are not consistent.')
+            end
+            self.x = value;
             if ~isempty(self.subUnitList)
                 % distribute the values to the sub-units
                 self = distributeSubData(self,'x',value);
             end
-            self.x = value;
         end
         
         function x = get.x(self)
             if ~isempty(self.subUnitList)
-                x = gatherSubData(self,'x');
-            else
-                x = self.x;
+                [self,x] = gatherSubData(self,'x');
+                
             end
+            x = self.x;
         end
         
-        function self = set.y(self,value)
-            if ~isempty(self.subUnitList)
-                % distribute the values to the sub-units
-                self = distributeSubData(self,'y',value);
-            end
-            self.y = value;
+        function y = getYAxisFromSubUnits.y(self)
+            y = self.y;
         end
         
-        function y = get.y(self)
-            if ~isempty(self.subUnitList)
-                y = gatherSubData(self,'y');
-            else
-                y = self.y;
-            end
+        function dy = getDYAxisFromSubUnits.dy(self)
+            dy = self.dy;
         end
         
-        function self = set.dy(self,value)
-            if ~isempty(self.subUnitList)
-                % distribute the values to the sub-units
-                self = distributeSubData(self,'dy',value);
-            end
-            self.dy = value;
+        function mask = getMaskAxisFromSubUnits.mask(self)
+            mask = self.mask;
         end
-        
-        function dy = get.dy(self)
-            if ~isempty(self.subUnitList)
-                dy = gatherSubData(self,'dy');
-            else
-                dy = self.dy;
-            end
-        end
-        
-        function self = set.mask(self,value)
-            if ~isempty(self.subUnitList) %#ok<*MCSUP>
-                % distribute the values to the sub-units
-                self = distributeSubData(self,'mask',value);
-            end
-            self.mask = value;
-        end
-        
-        function mask = get.mask(self)            
-            if ~isempty(self.subUnitList)
-                mask = gatherSubData(self,'mask');
-            else
-                mask = self.mask;
-            end
-        end
-        
     end
      
+%     methods (Access = public)
+%         
+%         function x = getZoneAxis(obj)
+%             if size(obj) == 1
+%                 x = getZoneAxis(obj.parameter);
+%             else
+%                 x = arrayfun(@(x) getZoneAxis(x.parameter),obj,'Uniform',0);
+%             end
+%         end %getZoneAxis
+% 
+%         function x = getDispAxis(obj)
+%             if size(obj) == 1
+%                 x = getDispAxis(obj.parameter);
+%             else
+%                 x = arrayfun(@(x) getDispAxis(x.parameter),obj,'Uniform',0);
+%             end
+%         end %getDispAxis
+%     end %methods    
 end
 
