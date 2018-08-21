@@ -11,6 +11,11 @@ classdef Zone2Disp < ProcessDataUnit
             self@ProcessDataUnit;
         end
         
+    end
+    
+    
+    methods (Sealed)
+        
         % function that applies the processing function to one bloc only.
         % This is where the custom processing function is being called.
         function [dispersion,zone] = applyProcessFunction(self,zone)
@@ -22,6 +27,10 @@ classdef Zone2Disp < ProcessDataUnit
             % consistent
             cellx = squeeze(num2cell(zone.x,1));
             celly = squeeze(num2cell(zone.y,1));
+            % make sure the data is sorted
+            [cellx,ord] = cellfun(@(c)sort(c),cellx,'UniformOutput',0);
+            celly = cellfun(@(c,o)c(o),celly,ord,'UniformOutput',0);
+            % cast to cell array for cellfun
             cellindex = num2cell(1:size(zone.y,2));
             if ~isequal(size(cellindex),size(cellx))
                 cellx = cellx';
@@ -52,10 +61,11 @@ classdef Zone2Disp < ProcessDataUnit
             fh = str2func(class(zone.parameter));
             params = fh(params);
             params = reshape(params,size(z));
-            params = merge(zone.parameter,params);
+            params = merge([zone.parameter,params]);
             
             % generate one zone object for each component provided by the
             % processing algorithm
+            warning('off','MATLAB:mat2cell:TrailingUnityVectorArgRemoved') % avoid spamming the terminal when the data is not multiexponential
             cellz = mat2cell(z,size(z,1),ones(1,size(z,2)),size(z,3));
             celldz = mat2cell(dz,size(dz,1),ones(1,size(dz,2)),size(dz,3));
             cellz = cellfun(@(x) squeeze(x),cellz,'UniformOutput',0);
@@ -66,9 +76,7 @@ classdef Zone2Disp < ProcessDataUnit
             dispersion = Dispersion('x',x,'y',cellz,'dy',celldz,'parameter',params,'legendTag',self.legendTag);
             
             % link the children and parent objects
-            dispersion = arrayfun(@(x) setfield(x,'parent',zone),dispersion,'UniformOutput',0);
-            dispersion = [dispersion{:}];
-            zone.children = [zone.children dispersion];
+            [zone,dispersion] = link(zone,dispersion);
         end
         
         % TO DO: make some test functions
@@ -90,6 +98,13 @@ classdef Zone2Disp < ProcessDataUnit
             [dispersion,zone] = arrayfun(@self.applyProcessFunction,zone,'Uniform',0);
             dispersion = [dispersion{:}]; % back to array of objects
             zone = [zone{:}];
+        end
+    
+        % standard naming convention for the processing function
+        function [disp,zone] = processData(self,zone)
+            [d,z] = arrayfun(@(s)makeDisp(s,zone),self,'UniformOutput',false);
+            zone = [z{:}];
+            disp = [d{:}];
         end
     end
     

@@ -136,7 +136,7 @@ classdef Disp2Exp < ProcessDataUnit
 %             self.subModel = arrayfun(@(mod)evaluateStartPoint(mod,disp.x,disp.y),self.subModel);
             self = gatherBoundaries(self);            
             % perform the calculations
-            selfCell = arrayfun(@(d2e,i) process(d2e,disp,fitpar,i),self,selfindex,'Uniform',0);
+            selfCell = arrayfun(@(d2e,i) process(d2e,disp,fitpar,i),self,selfindex,'UniformOutput',0);
             self = [selfCell{:,:}];
             % store the results in the dispersion object
             disp.model = self.model;
@@ -145,9 +145,11 @@ classdef Disp2Exp < ProcessDataUnit
         
         % function that applies a list of processing objects to a list of
         % dispersion objects. The result is a table of processing objects.
-        function self = applyProcessFunction(self,disp,fitpar)
-            selfCell = arrayfun(@(d) applyProcessFunctionToSingleDisp(self,d,fitpar),disp,'Uniform',0);
+        function [self,exp] = applyProcessFunction(self,disp,fitpar)
+            selfCell = arrayfun(@(d) applyProcessFunctionToSingleDisp(self,d,fitpar),disp,'UniformOutput',0);
             self = [selfCell{:,:}];
+            exp = DataUnit;
+            [disp,exp] = link(disp,exp);
         end
         
         % evaluate the function over the range of values provided by the
@@ -163,13 +165,23 @@ classdef Disp2Exp < ProcessDataUnit
         
         
         % TO DO
-        function exp = makeExp(self,disp)
+        function [exp,disp] = makeExp(self,disp)
             % generate the x-axis for the experiments (needs user input)
             
             % perform the fits (if needs be)
-            
-            % make the Exp object
-            exp = [];
+            [disp,exp] = arrayfun(@self.applyProcessFunction,disp,'UniformOutput',0);
+            disp = [disp{:}]; % back to array of objects
+            exp = [exp{:}];
+        end
+    end
+    
+    methods (Sealed)
+        
+        % standard naming convention for the processing function
+        function [exp,disp] = processData(self,disp)
+            [e,d] = arrayfun(@(s)makeExp(s,disp),self,'UniformOutput',0);
+            disp = [d{:}];
+            exp = [e{:}];
         end
         
     end

@@ -79,7 +79,8 @@ classdef ParamObj < handle
 
         
         function other = copy(self)
-            other = ParamObj;
+            fh = str2func(class(self));
+            other = fh();
             other.paramList = self.paramList;
         end
         
@@ -118,49 +119,83 @@ classdef ParamObj < handle
         end %setfield
         
         function self = changeFieldName(self,old,new)
-            self.paramList  = setfield(self.paramList ,new,getfield(self,old));
-            self.paramList = rmfield(self.paramList,old);
+            for i = 1:length(self)
+                self(i).paramList  = setfield(self(i).paramList ,new,getfield(self(i),old));
+                self(i).paramList = rmfield(self(i).paramList,old);
+            end
         end
         
-        function self = merge(self,other)
-            f2 = fieldnames(other.paramList);
+        % merging two parameter files. This is a complex operation and the
+        % function below may be largely optimised.
+        function new = merge(self)
+            f2 = fieldnames(self(2).paramList);
+            new = copy(self(1));
+            
             % place the exeptions here
             
+            % check the consistency of TAU values
+            if sum(strcmp(f2,'TAU')) % if there is a TAU field, then check
+                try
+                    tau = arrayfun(@(s)s.paramList.TAU,self,'UniformOutput',0);
+                    if ~isequal(tau{:})
+                        new.paramList.TAU = tau;
+                        warning('TAU values differ between acquisitions, the results may be meaningless.')
+                    else
+                        new.paramList.TAU = tau{1};
+                    end
+                catch ME
+                    warning('Inconsistent TAU values, the results may be meaningless.')
+                    disp(ME.message)
+                end
+                f2(strcmp(f2,'TAU')) = [];
+            end
+            
+            % start merging
             for indfname = 1:length(f2)
                 fname = f2(indfname);
                 fname = fname{1};
-                val2 = getfield(other,fname);
-                if isfield(self.paramList,fname)
-                    val1 = getfield(self.paramList,fname);
+                val2 = getfield(self(2),fname);
+                if isfield(new.paramList,fname)
+                    val1 = getfield(new.paramList,fname);
                     try
                         if isnumeric(val1) && isnumeric(val2) %#ok<*GFLD>
-                            self.paramList = setfield(self.paramList,fname,[val1,val2]); %#ok<*SFLD>
+                            new.paramList = setfield(new.paramList,fname,[val1,val2]); %#ok<*SFLD>
                         elseif iscell(val1) && iscell(val2)
-                            self.paramList = setfield(self.paramList,fname,[val1,val2]);
+                            new.paramList = setfield(new.paramList,fname,[val1,val2]);
                         else
-                            self.paramList = setfield(self.paramList,fname,{val1,val2});
+                            new.paramList = setfield(new.paramList,fname,{val1,val2});
                         end
                     catch
-                        self.paramList = setfield(self.paramList,fname,val2); % in case of an incompatibility, erase the old value altogether
+                        new.paramList = setfield(new.paramList,fname,val2); % in case of an incompatibility, erase the old value altogether
                     end
                 else
-                    self.paramList = setfield(self.paramList,fname,val2);
+                    new.paramList = setfield(new.paramList,fname,val2);
                 end
-            end    
-            % treat the exceptions here
-            
+            end
+            % treat additional items to merge recursively
+            if length(self)>2
+                new = merge([new, self(3:end)]);
+            end            
         end
                 
         function x = struct2cell(self)
             x = struct2cell(self.paramList);
         end
-%         function x = getZoneAxis(self)
-%         
-%         end
-%         
-%         function x = getDispAxis(self)
-%         
-%         end
+
+        % GETDISPAXIS(SELF) get the magnetic fields
+        % The input can not be an array of object, instead call GETDISPAXIS
+        % with the following syntax:
+        % brlx = arrayfun(@(x) getDispAxis(x), self, 'UniformOutput', 0);
+        function BRLX = getDispAxis(self)
+            % check input
+            if length(self) > 1
+                error('GetDispAxis:InputSize',['It seems that the input is'...
+                    ' an array of object. Use the following syntax instead: '...
+                    'arrayfun(@(x) getDispAxis(x), self, ''UniformOutput'', 0);'])
+            else
+                BRLX = self.paramList.BRLX(:);
+            end
+        end
         
     end
 end

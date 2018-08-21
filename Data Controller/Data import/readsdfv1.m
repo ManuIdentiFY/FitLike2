@@ -185,14 +185,10 @@ fclose(fid);
 % simplify the last structure if possible
 if length(parameter{iAcq}) > 1
     parameter{iAcq} = arrayofstruct2struct(parameter{iAcq});
-end
+end 
 
 % convert the parameter to ParamV1 object then cell array
 parameter = ParamV1(parameter);
-
-% if ~iscell(parameter)
-%     parameter = {parameter};
-% end
 
 end
 

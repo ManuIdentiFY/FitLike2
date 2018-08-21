@@ -40,10 +40,6 @@ classdef ParamV2 < ParamObj
             x = reshape(x,size(x,1),size(x,2));
         end
         
-        function x = getDispAxis(self)
-            x = self.paramList.BRLX;
-        end
-        
     end
     
 end

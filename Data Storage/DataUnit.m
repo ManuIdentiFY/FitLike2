@@ -42,8 +42,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     % other properties
     properties (Access = public, Hidden = true)
         fileID@char = '';       % ID of the file: [dataset sequence filename] 
-        parent = [];            % parent of the object
-        children = [];          % children of the object
+        parent@DataUnit;            % parent of the object
+        children@DataUnit;          % children of the object
     end
     
     methods 
@@ -96,8 +96,51 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             resetmask(obj);
             % generate fileID
             generateID(obj);
-        end %DataUnit       
+        end %DataUnit    
         
+        % assign a processing function to the data object
+        function self = assignProcessingFunction(self,processObj)
+            self = arrayfun(@(s)setfield(s,'processingMethod',processObj),self,'UniformOutput',0); %#ok<*SFLD>
+            self = [self{:}];
+        end
+
+        % link parent and children units
+        function [parentObj,childrenObj] = link(parentObj,childrenObj)
+            for indp = 1:length(parentObj)
+                for indc = 1:length(childrenObj)
+                    % check that the children objects are not already listed in the
+                    % parent object
+                    if ~sum(isequal(childrenObj(indc).parent,parentObj(indp)))
+                        childrenObj(indc).parent(end+1) = parentObj(indp);
+                    end
+                    % check that the children objects are not already listed in the
+                    % parent object
+                    if ~sum(isequal(parentObj(indp).children,childrenObj(indc)))
+                        parentObj(indp).children(end+1) = childrenObj(indc);
+                    end
+                end
+            end         
+        end
+
+        % other removal method to be used in arrays of objects (array =
+        % remove(array,indexes);
+        function self = remove(self,ind)
+            if nargin == 1
+                ind = 1:length(self);
+            end
+            unlink(self(ind));
+            self(ind) = [];
+        end
+        
+        % wrapper function to start the processing of the data unit
+        function [newDataUnit,self] = processData(self)
+            if sum(arrayfun(@(s)isempty(s.processingMethod),self))
+                error('One or more data object are not assigned to a processing function.')
+            end
+            [newDataUnit,self] = arrayfun(@(o)processData(o.processingMethod,o),self,'UniformOutput',0);
+            newDataUnit = [newDataUnit{:}];
+            self = [self{:}];
+        end        
         
         % collect the display names from all the parents in order to get
         % the entire history of the processing chain, for precise legends
@@ -115,6 +158,31 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             fld = fields(self);
             for ind = 1:length(fld)
                 other.(fld{ind}) = self.(fld{ind});
+            end
+        end
+
+        % merging function, merges a list of the same data object type
+        function mergedUnit = merge(selfList)
+            fh = str2func(class(selfList));
+            mergedUnit = fh();
+            mergedUnit.subUnitList = selfList;
+        end
+
+        % reverse operation 
+        function dataList = unMerge(self)
+            dataList = self.subUnitList;
+            self.subUnitList = [];
+        end
+
+        % removal from the parent object list for clean deletion
+        function unlink(self)
+            if length(self)>1
+                arrayfun(@(o)unlink(o),self,'UniformOutput',0)
+            else
+                for i = 1:length([self.parent])
+                    ind = arrayfun(@(o)isequal(o,self),self.parent(i).children);
+                    self.parent(i).children(ind) = [];
+                end
             end
         end
         
@@ -175,9 +243,15 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         end
         
         % function that gathers the data from the sub-units and place them
-        % in the correct field
+        % in the correct field. Always concatenate over the last
+        % significant dimension (dispersions)
         function value = gatherSubData(self,fieldName)
-            value = [self.subUnitList.(fieldName)];
+            sze = size(self.subUnitList(1).(fieldName));
+            n = ndims(self.subUnitList(1).(fieldName));
+            if (n == 2) && (sze(2)==1)
+                n = 1;
+            end                
+            value = cat(n,self.subUnitList.(fieldName));
 %             self.(fieldName) = value;
         end
         
@@ -188,7 +262,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             lengthList = arrayfun(@(o)length(o.(fieldName)),self.subUnitList);
             endList = cumsum(lengthList);
             startList = [1 endList(1:end-1)+1];
-            s = arrayfun(@(o,s,e)setfield(o,fieldName,value(s:e)),self.subUnitList,startList,endList,'UniformOutput',0); %#ok<SFLD>
+            s = arrayfun(@(o,s,e)setfield(o,fieldName,value(s:e)),self.subUnitList,startList,endList,'UniformOutput',0); 
             self.subUnitList = [s{:}];
         end
         
@@ -256,6 +330,24 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 mask = gatherSubData(self,'mask');
             else
                 mask = self.mask;
+            end
+        end
+        
+        function param = get.parameter(self)
+            if ~isempty(self.subUnitList)
+                param = merge([self.subUnitList.parameter]);
+            else
+                param = self.parameter;
+            end
+        end
+        
+        function self = set.parameter(self,value)
+            if ~isempty(self.subUnitList)
+                % TO DO
+                warning('Assignement of parameters not yet implemented for merged objects. See DataUnit.m, function set.parameter.')
+                self.subUnitList(1).parameter = value;
+            else
+                self.parameter = value;
             end
         end
         

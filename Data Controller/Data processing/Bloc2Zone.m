@@ -22,6 +22,10 @@ classdef Bloc2Zone < ProcessDataUnit
             % consistent
             cellx = squeeze(num2cell(bloc.x,1));
             celly = squeeze(num2cell(bloc.y,1));
+            % make sure the data is sorted
+            [cellx,ord] = cellfun(@(c)sort(c),cellx,'UniformOutput',0);
+            celly = cellfun(@(c,o)c(o),celly,ord,'UniformOutput',0);
+            % cast to cell array for cellfun
             cellindex = repmat(num2cell(1:bloc.parameter.paramList.NBLK)',1,size(bloc.y,3));
             if ~isequal(size(cellindex),size(cellx))
                 cellx = cellx';
@@ -49,10 +53,11 @@ classdef Bloc2Zone < ProcessDataUnit
             fh = str2func(class(bloc.parameter));
             params = fh(params);
             params = reshape(params,size(z));
-            params = merge(bloc.parameter,params);
+            params = merge([bloc.parameter,params]);
             
             % generate one zone object for each component provided by the
             % processing algorithm
+            warning('off','MATLAB:mat2cell:TrailingUnityVectorArgRemoved') % avoid spamming the terminal when the data is not multiexponential
             cellz = mat2cell(z,size(z,1),ones(1,size(z,2)),size(z,3));
             celldz = mat2cell(dz,size(dz,1),ones(1,size(dz,2)),size(dz,3));
             cellz = cellfun(@(x) squeeze(x),cellz,'UniformOutput',0);
@@ -63,9 +68,7 @@ classdef Bloc2Zone < ProcessDataUnit
             zone = Zone('x',x,'y',cellz,'dy',celldz,'parameter',params,'legendTag',self.legendTag);
             
             % link the children and parent objects
-            zone = arrayfun(@(x) setfield(x,'parent',bloc),zone,'UniformOutput',0); %#ok<SFLD>
-            zone = [zone{:}];
-            bloc.children = [bloc.children zone];
+            [bloc,zone] = link(bloc,zone);
         end
         
         % TO DO: make some test functions
@@ -80,6 +83,15 @@ classdef Bloc2Zone < ProcessDataUnit
             [zone,bloc] = arrayfun(@self.applyProcessFunction,bloc,'Uniform',0);
             zone = [zone{:}]; % back to array of objects
             bloc = [bloc{:}];
+        end
+    end
+    
+    methods (Sealed)
+        % standard naming convention for the processing function
+        function [zone,bloc] = processData(self,bloc)
+            [z,b] = arrayfun(@(s)makeZone(s,bloc),self,'UniformOutput',0);
+            zone = [z{:}];
+            bloc = [b{:}];
         end
     end
     

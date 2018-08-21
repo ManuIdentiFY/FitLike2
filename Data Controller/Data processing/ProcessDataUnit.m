@@ -1,4 +1,4 @@
-classdef ProcessDataUnit
+classdef ProcessDataUnit < matlab.mixin.Heterogeneous
 % this class defines the structure and general attibute of all the objects
 % that are used to process the data units. It aims at facilitating
 % operations on the processing functions, to streamline the creation of
@@ -33,6 +33,16 @@ classdef ProcessDataUnit
             out = 1;
         end
         
+%         function [newData, dataObj] = processData(self,dataObj)
+%             newData = dataObj;
+%         end
+                
     end
+    
+%     methods (Abstract)
+%         
+%         [newData, dataObj] = processData(self,dataObj)
+%         
+%     end
     
 end

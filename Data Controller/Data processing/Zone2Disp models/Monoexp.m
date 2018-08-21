@@ -23,9 +23,10 @@ classdef Monoexp < Zone2Disp
             
             % Exponential fit
             fitModel = @(c, x)((c(1)-c(2))*exp(-x*c(3))+c(2)); %exponential model
-
+            
             opts = statset('nlinfit');
             opts.Robust = 'on';
+            opts.Display = 'off';
 
             startPoint = [y(1),y(end),1/T1MX]; 
             try
