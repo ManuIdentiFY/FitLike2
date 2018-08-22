@@ -1,7 +1,10 @@
 classdef DispersionFminbnd < Disp2Exp
     
     properties
-        
+        functionName@char = 'Least square fit using fminbnd';      % character string, name of the model, as appearing in the figure legend
+        labelY@char = 'some value';                   % string, labels the Y-axis data in graphs
+        labelX@char = 'some experimental parameter';          % string, labels the X-axis data in graphs
+        legendTag@cell = {'some legend'};
     end
     
     methods

@@ -2,18 +2,13 @@ classdef Monoexp < Zone2Disp
 %MONOEXP Compute the 1-exponential decay model. The function is based on a
 %non-linear regression using iterative least-squares estimation and returned the
 %time constant of the equation y = f(x) with its error as well as the model used.
-    
-    methods
-        function self = Monoexp
-            self@Zone2Disp;
-            
-            self.functionName = 'Monoexponential fit';      % character string, name of the model, as appearing in the figure legend
-            self.labelY = 'R_1 (s^{-1})';                   % string, labels the Y-axis data in graphs
-            self.labelX = 'Evolution field (MHz)';          % string, labels the X-axis data in graphs
-            self.legendTag = {'Monoexponential T1'};
-        end
+    properties
+        functionName@char = 'Monoexponential fit';      % character string, name of the model, as appearing in the figure legend
+        labelY@char = 'R_1 (s^{-1})';                   % string, labels the Y-axis data in graphs
+        labelX@char = 'Evolution field (MHz)';          % string, labels the X-axis data in graphs
+        legendTag@cell = {'Monoexponential T1'};
     end
-
+    
     methods
         % this is where you should put the algorithm that processes the raw
         % data. Multi-component algorithms can store several results along

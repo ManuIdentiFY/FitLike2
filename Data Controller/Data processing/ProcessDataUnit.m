@@ -6,7 +6,7 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous
 %
 % L Broche, University of Aberdeen, 6/7/18
 
-    properties
+    properties (Abstract)
         functionName@char       % character string, name of the model, as appearing in the figure legend
         labelY@char             % string, labels the Y-axis data in graphs
         labelX@char             % string, labels the X-axis data in graphs

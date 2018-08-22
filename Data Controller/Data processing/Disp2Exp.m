@@ -94,21 +94,13 @@ classdef Disp2Exp < ProcessDataUnit
             for indsub = 1:length(self.subModel) % otherwise, pass the other values to the corresponding submodel
                 indStart = indLim + 1;
                 indLim = indLim + length(self.subModel(indsub).parameterName);
-                try
+                if length(self.model.bestValue)>=indLim
                     self.subModel(indsub).bestValue = self.model.bestValue(indStart:indLim);
-                catch
-                    warning('Invalid values for bestValue.')
                 end
-                try
+                if length(self.model.errorBar)>=indLim
                     self.subModel(indsub).errorBar = self.model.errorBar(indStart:indLim);
-                catch
-                    warning('Invalid values for errorBar.')
                 end
-                try
-                    self.subModel(indsub).gof = self.model.gof;
-                catch
-                    warning('Invalid values for gof.')
-                end
+                self.subModel(indsub).gof = self.model.gof;
             end
         end
         
@@ -167,18 +159,23 @@ classdef Disp2Exp < ProcessDataUnit
         
         % function that applies a list of processing objects for one
         % dispersion object 'disp'
-        function self = applyProcessFunctionToSingleDisp(self,disp)
+        function self = applyProcessFunctionToSingleDisp(self,dispersion)
             % keep track of the index of each model, for convenience
             selfindex = num2cell(1:length(self),1);
             % update the main model
             self = wrapSubModelList(self);
 %             self.subModel = arrayfun(@(mod)evaluateStartPoint(mod,disp.x,disp.y),self.subModel);
-            self = gatherBoundaries(self);            
+            self = gatherBoundaries(self);
+            % check that the model is not empty
+            if isempty(self.subModel)
+                disp('Model is empty. Please select a dispersion model.')
+                return
+            end
             % perform the calculations
-            selfCell = arrayfun(@(d2e,i) process(d2e,disp,i),self,selfindex,'UniformOutput',0);
+            selfCell = arrayfun(@(d2e,i) process(d2e,dispersion,i),self,selfindex,'UniformOutput',0);
             self = [selfCell{:,:}];
             % store the results in the dispersion object
-            disp.processingMethod = self;
+            dispersion.processingMethod = self;
         end
         
         % function that applies a list of processing objects to a list of
