@@ -27,7 +27,7 @@ classdef Disp2Exp < ProcessDataUnit
             if isempty(self.subModel)
                 self.subModel = subModel;
             else
-                self.subModel(end+1) = subModel;
+                self.subModel = [self.subModel subModel];
             end
             self = wrapSubModelList(self); % update the function handles
         end
@@ -77,15 +77,38 @@ classdef Disp2Exp < ProcessDataUnit
             self = gatherBoundaries(self);
         end
         
-        % update the sub models with the best fit values found from the ma
+        % function that allows estimating the start point. It should be 
+        % over-riden by the derived classes
+        function self = evaluateStartPoint(self,x,y)
+            % you may add some estimation technique here or let each
+            % component estimate its parameters using their own methods 
+            for i = 1:length(self.subModel)
+                self.subModel = evaluateStartPoint(self.subModel,x,y);
+            end
+        end
+                
+        % update the sub models with the best fit values found from the
+        % main model
         function self = updateSubModel(self)
             indLim = 0;
             for indsub = 1:length(self.subModel) % otherwise, pass the other values to the corresponding submodel
                 indStart = indLim + 1;
                 indLim = indLim + length(self.subModel(indsub).parameterName);
-                self.subModel(indsub).bestValue = self.model.bestValue(indStart:indLim);
-                self.subModel(indsub).errorBar = self.model.errorBar(indStart:indLim);
-                self.subModel(indsub).gof = self.model.gof;
+                try
+                    self.subModel(indsub).bestValue = self.model.bestValue(indStart:indLim);
+                catch
+                    warning('Invalid values for bestValue.')
+                end
+                try
+                    self.subModel(indsub).errorBar = self.model.errorBar(indStart:indLim);
+                catch
+                    warning('Invalid values for errorBar.')
+                end
+                try
+                    self.subModel(indsub).gof = self.model.gof;
+                catch
+                    warning('Invalid values for gof.')
+                end
             end
         end
         
@@ -107,13 +130,29 @@ classdef Disp2Exp < ProcessDataUnit
             self.model.maxValue = [];
             self.model.startPoint = [];
             self.model.isFixed = [];
+            self.model.bestValue = [];
+            self.model.errorBar = [];
             for i = 1:length(self.subModel)
                 self.model.minValue = [self.model.minValue, self.subModel(i).minValue(:)']; %#ok<*AGROW>
                 self.model.maxValue = [self.model.maxValue, self.subModel(i).maxValue(:)'];
                 self.model.startPoint = [self.model.startPoint, self.subModel(i).startPoint(:)'];
                 self.model.isFixed  = [self.model.isFixed,  self.subModel(i).isFixed(:)'];
+                self.model.bestValue  = [self.model.bestValue,  self.subModel(i).bestValue(:)'];
+                self.model.errorBar  = [self.model.errorBar,  self.subModel(i).errorBar(:)'];
             end
         end
+        
+        % redefine the access functions so that any change to the model or
+        % submodel list updates the entire object
+        function self = set.model(self,value)
+            self.model = value;
+            self = updateSubModel(self);
+        end
+        
+%         function self = set.subModel(self,value)
+%             self.subModel = value;
+%             self = wrapSubModelList(self); % update the function handles
+%         end
         
         % sets a function handle into the log space
         % fhlog = log10(fh)
@@ -128,7 +167,7 @@ classdef Disp2Exp < ProcessDataUnit
         
         % function that applies a list of processing objects for one
         % dispersion object 'disp'
-        function self = applyProcessFunctionToSingleDisp(self,disp,fitpar)
+        function self = applyProcessFunctionToSingleDisp(self,disp)
             % keep track of the index of each model, for convenience
             selfindex = num2cell(1:length(self),1);
             % update the main model
@@ -136,17 +175,16 @@ classdef Disp2Exp < ProcessDataUnit
 %             self.subModel = arrayfun(@(mod)evaluateStartPoint(mod,disp.x,disp.y),self.subModel);
             self = gatherBoundaries(self);            
             % perform the calculations
-            selfCell = arrayfun(@(d2e,i) process(d2e,disp,fitpar,i),self,selfindex,'UniformOutput',0);
+            selfCell = arrayfun(@(d2e,i) process(d2e,disp,i),self,selfindex,'UniformOutput',0);
             self = [selfCell{:,:}];
             % store the results in the dispersion object
-            disp.model = self.model;
-            disp.subModel = self.subModel;
+            disp.processingMethod = self;
         end
         
         % function that applies a list of processing objects to a list of
         % dispersion objects. The result is a table of processing objects.
-        function [self,exp] = applyProcessFunction(self,disp,fitpar)
-            selfCell = arrayfun(@(d) applyProcessFunctionToSingleDisp(self,d,fitpar),disp,'UniformOutput',0);
+        function [self,exp] = applyProcessFunction(self,disp)
+            selfCell = arrayfun(@(d) applyProcessFunctionToSingleDisp(self,d),disp,'UniformOutput',0);
             self = [selfCell{:,:}];
             exp = DataUnit;
             [disp,exp] = link(disp,exp);

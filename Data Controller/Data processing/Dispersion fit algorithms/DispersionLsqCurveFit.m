@@ -6,7 +6,7 @@ classdef DispersionLsqCurveFit < Disp2Exp
     
     methods
         
-        function self = process(self,dispersion,fitpar,index)
+        function self = process(self,dispersion,index)
             % apply the model to the object in the log space
             fhlog = makeLogFunction(self);
             
@@ -21,6 +21,7 @@ classdef DispersionLsqCurveFit < Disp2Exp
 %             opts.Robust = 'on'; 
             opts.MaxFunEvals = 1e4;
             opts.TypicalX = self.model.startPoint;
+            opts.Display = 'off';
             
             % perform the fit
             x = dispersion.x(dispersion.mask);

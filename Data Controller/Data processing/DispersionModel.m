@@ -1,14 +1,14 @@
-classdef DispersionModel
+classdef DispersionModel < matlab.mixin.Heterogeneous
     
     properties (Abstract)
-        modelName;        % character string, name of the model, as appearing in the figure legend
-        modelEquation;    % character string, equation that relates the Larmor frequency (Hz) to the parameters to R1 (s^{-1})
-        variableName;     % List of characters, name of the variables appearing in the equation
-        parameterName;    % List of characters, name of the parameters appearing in the equation
-        isFixed;          % List of array of booleans, set to 1 if the corresponding parameter is fixed, 0 if they are to be optimised by the fit. 
-        minValue;         % array of values, minimum values reachable for each parameter, respective to the order of parameterName
-        maxValue;         % array of values, maximum values reachable for each parameter, respective to the order of parameterName
-        startPoint;       % array of values, starting point for each parameter, respective to the order of parameterName 
+        modelName;          % character string, name of the model, as appearing in the figure legend
+        modelEquation;      % character string, equation that relates the Larmor frequency (Hz) to the parameters to R1 (s^{-1})
+        variableName;  % List of characters, name of the variables appearing in the equation
+        parameterName; % List of characters, name of the parameters appearing in the equation
+        isFixed;            % List of array of booleans, set to 1 if the corresponding parameter is fixed, 0 if they are to be optimised by the fit. 
+        minValue;           % array of values, minimum values reachable for each parameter, respective to the order of parameterName
+        maxValue;           % array of values, maximum values reachable for each parameter, respective to the order of parameterName
+        startPoint;         % array of values, starting point for each parameter, respective to the order of parameterName 
     end
     properties
         modelHandle;      % function handle that refers to the equation, or to any other function defined by the user
@@ -18,7 +18,7 @@ classdef DispersionModel
         fitobj;           % fitting object created after the model is used for fitting.
         
         % Additional display models custom defined by the user
-        submodels@DispersionModel;  % Visualisation functions user-defined to simplify the analysis of the fit results (TODO)
+        subModels@DispersionModel;  % Visualisation functions user-defined to simplify the analysis of the fit results (TODO)
     end
     
     methods

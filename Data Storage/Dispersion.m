@@ -6,9 +6,8 @@ classdef Dispersion < DataUnit
     
     properties
         displayName = 'dispersion';
-        model = [];  % DispersionModel object that sums up all the contributions from the sub-model list
-        subModel = [] % cell array of DispersionModel object
-        filter = [] % cell array of Filter object
+%         model = [];  % DispersionModel object that sums up all the contributions from the sub-model list
+%         subModel = [] % cell array of DispersionModel object
         % See DataUnit for other properties
     end
     
@@ -64,38 +63,43 @@ classdef Dispersion < DataUnit
         end %Dispersion
     end
     
-    methods (Access = public)        
-%         % Merge several Dispersion object.
-%         function selfMerged = merge(self)
-%             selfMerged = copy(self(1));
-%             selfMerged.x = [self(1).x(:); self(2).x(:)];
-%             selfMerged.y = [self(1).y(:); self(2).y(:)];
-%             selfMerged.dy = [self(1).dy(:); self(2).dy(:)];
-%             selfMerged.mask = [self(1).mask(:); self(2).mask(:)];
-%             selfMerged.parameter = merge(self(1).parameter,self(2).parameter);
-%             if length(self) > 2
-%                 selfMerged = merge([selfMerged self(3:end)]);
-%             end
-%         end
-        
+    methods       
+       
         % Average several Dispersion object data (X, Y) and create a new
         % Dispersion object
+        % TODO: This should be a disp2disp object 
         function self = average(self)
             
         end %average
         
-        % Export data from Dispersion object in text file.
+        
+        % assign a processing function to the data object (over rides the
+        % metaclass function to add initial parameter estimation when
+        % loading the processing object)
+        function self = assignProcessingFunction(self,processObj)
+            % assign the process object to each dataset
+            self = arrayfun(@(s)setfield(s,'processingMethod',processObj),self,'UniformOutput',0); %#ok<*SFLD>
+            self = [self{:}];
+            % then evaluate the initial parameters if a method is provided
+            self = arrayfun(@(s)evaluateStartPoint(s.processingMethod,s.x,s.y),self,'UniformOutput',0); %#ok<*SFLD>
+            self = [self{:}];
+        end
+        
+        % TODO: Export data from Dispersion object in text file.
         function export(obj,method)
             
         end %export
         
         % plotting function - needs to be improved
-        function plot(obj,varargin)
-            for ind1 = 1:size(obj.y,1)
-                for ind2 = 1:size(obj.y,2)
-                    loglog(obj.x,squeeze(obj.y(ind1,ind2,:)),varargin{:})
-                    hold on
+        function loglog(obj,varargin)
+            for ind = 1:length(obj)
+                if isempty(obj(ind).processingMethod.model.bestValue)
+                    loglog(obj(ind).x,obj(ind).y,varargin{:})
+                else
+                    loglog(obj(ind).x,obj(ind).y,...
+                           obj(ind).x,evaluate(obj(ind).processingMethod.model,obj(ind).x),varargin{:})
                 end
+                hold on
             end
             hold off
         end

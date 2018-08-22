@@ -6,7 +6,7 @@ classdef DispersionFminbnd < Disp2Exp
     
     methods
         
-        function self = process(self,dispersion,fitpar,index)
+        function self = process(self,dispersion,index)
             % apply the model to the object in the log space
             fhlog = makeLogFunction(self);
             
