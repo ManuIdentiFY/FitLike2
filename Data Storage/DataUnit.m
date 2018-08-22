@@ -28,7 +28,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     
     % file processing
     properties (Access = public)
-        processingMethod@ProcessDataUnit = ProcessDataUnit(); % stores the processing objects that are associated with the data unit
+        processingMethod@ProcessDataUnit; % stores the processing objects that are associated with the data unit
     end
     
     % file properties
@@ -193,13 +193,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % Generate fileID field
         function obj = generateID(obj)
             if length(obj) > 1
-                ID = strcat({obj.dataset}, {obj.sequence},...
-                    {obj.filename},repmat({'@'},1,numel({obj.dataset})),...
-                    {obj.displayName});
+                sep = repmat({'@'},1,numel({obj.dataset}));
+                ID = strcat({obj.dataset},sep,{obj.sequence},sep,...
+                    {obj.filename},sep,{obj.displayName});
                 [obj.fileID] = ID{:};            
             else
-                obj.fileID = [obj.dataset, obj.sequence,...
-                    obj.filename,'@', obj.displayName];
+                obj.fileID = [obj.dataset,'@',obj.sequence,'@',...
+                    obj.filename,'@',obj.displayName];
             end
         end %generateID
         
