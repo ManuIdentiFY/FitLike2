@@ -99,58 +99,7 @@ classdef FileManager < handle
         function this = removeData(this)
                % just delete the selected nodes and their children
                delete(this.gui.tree.CheckedNodes);
-        end %removeData
-        
-        % Get the fileID list of the selected nodes
-        function fileID = Checkbox2fileID(this)
-            % get the list of the selected nodes
-            hSelected = this.gui.tree.CheckedNodes;  
-            % initialise fileID
-            fileID = [];
-            % loop over the selected nodes
-            for k = 1:numel(hSelected)
-                % get the nodeID by looking at its ancestor
-                hAncestor = hSelected(k);
-                nodeID = hAncestor.Name;
-                while ~isempty(hAncestor.Parent.Parent)
-                    hAncestor = hAncestor.Parent;
-                    nodeID = [hAncestor.Name,'@',nodeID]; %#ok<AGROW>
-                end
-                % find all the descendant
-                currentID = nodeID;
-                hDescendant = hSelected(k).Children(1);
-                stopFlag = 1;
-                idx = 1;
-                while stopFlag
-                    % go to the object at the same tree level
-                    hDescendant = hDescendant.Parent.Children(idx);
-                    % move to the next level until reaching relaxObj
-                    while ~isempty(hDescendant.Children)                      
-                        currentID = [currentID,'@',hDescendant.Name]; %#ok<AGROW>
-                        hDescendant = hDescendant.Children(1);
-                    end
-                    % store the relaxObj found
-                    fileID = [fileID, {[currentID,'@',hDescendant.Name]}]; %#ok<AGROW>
-                    % find the index of the current obj
-                    idx = find(hDescendant.Parent.Children == hDescendant);
-                    % check if other branch at the same level
-                    while numel(hDescendant.Parent.Children) == idx && stopFlag
-                        % no more object at this level, go back
-                        hDescendant = hDescendant.Parent;
-                        % reset the index
-                        idx = find(hDescendant.Parent.Children == hDescendant);
-                        % remove the current level name
-                        currentID = currentID(1:end-numel(hDescendant.Name)-1);
-                        % check if we reach the end of the selection
-                        if hDescendant == hSelected(k) 
-                            stopFlag = 0;
-                        end
-                    end
-                    % increment to reach the nex branch
-                    idx = idx + 1;
-                end % while
-            end %for
-        end %Checkbox2fileID
+        end %removeData       
         
         % check the nodes that match fileID 
         function this = fileID2Checkbox(this, fileID)
@@ -175,7 +124,76 @@ classdef FileManager < handle
     end
     
     % Methods to help tree construction/modification
-    methods (Access = public, Static = true)
+    methods (Access = public, Static = true)       
+        % Get the fileID list of the selected nodes
+        function fileID = Checkbox2fileID(tree)
+            % check input
+            if isempty(tree)
+                fileID = [];
+                return
+            end
+            % get the list of the selected nodes
+            hSelected = tree.CheckedNodes;  
+            % initialise fileID
+            fileID = [];
+            % loop over the selected nodes
+            for k = 1:numel(hSelected)                                
+                % check if the selected node is the root
+                if strcmp(hSelected(k).Name,'Root')
+                    hSelected(k) = hSelected(k).Children(1);
+                end
+                
+                % get the nodeID by looking at its ancestor
+                hAncestor = hSelected(k);
+                nodeID = hAncestor.Name;
+                
+                while ~isempty(hAncestor.Parent.Parent)
+                    hAncestor = hAncestor.Parent;
+                    nodeID = [hAncestor.Name,'@',nodeID]; %#ok<AGROW>
+                end
+                % check if descendant are available
+                if isempty(hSelected(k).Children)
+                    fileID = [fileID, {nodeID}]; %#ok<AGROW>
+                    continue
+                else
+                    % keep the nodeID
+                    currentID = nodeID;
+                    % start at the first descendant
+                    hDescendant = hSelected(k).Children(1);
+                    stopFlag = 1;
+                    idx = 1;
+                    while stopFlag
+                        % go to the object at the same tree level
+                        hDescendant = hDescendant.Parent.Children(idx);
+                        % move to the next level until reaching relaxObj
+                        while ~isempty(hDescendant.Children)                      
+                            currentID = [currentID,'@',hDescendant.Name]; %#ok<AGROW>
+                            hDescendant = hDescendant.Children(1);
+                        end
+                        % store the relaxObj found
+                        fileID = [fileID, {[currentID,'@',hDescendant.Name]}]; %#ok<AGROW>
+                        % find the index of the current obj
+                        idx = find(hDescendant.Parent.Children == hDescendant);
+                        % check if other branch at the same level
+                        while numel(hDescendant.Parent.Children) == idx && stopFlag
+                            % no more object at this level, go back
+                            hDescendant = hDescendant.Parent;
+                            % reset the index
+                            idx = find(hDescendant.Parent.Children == hDescendant);
+                            % remove the current level name
+                            currentID = currentID(1:end-numel(hDescendant.Name)-1);
+                            % check if we reach the end of the selection
+                            if hDescendant == hSelected(k) 
+                                stopFlag = 0;
+                            end
+                        end
+                        % increment to reach the nex branch
+                        idx = idx + 1;
+                    end % while
+                end
+            end %for
+        end %Checkbox2fileID
+        
         % this function determines if the dragged target is valid or not
         % and drop the object.
         % *User can drag dataset, sequence and file
