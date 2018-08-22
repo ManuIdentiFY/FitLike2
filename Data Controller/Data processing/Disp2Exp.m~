@@ -85,6 +85,7 @@ classdef Disp2Exp < ProcessDataUnit
             
             % collect the boundaries corresponding to each sub-model
             self = gatherBoundaries(self);
+            
         end
         
         % function that allows estimating the start point. It should be 
@@ -94,7 +95,7 @@ classdef Disp2Exp < ProcessDataUnit
             % component estimate its parameters using their own methods 
             for indProc = 1:length(self)
                 for i = 1:length(self(indProc).subModel)
-                    self(indProc).subModel = evaluateStartPoint(self(indProc).subModel,x,y);
+                    self(indProc).subModel(i) = evaluateStartPoint(self(indProc).subModel(i),x,y);
                 end
             end
         end
@@ -210,17 +211,51 @@ classdef Disp2Exp < ProcessDataUnit
             y = evaluateRange(self.model,x1,x2,n);
         end
         
+        % make a list of all the sub-models
+        function list = makeModelList(self)
+            if length(self)>1
+                list = arrayfun(@(o)makeModelList(o),self,'UniformOutput',0);
+            else
+                list = arrayfun(@(i)class(self.subModel(i)),1:length(self.subModel),'UniformOutput',0);
+            end
+        end
         
         % TO DO
         % generate a new object from a list of already processed dispersion
-        % objects
-        function [exp,disp] = makeExp(self,disp)
-            % generate the x-axis for the experiments (needs user input)
+        % objects. Makes an experiment from all the dispersion objects that
+        % have been processed with an object of the same class as 'self'
+        % (which may be an array).
+        % the user may also provide a list of parameters to pre-fill the
+        % experiment object ('x',x_array,'xlabel','some string',...)
+        % TO DO: provide the type of experiment object so that one can
+        % customise the behaviour of the output depending on the experiment
+        % TO DO: cluster the data by label
+        function [exp,disp] = makeExp(self,disp,varargin)
+            % treat the case when the processing object is a list
+            if length(self)>1
+                [exp,disp] = arrayfun(@(o)makeExp(o,disp),self);
+                return
+            end
+            % now we only have one processing object, and a list of data
+            % units
             
-            % perform the fits (if needs be)
-            [procfun,exp] = arrayfun(@self.applyProcessFunction,disp,'UniformOutput',0);
-            procfun = [procfun{:}]; % back to array of objects
-            exp = [exp{:}];
+            % make one experiment object per parameter in the fit object
+            % (do not consider the fixed parameters)
+            [~,parameterName] = gatherParameterNames(self);
+            exp(1:length(parameterName)) = Experiment(varargin{:});
+            
+            % finds all the datasets using the same fitting algorithm
+            modelClass = makeModelList(self);
+            matchIndex = arrayfun(@(o)cellfun(@(c)isequal(c,modelClass),makeModelList(o.processingMethod),'UniformOutput' ,0),disp,'UniformOutput',0);
+            % now collect the data and store it in the experiment object
+            for indDisp = 1:length(matchIndex)
+                for indMod = 1:length(disp(indDisp).subModel)
+                    for indExp = 1:length(parameterName)
+                        exp(indExp).y = disp(indDis
+                    end
+                end
+            end
+            
         end
     end
     
@@ -244,6 +279,7 @@ classdef Disp2Exp < ProcessDataUnit
             self = [selfCell{:,:}];
             % store the results in the dispersion object
             dispersion.processingMethod = self;
+            exp = [];
         end
         
     end
