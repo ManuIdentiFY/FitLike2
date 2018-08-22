@@ -9,6 +9,10 @@ classdef DispersionLsqCurveFit < Disp2Exp
     
     methods
         
+        function self = DispersionLsqCurveFit(varargin)
+            self@Disp2Exp(varargin{:});
+        end
+        
         function self = process(self,dispersion,index)
             % apply the model to the object in the log space
             fhlog = makeLogFunction(self);
