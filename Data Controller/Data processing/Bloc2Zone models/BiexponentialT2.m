@@ -1,12 +1,15 @@
 classdef BiexponentialT2 < Bloc2Zone
-        
+    
+   properties
+        functionName@char = 'Biexponential T2 decay';     % character string, name of the model, as appearing in the figure legend
+        labelY@char = 'Average magnitude (A.U.)';       % string, labels the Y-axis data in graphs
+        labelX@char = 'Evolution time (s)';             % string, labels the X-axis data in graphs
+        legendTag@cell = {'Long T2 component','Short T2 component'};         % tag appearing in the legend of data derived from this object
+   end
+    
     methods
         function self = BiexponentialT2
             self@Bloc2Zone;   
-            self.functionName = 'Biexponential T2 decay';     % character string, name of the model, as appearing in the figure legend
-            self.labelY = 'Average magnitude (A.U.)';       % string, labels the Y-axis data in graphs
-            self.labelX = 'Evolution time (s)';             % string, labels the X-axis data in graphs
-            self.legendTag = {'Long T2 component','Short T2 component'}; % strings associated with the legend in the display graph
         end
 
         % this is where you should put the algorithm that processes the raw
