@@ -28,7 +28,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     
     % file processing
     properties (Access = public)
-        processingMethod@ProcessDataUnit = ProcessDataUnit(); % stores the processing objects that are associated with the data unit
+        processingMethod@ProcessDataUnit; % stores the processing objects that are associated with the data unit
     end
     
     % file properties

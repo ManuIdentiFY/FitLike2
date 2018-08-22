@@ -15,8 +15,12 @@ classdef Disp2Exp < ProcessDataUnit
     methods
         
         function self = Disp2Exp(varargin)
-            self@ProcessDataUnit(varargin{:});
+            self@ProcessDataUnit;
+            % TODO: better parsing. Assuming it is the list of sub-models
             self.model = DefaultDispersionModel;
+            if ~isempty(varargin)
+                self = addModel(self,varargin{1});
+            end
         end
         
         % add a DispersionModel object to the list of contributions

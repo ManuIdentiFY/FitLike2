@@ -93,11 +93,13 @@ classdef Dispersion < DataUnit
         % plotting function - needs to be improved
         function loglog(obj,varargin)
             for ind = 1:length(obj)
+                [x,ord] = sort(obj(ind).x);
+                y = obj(ind).y(ord);
                 if isempty(obj(ind).processingMethod.model.bestValue)
-                    loglog(obj(ind).x,obj(ind).y,varargin{:})
+                    loglog(x,y,varargin{:})
                 else
-                    loglog(obj(ind).x,obj(ind).y,...
-                           obj(ind).x,evaluate(obj(ind).processingMethod.model,obj(ind).x),varargin{:})
+                    loglog(x,y,...
+                           x,evaluate(obj(ind).processingMethod.model,x),varargin{:})
                 end
                 hold on
             end

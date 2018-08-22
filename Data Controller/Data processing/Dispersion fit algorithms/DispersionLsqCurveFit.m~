@@ -9,9 +9,9 @@ classdef DispersionLsqCurveFit < Disp2Exp
     
     methods
         
-        function self = DispersionLsqCurveFit(varargin)
-            self@Disp2Exp(varargin{:});
-        end
+        function function self = Disp2Exp(varargin)
+            self@ProcessDataUnit
+            end
         
         function self = process(self,dispersion,index)
             % apply the model to the object in the log space
