@@ -17,8 +17,9 @@ classdef DispersionModel < matlab.mixin.Heterogeneous
         gof;              % structure that contains all the info required about the goodness of fit
         fitobj;           % fitting object created after the model is used for fitting.
         
-        % Additional display models custom defined by the user
-        subModels@DispersionModel;  % Visualisation functions user-defined to simplify the analysis of the fit results (TODO)
+        % Additional display models custom-defined by the user. It must use
+        % the same parameters and variable names as the main function.
+        visualisationFunction@cell;  % Visualisation functions user-defined to simplify the analysis of the fit results
     end
     
     methods
@@ -141,6 +142,36 @@ classdef DispersionModel < matlab.mixin.Heterogeneous
         function y = evaluateRange(self,x1,x2,n)
             x = logspace(log10(x1),log10(x2),n);
             y = evaluate(self,x);
+        end
+        
+        % evaluation of the visualisation components
+        function y = evaluateVisualisationFunction(self,x)
+            for ind = 1:length(self.visualisationFunction)
+                % collect all names
+                name = self.parameterName{1};
+                for indn = 2:length(self.parameterName)
+                    name = [name ',' self.parameterName{indn}];
+                end
+                for indv = 1:length(self.variableName)
+                    name = [name ',' self.variableName{indv}];
+                end
+                % check that the equation is valid
+                eq = ['@(' name ')' self.visualisationFunction{ind}];
+                opList = {'^','*','/'};
+                for indParam = 1:length(opList)
+                    op = opList{indParam};
+                    pos = regexp(eq,['[^.]\' op]); % find when the operators are not preceded by a dot
+                    % make the replacements
+                    for indsub = length(pos):-1:1
+                        eq = [eq(1:pos(indsub)) '.' eq(pos(indsub)+1:end)];
+                    end
+                end
+                % generate a function handle
+                fh = str2func(eq);
+                % evaluate the function
+                parval = mat2cell(self.bestValue,1,[ones(size(self.bestValue))]); %#ok<MMTC>
+                y(1:length(x),ind) = fh(parval{:},x);
+            end
         end
         
     end

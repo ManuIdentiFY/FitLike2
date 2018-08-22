@@ -18,12 +18,15 @@ properties
     maxValue =      [100,      0,     0,     1e7];                  % array of values, maximum values reachable for each parameter, respective to the order of parameterName
     startPoint =    [18,    -0.05, -0.32,    2.5e6];                % array of values, starting point for each parameter, respective to the order of parameterName 
     isFixed =       [0        0       0       0 ];
+    
 end
     
  methods
     function model = PowerLawTwoSegment
-
-    end
+        % additional property used to visualise the individual components
+        model.visualisationFunction = {'dl*f.^v1', ...
+                                       '(dl*f_trans1^(v1-v2))*f^v2'};
+    end 
 
     function self = evaluateStartPoint(self,x,y)
 
