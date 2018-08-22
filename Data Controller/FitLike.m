@@ -232,7 +232,7 @@ classdef FitLike < handle
         % Remove funcion: allow to remove files, sequence, dataset
         function this = remove(this)
             % check the selected files in FileManager
-            fileID = Checkbox2fileID(this.FileManager);
+            fileID = FileManager.Checkbox2fileID(this.FileManager.gui.tree); %#ok<PROP>
             % remove files in RelaxData 
             [~,idx,~] = intersect({this.RelaxData.fileID},fileID);
             this.RelaxData(idx) = [];
@@ -447,7 +447,102 @@ classdef FitLike < handle
     end
     %% ------------------ ProcessingManager Callback ------------------- %%
     methods (Access = public)
-        
+        % Run process
+        function this = runProcess(this)
+            % check if data are selected
+            fileID = FileManager.Checkbox2fileID(this.ProcessingManager.gui.tree.UserData); %#ok<PROP>
+            
+            if isempty(fileID)
+                warndlg('You need to select file to run process!','Warning')
+                return
+            end
+            
+            % check process mode
+            if this.ProcessingManager.gui.BatchRadioButton.Value
+                % get the selected tab
+                tab = this.ProcessingManager.gui.tab.SelectedTab.Children;
+                % check the selected pipeline
+                [tf, inputFormat] = ProcessTab.checkProcess(tab);
+                % check output
+                if tf
+                    % get the process array
+                    ProcessArray = flip(tab.ProcessArray);
+                    % loop over the file
+                    for k = 1:numel(fileID)
+                        % get fileID
+                        ifileID = split(fileID{k},'@');
+                        % check for correspondance
+                        tf = strcmp(ifileID{1},{this.RelaxData.dataset}) &... 
+                            strcmp(ifileID{2},{this.RelaxData.sequence}) &... 
+                            strcmp(ifileID{3},{this.RelaxData.filename});
+                        if ~all(tf == 0)
+                            % loop over the process
+                            for j = 1:numel(ProcessArray) 
+                                % assign the pipeline
+                                assignProcessingFunction(this.RelaxData(tf),ProcessArray(j));
+                                % apply the pipeline
+                                newData = processData(this.RelaxData(tf));
+                                % re-parenting
+                                [this.RelaxData(tf),~] = link(newData,this.RelaxData(tf));
+                            end
+                        end
+                    end %for
+                end
+            else
+                
+            end
+        end %runProcess
+    end
+    
+    methods (Access = public, Static = true)
+        % Display a window where the user can select a process
+        function [name, intype, outtype, parameter, processObj] = processdlg()
+            % define subclass to list
+            PROCESS_CLASS = {'Bloc2Zone','Zone2Disp'}; %name of the class to list
+            process_tb = [];
+            % loop 
+            for k = 1:numel(PROCESS_CLASS)
+                % get subclass
+                tb = getSubclasses(PROCESS_CLASS{k}, pwd);
+                tb = tb(2:end,:); % remove superclass
+                % add input/output 
+                switch PROCESS_CLASS{k}
+                    case 'Bloc2Zone'
+                        in = 'bloc';
+                        out = 'zone';
+                    case 'Zone2Disp'
+                        in = 'zone';
+                        out = 'dispersion';
+                end
+                
+                tb.from = repmat({in},height(tb),1);
+                tb.to = repmat({out},height(tb),1);
+                % add displayName
+                mc = cellfun(@meta.class.fromName, tb.names, 'Uniform',0); %get class data
+                tf = strcmp({mc{1}.PropertyList.Name}, 'functionName'); %be sure about the index of the name
+                tb.displayName = cellfun(@(x) x.PropertyList(tf).DefaultValue, mc, 'Uniform', 0);
+                % concatenate
+                process_tb = [process_tb; tb];
+            end
+            
+            % create listdlg to select process
+            [indx,~] = listdlg('PromptString','Select a process:',...
+                           'SelectionMode','single',...
+                           'ListString',process_tb.displayName);
+                       
+            % if process was selected, get the corresponding information
+            if ~isempty(indx)
+                name = process_tb.displayName{indx};
+                intype = process_tb.from{indx};
+                outtype = process_tb.to{indx};
+                parameter = []; %TO DO
+                % create the process object using its name
+                funcProcess = str2func(process_tb.names{indx});
+                processObj = funcProcess();
+            else
+                name = [];  intype = []; outtype = []; parameter = []; processObj = [];
+            end
+        end %inputProcess       
     end
     %% --------------------- ModelManager Callback --------------------- %%
      methods (Access = public)
