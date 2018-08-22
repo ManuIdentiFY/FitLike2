@@ -137,9 +137,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             if sum(arrayfun(@(s)isempty(s.processingMethod),self))
                 error('One or more data object are not assigned to a processing function.')
             end
-            [newDataUnit,self] = arrayfun(@(o)processData(o.processingMethod,o),self,'UniformOutput',0);
+            newDataUnit = arrayfun(@(o)processData(o.processingMethod,o),self,'UniformOutput',0);
             newDataUnit = [newDataUnit{:}];
-            self = [self{:}];
         end        
         
         % collect the display names from all the parents in order to get

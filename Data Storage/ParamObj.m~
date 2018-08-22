@@ -139,7 +139,7 @@ classdef ParamObj < handle
                     tau = arrayfun(@(s)s.paramList.TAU,self,'UniformOutput',0);
                     if ~isequal(tau{:})
                         new.paramList.TAU = tau;
-%                         warning('TAU values differ between acquisitions, the results may be meaningless.')
+                        warning('TAU values differ between acquisitions, the results may be meaningless.')
                     else
                         new.paramList.TAU = tau{1};
                     end
