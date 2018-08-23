@@ -13,7 +13,9 @@ classdef FileManager < handle
         DatasetIcon = fullfile(matlabroot,'toolbox','matlab','icons','foldericon.gif');
         SequenceIcon = fullfile(matlabroot,'toolbox','matlab','icons','greencircleicon.gif');
         FileIcon = fullfile(matlabroot,'toolbox','matlab','icons','HDF_filenew.gif');
-        RelaxObjIcon = fullfile(matlabroot,'toolbox','matlab','icons','HDF_object02.gif');
+        RelaxObjIcon = {fullfile(matlabroot,'toolbox','matlab','icons','HDF_object02.gif'),...
+                        fullfile(matlabroot,'toolbox','matlab','icons','HDF_object01.gif'),...
+                        fullfile(matlabroot,'toolbox','matlab','icons','unknownicon.gif')};
     end
     
     methods (Access = public)
@@ -56,19 +58,23 @@ classdef FileManager < handle
     end
     
     methods (Access = public)
-        % Add new data to the tree
-        function this = addData(this, dataset, sequence, filename, displayName)
+        % Add new data to the tree. Type is 'bloc', 'zone', 'dispersion'.
+        function this = addData(this, type, dataset, sequence, filename, displayName)
             % check input type
-            if ischar(dataset) && ischar(sequence) && ischar(filename)
+            if ischar(dataset) && ischar(sequence) && ischar(filename) && ischar(type)
                 % convert to cell
+                type = {type};
                 dataset = {dataset};
                 sequence = {sequence};
                 filename = {filename};
                 displayName = {displayName};
-            elseif iscell(dataset) && iscell(sequence) && iscell(filename)
+            elseif iscell(dataset) && iscell(sequence) && iscell(filename) &&...
+                    iscell(type) && iscell(displayName)
                 % check if size is consistent
                 if ~isequal(length(dataset),length(sequence)) ||...
-                        ~isequal(length(dataset),length(filename))
+                        ~isequal(length(dataset),length(filename)) ||...
+                        ~isequal(length(filename),length(displayName)) ||...
+                        ~isequal(length(type),length(displayName))
                     error('FileManager:addData','Input size is not consistent')
                 end
             else
@@ -90,37 +96,60 @@ classdef FileManager < handle
                 hFile = FileManager.checkNodeExistence(hSequence,...
                     filename{k}, this.FileIcon, 'file');
                 % + relaxobj
+                switch lower(type{k}) % case-insensitive
+                    case 'bloc'
+                        idx = 1;
+                    case 'zone'
+                        idx = 2;
+                    case 'dispersion'
+                        idx = 3;
+                end
                 FileManager.checkNodeExistence(hFile, displayName{k},...
-                    this.RelaxObjIcon, 'relaxObj');
+                    this.RelaxObjIcon{idx}, 'relaxObj');
             end
         end %addData
         
-        % Remove data from the tree
-        function this = removeData(this)
-               % just delete the selected nodes and their children
-               delete(this.gui.tree.CheckedNodes);
+        % Remove data from the tree. 
+        function this = removeData(this, varargin)
+            % just delete the selected nodes and their children
+            delete(this.gui.tree.CheckedNodes);
         end %removeData       
         
-        % check the nodes that match fileID 
-        function this = fileID2Checkbox(this, fileID)
-            % check input 
-            if size(fileID,2) ~= 1
-                fileID = fileID';
+        % check or delete the nodes corresponding to fileID. fileID can be
+        % partial.
+        % mode = {'check','delete'};
+        function this = fileID2tree(this, fileID, mode, varargin)
+            % format input
+            if iscell(fileID)
+                if size(fileID,2) ~= 1
+                    fileID = fileID';
+                end
+                % split the fileID 
+                str = split(fileID,'@');
+                str = str';
+            else
+                % split the fileID
+                str = split(fileID,'@');
             end
-            % split the fileID 
-            str = split(fileID,'@');
+    
             % get tree root
             hRoot = this.gui.tree.Root;
             % loop over the fileID
-            for k = 1:numel(dataset)
+            for iFile = 1:size(str,2)
                 hNodes = hRoot;
-                for iLevel = 1:size(str,2)
-                    tf = strcmp(str{k,iLevel},{hNodes.Children.Name});
+                for iLevel = 1:size(str,1)
+                    tf = strcmp(str{iLevel, iFile},{hNodes.Children.Name});
                     hNodes = hNodes.Children(tf);
                 end
-                hNodes.Checked = 1;
+                % check the mode to apply
+                switch mode
+                    case 'check'
+                        hNodes.Checked = 1;
+                    case 'delete'
+                        delete(hNodes);                        
+                end
             end
-        end %fileID2Checkbox
+        end %fileID2tree
     end
     
     % Methods to help tree construction/modification
