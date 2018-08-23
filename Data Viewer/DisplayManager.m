@@ -23,8 +23,8 @@ classdef DisplayManager < handle
             this.gui.tab = uitabgroup(this.gui.fig,'Position',[0 0 1 1]);
             
             % Add an empty tab and one with the mention "+"
-            EmptyTab(FitLike, uitab(this.gui.tab));
-            EmptyPlusTab(FitLike, uitab(this.gui.tab));            
+            EmptyTab(uitab(this.gui.tab));
+            EmptyPlusTab(uitab(this.gui.tab));            
             
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
@@ -55,7 +55,7 @@ classdef DisplayManager < handle
         % Add tab to DisplayManager
         function addTab(this)
             % add an empty tab: Just to try different gui objects
-            EmptyTab(this.FitLike, uitab(this.gui.tab));
+            EmptyTab(uitab(this.gui.tab));
             % push this new tab to the position just before '+' tab
             uistack(this.gui.tab.Children(end),'up');
             % set the selection to this tab

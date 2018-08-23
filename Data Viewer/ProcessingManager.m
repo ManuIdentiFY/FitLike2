@@ -20,8 +20,8 @@ classdef ProcessingManager < handle
             this.gui = guihandles(gui);     
             
             % Set the first tab and the '+' tab
-            ProcessTab(FitLike, uitab(this.gui.tab),'Pipeline1');
-            EmptyPlusTab(FitLike, uitab(this.gui.tab));
+            ProcessTab(uitab(this.gui.tab),'Pipeline1');
+            EmptyPlusTab(uitab(this.gui.tab));
             
             % Set the UI ContextMenu
             setUIMenu(this);
@@ -110,7 +110,7 @@ classdef ProcessingManager < handle
             % count tab
             nTab = numel(this.gui.tab.Children);
             % add new tab
-            ProcessTab(this.FitLike, uitab(this.gui.tab),['Pipeline',num2str(nTab)]);
+            ProcessTab(uitab(this.gui.tab),['Pipeline',num2str(nTab)]);
             % push this tab
             uistack(this.gui.tab.Children(end),'up');
             % set the selection to this tab
