@@ -4,7 +4,6 @@ classdef ProcessTab < uix.Container & handle
     %
     
     properties (Access = public)
-        FitLike % handle to Presenter
         hbox % main horizontal box
         vbox % array of vertical box
         TabTitle % tab title        
@@ -19,11 +18,10 @@ classdef ProcessTab < uix.Container & handle
     
     methods
         % Constructor
-        function this = ProcessTab(FitLike, tab, TabTitle)
+        function this = ProcessTab(tab, TabTitle)
             % Call superclass constructor
             this@uix.Container();
-            % set Presenter & Title
-            this.FitLike = FitLike;
+            % set Title
             this.TabTitle = TabTitle;
             % Create the grid in the parent tab
             grid = uix.Grid('Parent',this,'Spacing', 2); 
@@ -123,7 +121,7 @@ classdef ProcessTab < uix.Container & handle
        % Add new process
        function this = addProcess(this)
            % call the process selector
-           [name, intype, outtype, parameter, processObj] = this.FitLike.processdlg();
+           [name, intype, outtype, parameter, processObj] = ProcessTab.processdlg();
            % check if empty and add the process
            if ~isempty(name)
                 % add new line
@@ -185,6 +183,55 @@ classdef ProcessTab < uix.Container & handle
     end
     
     methods (Static = true, Access = public)
+        % Display a window where the user can select a process
+        function [name, intype, outtype, parameter, processObj] = processdlg()
+            % define subclass to list
+            PROCESS_CLASS = {'Bloc2Zone','Zone2Disp'}; %name of the class to list
+            process_tb = [];
+            % loop 
+            for k = 1:numel(PROCESS_CLASS)
+                % get subclass
+                tb = getSubclasses(PROCESS_CLASS{k}, pwd);
+                tb = tb(2:end,:); % remove superclass
+                % add input/output 
+                switch PROCESS_CLASS{k}
+                    case 'Bloc2Zone'
+                        in = 'bloc';
+                        out = 'zone';
+                    case 'Zone2Disp'
+                        in = 'zone';
+                        out = 'dispersion';
+                end
+                
+                tb.from = repmat({in},height(tb),1);
+                tb.to = repmat({out},height(tb),1);
+                % add displayName
+                mc = cellfun(@meta.class.fromName, tb.names, 'Uniform',0); %get class data
+                tf = strcmp({mc{1}.PropertyList.Name}, 'functionName'); %be sure about the index of the name
+                tb.displayName = cellfun(@(x) x.PropertyList(tf).DefaultValue, mc, 'Uniform', 0);
+                % concatenate
+                process_tb = [process_tb; tb];
+            end
+            
+            % create listdlg to select process
+            [indx,~] = listdlg('PromptString','Select a process:',...
+                           'SelectionMode','single',...
+                           'ListString',process_tb.displayName);
+                       
+            % if process was selected, get the corresponding information
+            if ~isempty(indx)
+                name = process_tb.displayName{indx};
+                intype = process_tb.from{indx};
+                outtype = process_tb.to{indx};
+                parameter = []; %TO DO
+                % create the process object using its name
+                funcProcess = str2func(process_tb.names{indx});
+                processObj = funcProcess();
+            else
+                name = [];  intype = []; outtype = []; parameter = []; processObj = [];
+            end
+        end %processdlg()     
+        
        % Check process: is the pipeline consistent?
        function tf = checkProcess(this)
            % check number of process

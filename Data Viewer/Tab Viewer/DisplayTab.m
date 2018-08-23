@@ -7,7 +7,6 @@ classdef DisplayTab < uix.Container & handle
     
     % list of the components
     properties (Access = public)
-        FitLike % handle to Presenter
         grid % handle to grid
         box % handle to box
         axe % handle to the axis
@@ -15,7 +14,7 @@ classdef DisplayTab < uix.Container & handle
         
     methods (Access = public)
         % Constructor
-        function this = DisplayTab(FitLike, tab)
+        function this = DisplayTab(tab)
             % Call superclass constructor
             this@uix.Container();
             % Create the container in the parent tab
@@ -29,8 +28,6 @@ classdef DisplayTab < uix.Container & handle
                         'NextPlot','Add');
             % set the Parent 
             this.Parent = tab;
-            % set the Presenter
-            this.FitLike = FitLike;
         end %DisplayTab
     end
     
