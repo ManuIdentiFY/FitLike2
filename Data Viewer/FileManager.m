@@ -37,6 +37,7 @@ classdef FileManager < handle
                 'Editable',true, 'DndEnabled',true,...
                 'NodeDraggedCallback', @(s,e) FileManager.DragDrop_Callback(this, s,e),...
                 'NodeDroppedCallback', @(s,e) FileManager.DragDrop_Callback(this, s,e),...
+                'MouseClickedCallback', @(s,e) this.FitLike.selectFile(s, e),...
                 'Tag','tree','RootVisible',false);           
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
@@ -155,25 +156,23 @@ classdef FileManager < handle
     % Methods to help tree construction/modification
     methods (Access = public, Static = true)       
         % Get the fileID list of the selected nodes
-        function fileID = Checkbox2fileID(tree)
+        function fileID = Checkbox2fileID(nodes)
             % check input
-            if isempty(tree)
+            if isempty(nodes)
                 fileID = [];
                 return
             end
-            % get the list of the selected nodes
-            hSelected = tree.CheckedNodes;  
             % initialise fileID
             fileID = [];
             % loop over the selected nodes
-            for k = 1:numel(hSelected)                                
+            for k = 1:numel(nodes)                                
                 % check if the selected node is the root
-                if strcmp(hSelected(k).Name,'Root')
-                    hSelected(k) = hSelected(k).Children(1);
+                if strcmp(nodes(k).Name,'Root')
+                    nodes(k) = nodes(k).Children(1);
                 end
                 
                 % get the nodeID by looking at its ancestor
-                hAncestor = hSelected(k);
+                hAncestor = nodes(k);
                 nodeID = hAncestor.Name;
                 
                 while ~isempty(hAncestor.Parent.Parent)
@@ -181,14 +180,14 @@ classdef FileManager < handle
                     nodeID = [hAncestor.Name,'@',nodeID]; %#ok<AGROW>
                 end
                 % check if descendant are available
-                if isempty(hSelected(k).Children)
+                if isempty(nodes(k).Children)
                     fileID = [fileID, {nodeID}]; %#ok<AGROW>
                     continue
                 else
                     % keep the nodeID
                     currentID = nodeID;
                     % start at the first descendant
-                    hDescendant = hSelected(k).Children(1);
+                    hDescendant = nodes(k).Children(1);
                     stopFlag = 1;
                     idx = 1;
                     while stopFlag
@@ -212,7 +211,7 @@ classdef FileManager < handle
                             % remove the current level name
                             currentID = currentID(1:end-numel(hDescendant.Name)-1);
                             % check if we reach the end of the selection
-                            if hDescendant == hSelected(k) 
+                            if hDescendant == nodes(k) 
                                 stopFlag = 0;
                             end
                         end
