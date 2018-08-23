@@ -232,7 +232,8 @@ classdef FitLike < handle
         % Remove funcion: allow to remove files, sequence, dataset
         function this = remove(this)
             % check the selected files in FileManager
-            fileID = FileManager.Checkbox2fileID(this.FileManager.gui.tree); %#ok<PROP>
+            nodes = this.FileManager.gui.tree.CheckedNodes;
+            fileID = FileManager.Checkbox2fileID(nodes); %#ok<PROP>
             % remove files in RelaxData 
             [~,idx,~] = intersect({this.RelaxData.fileID},fileID);
             this.RelaxData(idx) = [];
@@ -348,18 +349,29 @@ classdef FitLike < handle
     methods (Access = public)
         % File selection callback
         function selectFile(this, ~, event)
-            % get the new values
-            val = event.EditData;
-            %row = event.Indices(1);
-            col = event.Indices(2);
-            % check if files selected
-            if isequal(col,1)
-                if isequal(val,1)
-                    %addPlot(this);
+            % check if nodes was selected
+            if ~isempty(event.Nodes)
+                % get the fileID list of the checked object
+                fileID = FileManager.Checkbox2fileID(event.Nodes); %#ok<PROPLC>
+                % check the state of the node
+                if event.Nodes.Checked
+                    % get the handle of the selected tab
+                    hTab = this.DisplayManager.gui.tab.SelectedTab.Children; 
+                    % loop
+                    for k = 1:numel(fileID)
+                        tf = strcmp({this.RelaxData.fileID}, fileID{k});
+                        addPlot(hTab, this.RelaxData(tf));
+                    end
                 else
-                    %removePlot(this);
+                    % get the handle of the selected tab
+                    hTab = this.DisplayManager.gui.tab.SelectedTab.Children; 
+                    % loop
+                    for k = 1:numel(fileID)
+                        removePlot(hTab, fileID{k});
+                    end
                 end
             end
+            
         end %selectFile
     end   
     %% -------------------- DisplayManager Callback -------------------- %% 
@@ -450,7 +462,8 @@ classdef FitLike < handle
         % Run process
         function this = runProcess(this)
             % check if data are selected
-            fileID = FileManager.Checkbox2fileID(this.ProcessingManager.gui.tree.UserData); %#ok<PROP>
+            nodes = this.ProcessingManager.gui.tree.UserData.CheckedNodes;
+            fileID = FileManager.Checkbox2fileID(nodes); %#ok<PROP>
             % according to the mode process, run it
             if isempty(fileID)
                 warndlg('You need to select file to run process!','Warning')
@@ -510,54 +523,7 @@ classdef FitLike < handle
     end
     
     methods (Access = public, Static = true)
-        % Display a window where the user can select a process
-        function [name, intype, outtype, parameter, processObj] = processdlg()
-            % define subclass to list
-            PROCESS_CLASS = {'Bloc2Zone','Zone2Disp'}; %name of the class to list
-            process_tb = [];
-            % loop 
-            for k = 1:numel(PROCESS_CLASS)
-                % get subclass
-                tb = getSubclasses(PROCESS_CLASS{k}, pwd);
-                tb = tb(2:end,:); % remove superclass
-                % add input/output 
-                switch PROCESS_CLASS{k}
-                    case 'Bloc2Zone'
-                        in = 'bloc';
-                        out = 'zone';
-                    case 'Zone2Disp'
-                        in = 'zone';
-                        out = 'dispersion';
-                end
-                
-                tb.from = repmat({in},height(tb),1);
-                tb.to = repmat({out},height(tb),1);
-                % add displayName
-                mc = cellfun(@meta.class.fromName, tb.names, 'Uniform',0); %get class data
-                tf = strcmp({mc{1}.PropertyList.Name}, 'functionName'); %be sure about the index of the name
-                tb.displayName = cellfun(@(x) x.PropertyList(tf).DefaultValue, mc, 'Uniform', 0);
-                % concatenate
-                process_tb = [process_tb; tb];
-            end
-            
-            % create listdlg to select process
-            [indx,~] = listdlg('PromptString','Select a process:',...
-                           'SelectionMode','single',...
-                           'ListString',process_tb.displayName);
-                       
-            % if process was selected, get the corresponding information
-            if ~isempty(indx)
-                name = process_tb.displayName{indx};
-                intype = process_tb.from{indx};
-                outtype = process_tb.to{indx};
-                parameter = []; %TO DO
-                % create the process object using its name
-                funcProcess = str2func(process_tb.names{indx});
-                processObj = funcProcess();
-            else
-                name = [];  intype = []; outtype = []; parameter = []; processObj = [];
-            end
-        end %inputProcess       
+        
     end
     %% --------------------- ModelManager Callback --------------------- %%
      methods (Access = public)
