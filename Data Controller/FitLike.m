@@ -190,7 +190,7 @@ classdef FitLike < handle
             % append data to RelaxData
             this.RelaxData = [this.RelaxData bloc];
             % update FileManager
-            addData(this.FileManager,...
+            addData(this.FileManager,repmat({'bloc'},1,size(bloc)),...
                 {bloc.dataset}, {bloc.sequence},...
                 {bloc.filename}, {bloc.displayName});
             % update ProcessingManager
@@ -451,18 +451,15 @@ classdef FitLike < handle
         function this = runProcess(this)
             % check if data are selected
             fileID = FileManager.Checkbox2fileID(this.ProcessingManager.gui.tree.UserData); %#ok<PROP>
-            
+            % according to the mode process, run it
             if isempty(fileID)
                 warndlg('You need to select file to run process!','Warning')
                 return
-            end
-            
-            % check process mode
-            if this.ProcessingManager.gui.BatchRadioButton.Value
-                % get the selected tab
+            elseif this.ProcessingManager.gui.BatchRadioButton.Value
+                % Batch mode
                 tab = this.ProcessingManager.gui.tab.SelectedTab.Children;
                 % check the selected pipeline
-                [tf, inputFormat] = ProcessTab.checkProcess(tab);
+                tf = ProcessTab.checkProcess(tab);
                 % check output
                 if tf
                     % get the process array
@@ -472,24 +469,42 @@ classdef FitLike < handle
                         % get fileID
                         ifileID = split(fileID{k},'@');
                         % check for correspondance
-                        tf = strcmp(ifileID{1},{this.RelaxData.dataset}) &... 
+                        indx = find(strcmp(ifileID{1},{this.RelaxData.dataset}) &... 
                             strcmp(ifileID{2},{this.RelaxData.sequence}) &... 
-                            strcmp(ifileID{3},{this.RelaxData.filename});
-                        if ~all(tf == 0)
-                            % loop over the process
-                            for j = 1:numel(ProcessArray) 
-                                % assign the pipeline
-                                assignProcessingFunction(this.RelaxData(tf),ProcessArray(j));
-                                % apply the pipeline
-                                newData = processData(this.RelaxData(tf));
-                                % re-parenting
-                                [this.RelaxData(tf),~] = link(newData,this.RelaxData(tf));
-                            end
+                            strcmp(ifileID{3},{this.RelaxData.filename}));
+                        % get the ancestor
+                        bloc = this.RelaxData(indx(1)); %take the first one
+                        while ~isempty(bloc.parent)
+                            bloc = bloc.parent;
+                        end
+                        % create a copy of the object, for the process
+                        relaxObj = copy(bloc);
+                        if ~isempty(relaxObj.children)
+                            remove(relaxObj.children); % remove children
+                        end
+                        % apply the pipeline
+                        for j = 1:numel(ProcessArray) 
+                            % assign the process
+                            assignProcessingFunction(relaxObj, ProcessArray(j));
+                            % apply the process
+                            relaxObj = processData(relaxObj);
+                        end                        
+                        % replace the new relaxObj in the main array
+                        this.RelaxData = remove(this.RelaxData, indx);
+                        this.RelaxData = [this.RelaxData, relaxObj];
+                        % update FileManager
+                        this.FileManager = fileID2tree(this.FileManager, fileID{k}, 'delete'); %delete old file
+                        % loop over the new obj
+                        for i = 1:numel(relaxObj)
+                           addData(this.FileManager, class(relaxObj(i)),...
+                               relaxObj(i).dataset, relaxObj(i).sequence,...
+                               relaxObj(i).filename,relaxObj(i).displayName);
                         end
                     end %for
                 end
             else
-                
+                % Simulation mode
+                % TO DO
             end
         end %runProcess
     end
