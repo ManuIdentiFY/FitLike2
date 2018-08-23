@@ -186,13 +186,12 @@ classdef ProcessTab < uix.Container & handle
     
     methods (Static = true, Access = public)
        % Check process: is the pipeline consistent?
-       function [tf, inputFormat] = checkProcess(this)
+       function tf = checkProcess(this)
            % check number of process
            n = length(this.vbox{2}.Children) - 2;
            % check if empty
            if n < 1
                tf = 0;
-               inputFormat = [];
                warndlg('No process to run pipeline!','Warning')
            else
                % check that input/output is consistent: bloc-->zone then
@@ -200,8 +199,10 @@ classdef ProcessTab < uix.Container & handle
                from = flip({this.vbox{2}.Children(2:end-1).String}); %get input format
                to = flip({this.vbox{3}.Children(2:end-1).String}); %get output format
                 
-               if n == 1
-                   inputFormat = from{1};
+               if ~strcmp(from{1},'bloc')
+                   tf = 0;
+                   warndlg('The pipeline need to start by a bloc type!', 'Warning')
+               elseif n == 1
                    tf = 1;
                else
                    % check in/out format
@@ -210,13 +211,11 @@ classdef ProcessTab < uix.Container & handle
                        inFormat = from{k+1};
                        if ~isequal(inFormat, outFormat)
                            tf = 0;
-                           inputFormat = [];
                            warndlg('The input/output type are not consistent to run pipeline!','Warning')
                            return
                        end
                    end
-                   % ok
-                   inputFormat = from{1};
+                   % valid pipeline
                    tf = 1;
                end
            end
