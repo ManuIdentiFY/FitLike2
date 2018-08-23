@@ -1,10 +1,7 @@
-classdef PowerLawTwoSegment < DispersionModel
-    % Class template for models of NMRD profiles. To use it:
-    % - Replace 'ModelName' by the name of the model you wish to implement
-    % (type control+f and replace). Do not use space or special characters.
-    % - Save the file using the same model name.
-    % - Adapt the values of the properties to your needs.
-    % that is it.
+classdef PowerLawTwoSegments < DispersionModel
+    % Phenomenological model using power laws with two segments. This may
+    % be used to model the dispersion of certain polymers or may be used as
+    % a kind of linear approximation in the log-log space.
     %
     % Lionel Broche, University of Aberdeen, 08/02/2017
     % adapted for FitLike2, 16/08/2018
@@ -22,7 +19,7 @@ properties
 end
     
  methods
-    function model = PowerLawTwoSegment
+    function model = PowerLawTwoSegments
         % additional property used to visualise the individual components
         model.visualisationFunction = {'dl*f.^v1', ...
                                        '(dl*f_trans1^(v1-v2))*f^v2'};
