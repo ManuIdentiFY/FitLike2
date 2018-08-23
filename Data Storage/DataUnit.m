@@ -121,16 +121,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 end
             end         
         end
-
-        % other removal method to be used in arrays of objects (array =
-        % remove(array,indexes);
-        function self = remove(self,ind)
-            if nargin == 1
-                ind = 1:length(self);
-            end
-            unlink(self(ind));
-            self(ind) = [];
-        end
         
         % wrapper function to start the processing of the data unit
         function [newDataUnit,self] = processData(self)
@@ -188,6 +178,15 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     end % methods
     
     methods (Access = public, Sealed = true)
+        % other removal method to be used in arrays of objects (array =
+        % remove(array,indexes);
+        function self = remove(self,ind)
+            if nargin == 1
+                ind = 1:length(self);
+            end
+            unlink(self(ind));
+            self(ind) = [];
+        end        
         
         % Generate fileID field
         function obj = generateID(obj)
