@@ -1,24 +1,22 @@
-classdef Lorentzian < DispersionModel
-    % Lorentzian model for freely-moving molecules with Gaussian diffusion
-    % profiles.
-    % From: Understanding Spin Dynamics, D. Kruk, Pan Stanford Publishing
-    % 2016,  page 20
+classdef LorentzianStretched < DispersionModel   
+    % Stretched Lorentzian model for liquids with Gaussian diffusion and
+    % restricted motion (phenomenological model).
     %
     % Lionel Broche, University of Aberdeen, 08/02/2017 (modified 23/08/18)
     
     properties
-        modelName     = 'Lorentzian profile';        
-        modelEquation = '3/2*(1.2e-23/rhh^3).^2*[tau./(1+(2*pi*f*tau).^2) + 4*tau./(1+(4*pi*f*tau).^2)]';    
+        modelName     = 'Streched Lorentzian profile';        
+        modelEquation = '3/2*(1.2e-23/rhh^3).^2*[tau./(1+(2*pi*f*tau).^n) + 4*tau./(1+(2*2*pi*f*tau).^n)]';    
         variableName  = {'f'};     
-        parameterName = {'rhh',   'tau'};  
-        minValue      = [0,       1e-9];  
-        maxValue      = [Inf,     1e-3];  
-        startPoint    = [3e-10,   1e-6];  
-        isFixed       = [0           0];
+        parameterName = {'rhh',   'tau',  'n'};  
+        minValue      = [0,       1e-9,     0];  
+        maxValue      = [Inf,     1e-3,   Inf];  
+        startPoint    = [3e-10,   1e-6,     1];  
+        isFixed       = [0        0         0];
     end
     
     methods
-        function model = Lorentzian
+        function model = LorentzianStretched
             model@DispersionModel;
             % generate the function handle (do not remove)
 %             model = makeFunctionHandle(model);
@@ -39,7 +37,7 @@ classdef Lorentzian < DispersionModel
             tau = 1/x(indm);
             % then rhh is estimated from the low-frequency limit
             rhh = (1.2e-23)^(1/3)/(yLowFreq/(5*tau)*2/3)^(1/6);
-            self.startPoint = [rhh,tau];
+            self.startPoint = [rhh,tau,1];
         end
     end
 end
