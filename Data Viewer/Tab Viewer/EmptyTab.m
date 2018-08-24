@@ -11,9 +11,9 @@ classdef EmptyTab < DisplayTab
     
     methods
         % Constructor
-        function this = EmptyTab(FitLike, tab)
+        function this = EmptyTab(tab)
             % call the superclass constructor
-            this = this@DisplayTab(FitLike, tab);
+            this = this@DisplayTab(tab);
             % set the name of the subtab 
             this.Parent.Title = 'Untitled';
             % set the axis visibility to "off"
@@ -26,7 +26,7 @@ classdef EmptyTab < DisplayTab
         % Add new data to the current axis: addPlot()
         function this = addPlot(this)
             return
-        end %removePlot()
+        end %addPlot()
         % Remove data from the current axis: removePlot()
         function this = removePlot(this)
             return
@@ -34,7 +34,7 @@ classdef EmptyTab < DisplayTab
         % Set the legend: setLegend()
         function this = update(this)
             return
-        end %setLegend
+        end %update()
     end
     
 end
