@@ -21,7 +21,7 @@ classdef ProcessingManager < handle
             
             % Set the first tab and the '+' tab
             ProcessTab(uitab(this.gui.tab),'Pipeline1');
-            EmptyPlusTab(uitab(this.gui.tab));
+            %EmptyPlusTab(this.gui.tab);
             
             % Set the UI ContextMenu
             setUIMenu(this);
@@ -90,6 +90,11 @@ classdef ProcessingManager < handle
                 hDataset = hParent.Children(k);
                 for j = 1:numel(hDataset.Children)
                     hSequence = hDataset.Children(j);
+                    %%%----------------------------%%%
+                    if strcmp(hSequence.Name,'IRCPMG/S [DefaultFfcSequences.ssf]')
+                        hSequence.Checked = 1;
+                    end
+                    %%%----------------------------%%%
                     for i = 1:numel(hSequence.Children)
                         hFile = hSequence.Children(i);
                         delete(hFile.Children)
@@ -150,8 +155,12 @@ classdef ProcessingManager < handle
         % Load Pipeline
         function this = loadPipeline(this)
             % open dlg box
-             [file, path] = uigetfile({'*.mat','MAT-files (*.mat)'},...
-               'Select a pipeline');
+            %%%-------------------------------------------------------%%%
+%              [file, path] = uigetfile({'*.mat','MAT-files (*.mat)'},...
+%                'Select a pipeline');
+            path = 'C:/Users/Manu/Documents/GitHub/FitLike2/Data Controller/Data processing/Pipeline Saved';
+            file = 'myPipeline.mat';
+            %%%-------------------------------------------------------%%%
             % load data
             if ischar(file)
                 % check if valid file
