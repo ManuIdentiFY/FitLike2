@@ -25,6 +25,23 @@ classdef FitLike < handle
 
             % Add the main View
             this.FitLikeView = FitLikeView(this);
+            
+            %%%-----------%%%
+            % call open
+            open(this);
+            loadPipeline(this.ProcessingManager)
+            % runProcess
+            runProcess(this)
+            % expand
+            expand(this.FileManager.gui.tree.Root.Children.Children(3))
+            expand(this.FileManager.gui.tree.Root.Children.Children(3).Children)
+            % select IRCPMG files
+            tf = strcmp({this.RelaxData.sequence}, 'IRCPMG/S [DefaultFfcSequences.ssf]');
+            fileID2tree(this.FileManager, {this.RelaxData(tf).fileID}, 'check');
+            % fire callback
+            event.Nodes = this.FileManager.gui.tree.Root.Children.Children(3);
+            selectFile(this, this, event)
+            %%%-----------%%%
         end %FitLike
         
         % Destructor             
@@ -49,11 +66,19 @@ classdef FitLike < handle
         % Open function: allow to open new files or dataset (.sdf, .sef, .mat)
         function this = open(this)
             % open interface to select files
-            [file, path, indx] = uigetfile({'*.sdf','Stelar Raw Files (*.sdf)';...
-                                     '*.sef','Stelar Processed Files (*.sef)';...
-                                     '*.mat','FitLike Dataset (*.mat)'},...
-                                     'Select One or More Files', ...
-                                     'MultiSelect', 'on');
+            %%%%---------------------%%%%
+%             [file, path, indx] = uigetfile({'*.sdf','Stelar Raw Files (*.sdf)';...
+%                                      '*.sef','Stelar Processed Files (*.sef)';...
+%                                      '*.mat','FitLike Dataset (*.mat)'},...
+%                                      'Select One or More Files', ...
+%                                      'MultiSelect', 'on');
+            
+            path = 'C:/Users/Manu/Desktop/FFC-NMR DATA/PIGS/SAIN/2/';
+            file = {'20170728_cochonsain2_corpscalleux2_ML.sdf',...
+                    '20170728_cochonsain2_corpscalleux4_ML.sdf',...
+                    '20170728_cochonsain2_corpscalleux2_QP_ML.sdf'};
+            indx = 1;
+            %%%%---------------------%%%%
             % check output
             if isequal(file,0)
                 % user canceled
@@ -68,8 +93,12 @@ classdef FitLike < handle
                 case 1 %sdf
                     % enter dataset
                     if isempty(this.RelaxData)
-                        dataset = inputdlg({'Enter a dataset name:'},...
-                            'Create dataset',[1 70],{'myDataset'});
+                        %%%-------------%%%
+%                         dataset = inputdlg({'Enter a dataset name:'},...
+%                             'Create dataset',[1 70],{'myDataset'});
+                        
+                        dataset = 'myDataset';
+                        %%%-------------%%%
                     else
                         % ask user in which dataset we need to put files
                         res = questdlg('Where do you want to import your data?',...
@@ -190,7 +219,7 @@ classdef FitLike < handle
             % append data to RelaxData
             this.RelaxData = [this.RelaxData bloc];
             % update FileManager
-            addData(this.FileManager,repmat({'bloc'},1,size(bloc)),...
+            addData(this.FileManager,repmat({'bloc'},[1,size(bloc)]),...
                 {bloc.dataset}, {bloc.sequence},...
                 {bloc.filename}, {bloc.displayName});
             % update ProcessingManager
@@ -355,19 +384,15 @@ classdef FitLike < handle
                 fileID = FileManager.Checkbox2fileID(event.Nodes); %#ok<PROPLC>
                 % check the state of the node
                 if event.Nodes.Checked
-                    % get the handle of the selected tab
-                    hTab = this.DisplayManager.gui.tab.SelectedTab.Children; 
                     % loop
                     for k = 1:numel(fileID)
                         tf = strcmp({this.RelaxData.fileID}, fileID{k});
-                        addPlot(hTab, this.RelaxData(tf));
+                        addPlot(this.DisplayManager, this.RelaxData(tf));
                     end
                 else
-                    % get the handle of the selected tab
-                    hTab = this.DisplayManager.gui.tab.SelectedTab.Children; 
                     % loop
                     for k = 1:numel(fileID)
-                        removePlot(hTab, fileID{k});
+                        removePlot(this.DisplayManager, fileID{k});
                     end
                 end
             end
@@ -379,83 +404,17 @@ classdef FitLike < handle
         % Tab selection callback: add new tab
         function selectTab(this, src)
             % reset FileManager selection
-            selection = false(size(this.FileManager.gui.table.Data(:,1)));
-            this.FileManager.gui.table.Data(:,1) = num2cell(selection);
+%             selection = false(size(this.FileManager.gui.table.Data(:,1)));
+%             this.FileManager.gui.table.Data(:,1) = num2cell(selection);
             % check if user select the '+' tab or another one
-            if strcmp(src.SelectedTab.Title,'+')
+            hTab = src.SelectedTab.Children;
+            if isa(hTab,'EmptyPlusTab')
                 % add tab
                 addTab(this.DisplayManager);
-            elseif strcmp(src.SelectedTab.Title,'Dispersion')
-                % update FileManager to fit with DisplayManager
-                listFileID = getFileID(src.SelectedTab.Children);
-                fileID = strcat(this.RelaxObj.dataset,...
-                            this.RelaxObj.sequence,...
-                            this.RelaxObj.filename);
-                [~,indx,~] = intersect(fileID, listFileID);
-                % set the displayed file as selected
-                this.FileManager.gui.table.Data(indx,1) = num2cell(true(length(indx),1));
+            elseif isa(hTab,'Dispersion')
+
             end
         end %selectTab
-        
-        % Tab destructor callback: UIContextMenu in DisplayManager
-        function removeTab(this, src)
-            % check the number of displayed tabs
-            n = length(this.DisplayManager.gui.tab.Children);
-            % check if one tab is left (not including '+' tab)           
-            if n < 3
-                % disp error or warning! Not enough tabs
-                return
-            end
-            % Use Tag to know the tab index concerned and re-order it to
-            % fit with Matlab child storage order.
-            indx = str2double(src.Tag(end));
-            % close the tab
-            removeTab(this.DisplayManager, indx);
-            % reset FileManager
-            selectTab(this, this.DisplayManager.gui.tab);
-        end %removeTab
-        
-        % Add plot to the current tab/axis
-        function this = addPlot(this, hData)
-            % get the handle of the selected tab
-            hTab = this.DisplayManager.gui.tab.SelectedTab; 
-            % select an action according to this type
-            switch class(hTab.Children)
-                case 'EmptyTab'
-                    % if empty just replace the empty tab by the adapted
-                    % tab
-                    if isa(hData,'Dispersion')
-                         % add Dispersion tab and delete the empty one
-                         DispersionTab(this, hTab);
-                         delete(hTab.Children(2));
-                         % call plot of this tab
-                         addPlot(hTab.Children, hData, [1 1], 1);
-                    elseif isa(data,'Zone') || isa(data,'Bloc')
-                        
-                    else 
-                        disp('Error!')
-                    end                   
-                case 'DispersionTab'
-                    % add to current tab/axis
-                    addPlot(hTab.Children, hData, [1 1], 1);
-            end            
-        end %addPlot
-        
-        % Remove plot from the current tab/axis
-        function this = removePlot(this, fileID)
-            % get the handle of the selected tab
-            hTab = this.DisplayManager.gui.tab.SelectedTab; 
-            % remove these lines
-            removePlot(hTab.Children, fileID);
-        end %removePlot
-        
-        % update plot
-        function this = updatePlot(this,src)
-            % get the handle of the selected tab
-            hTab = this.DisplayManager.gui.tab.SelectedTab; 
-            % call the update function of the concerned tab
-            update(hTab.Children, src);
-        end %updatePlot
     end
     %% ------------------ ProcessingManager Callback ------------------- %%
     methods (Access = public)
