@@ -118,19 +118,18 @@ classdef FileManager < handle
         
         % check or delete the nodes corresponding to fileID. fileID can be
         % partial.
-        % mode = {'check','delete'};
+        % mode = {'check','uncheck','delete'};
         function this = fileID2tree(this, fileID, mode)
             % format input
-            if iscell(fileID)
+            if numel(fileID) == 1
+                str = split(fileID,'@');
+            else
                 if size(fileID,2) ~= 1
                     fileID = fileID';
                 end
                 % split the fileID 
                 str = split(fileID,'@');
                 str = str';
-            else
-                % split the fileID
-                str = split(fileID,'@');
             end
     
             % get tree root
@@ -146,6 +145,8 @@ classdef FileManager < handle
                 switch mode
                     case 'check'
                         hNodes.Checked = 1;
+                    case 'uncheck'
+                        hNodes.Checked = 0;
                     case 'delete'
                         delete(hNodes);                        
                 end
