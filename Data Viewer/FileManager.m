@@ -119,7 +119,7 @@ classdef FileManager < handle
         % check or delete the nodes corresponding to fileID. fileID can be
         % partial.
         % mode = {'check','delete'};
-        function this = fileID2tree(this, fileID, mode, varargin)
+        function this = fileID2tree(this, fileID, mode)
             % format input
             if iscell(fileID)
                 if size(fileID,2) ~= 1
