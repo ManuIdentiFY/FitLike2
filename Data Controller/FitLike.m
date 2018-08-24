@@ -384,16 +384,23 @@ classdef FitLike < handle
                 fileID = FileManager.Checkbox2fileID(event.Nodes); %#ok<PROPLC>
                 % check the state of the node
                 if event.Nodes.Checked
-                    % loop
-                    for k = 1:numel(fileID)
-                        tf = strcmp({this.RelaxData.fileID}, fileID{k});
-                        addPlot(this.DisplayManager, this.RelaxData(tf));
+                    % get the data and call addPlot()
+                    [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
+                    [~, plotFlag, tf] = addPlot(this.DisplayManager, this.RelaxData(indx));
+                    % check if everything have been plotted 
+                    if ~plotFlag
+                        str = cellfun(@(x,y) sprintf('%s (Sequence: %s)',x,y),...
+                                {this.RelaxData(indx(tf)).filename},...
+                                {this.RelaxData(indx(tf)).sequence},'Uniform',0);
+                        warndlg(sprintf(['The following data have not been '...
+                            'displayed because their type do not fit with '...
+                            'the graph type: \n\n%s.'], sprintf('%s \n',str{:})))
+                        % uncheck these nodes
+                        fileID2tree(this.FileManager,...
+                            {this.RelaxData(indx(tf)).fileID}, 'uncheck');
                     end
                 else
-                    % loop
-                    for k = 1:numel(fileID)
-                        removePlot(this.DisplayManager, fileID{k});
-                    end
+                    removePlot(this.DisplayManager, fileID);
                 end
             end
             
@@ -465,7 +472,7 @@ classdef FitLike < handle
                         this.RelaxData = remove(this.RelaxData, indx);
                         this.RelaxData = [this.RelaxData, relaxObj];
                         % update FileManager
-                        this.FileManager = fileID2tree(this.FileManager, fileID{k}, 'delete'); %delete old file
+                        this.FileManager = fileID2tree(this.FileManager, fileID(k), 'delete'); %delete old file
                         % loop over the new obj
                         for i = 1:numel(relaxObj)
                            addData(this.FileManager, class(relaxObj(i)),...

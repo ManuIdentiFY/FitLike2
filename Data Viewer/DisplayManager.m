@@ -108,35 +108,43 @@ classdef DisplayManager < handle
         end
 
         % call the tab plot method
-        function this = addPlot(this, hData)
+        function [this, plotFlag, tf] = addPlot(this, hData)
             % get the selected tab 
             tab = this.gui.tab.SelectedTab;
             % check if it is an empty tab
             if isa(tab.Children, 'EmptyTab')
-                % check the class of hData
-                switch class(hData)
+                % check the class of the first hData
+                switch class(hData(1))
                     case 'Bloc'
                         return % TO DO
                     case 'Zone'
                         return % TO DO
                     case 'Dispersion'
-                        newTab = 'DispersionTab';
+                        replaceTab(this, tab, 'DispersionTab');
                 end
-                % replace the empty tab
-                replaceTab(this, tab, newTab);
-                % get the new tab
                 tab = this.gui.tab.SelectedTab;
             end
             % call addPlot method of this tab
-            addPlot(tab.Children, hData)
+            tf = false(1,numel(hData));
+            for k = 1:numel(hData)
+                [~,tf(k)] = addPlot(tab.Children, hData(k));
+            end
+            % check if everything have been plotted or not and send a call
+            % to the presenter if not
+            if all(tf == 0)
+                plotFlag = 1;
+            else
+                plotFlag = 0;
+            end
         end
         
         % call the tab remove method
         function this = removePlot(this, fileID)
             % get the selected tab 
             tab = this.gui.tab.SelectedTab;
-            % call addPlot method of this tab
-            removePlot(tab.Children, fileID)
+            for k = 1:numel(fileID)
+                removePlot(tab.Children, fileID{k})
+            end
         end
     end
 end

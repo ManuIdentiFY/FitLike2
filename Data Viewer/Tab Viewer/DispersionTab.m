@@ -134,10 +134,16 @@ classdef DispersionTab < DisplayTab
     methods (Access = public)
         % Add new data to the tab using handle. hData must be a Dispersion
         % object. 
-        function this = addPlot(this, hData)
-            % check input handle object if Dispersion
+        function [this, tf] = addPlot(this, hData)
+            % check input handle object if Dispersion and no duplicates
             if ~isa(hData,'Dispersion')
+                tf = 1;
                 return
+            elseif ~all((this.hDispersion == hData) == 0)
+                tf = 0;
+                return
+            else
+                tf = 0;
             end
             
             % append data
