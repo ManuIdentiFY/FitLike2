@@ -384,7 +384,6 @@ classdef FitLike < handle
                 this.FileManager.gui.tree.Enable = 'off';
                 % get the fileID list of the checked object
                 fileID = FileManager.Checkbox2fileID(event.Nodes); %#ok<PROPLC>
-                disp(fileID)
                 % check the state of the node
                 if event.Nodes.Checked
                     % get the data and call addPlot()
@@ -417,13 +416,12 @@ classdef FitLike < handle
         function selectTab(this, src)
             % get the selected tab
             hTab = src.SelectedTab.Children;
+            resetTree(this.FileManager);
             if isa(hTab,'EmptyPlusTab')
                 % add new tab
                 addTab(this.DisplayManager);
-                resetTree(this.FileManager);
             elseif isa(hTab,'EmptyTab')
-                % reset tree
-                resetTree(this.FileManager);
+                % dumb
             elseif isa(hTab,'DispersionTab')
                 % get the fileID plotted and check them
                 fileID = getFileID(hTab);

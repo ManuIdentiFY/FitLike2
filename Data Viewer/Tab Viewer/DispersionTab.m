@@ -197,7 +197,7 @@ classdef DispersionTab < DisplayTab
 
             % clear axis if no more data
             if isempty(this.axe.Children)
-                cla(this.axe, 'reset');
+                legend(this.axe,'off');
                 % clear pointer - prevent memory leaks
                 this.hDispersion = [];
             end

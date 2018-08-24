@@ -121,9 +121,7 @@ classdef FileManager < handle
             % check the tree state
             if ~isempty(this.gui.tree.CheckedNodes)
                % uncheck
-               for k = 1:numel(this.gui.tree.CheckedNodes)
-                   this.gui.tree.CheckedNodes(k).Checked = 0;
-               end
+               [this.gui.tree.CheckedNodes.Checked] = deal(false);
             end
         end %resetTree
         
