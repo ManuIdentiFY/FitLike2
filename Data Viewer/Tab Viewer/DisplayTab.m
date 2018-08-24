@@ -77,7 +77,7 @@ classdef DisplayTab < uix.Container & handle
         % Add new data to the current axis
         addPlot(this, varargin)
         % Remove data from the current axis
-        removePlot(this, idx)
+        removePlot(this, varargin)
         % Set the legend in the current axis
         update(this, varargin)
     end    
