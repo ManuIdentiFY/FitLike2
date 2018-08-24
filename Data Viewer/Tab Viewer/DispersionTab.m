@@ -325,7 +325,7 @@ classdef DispersionTab < DisplayTab
             end
             
             % + plot masked data
-            plotMaskedData(this, hData)   
+            plotMaskedData(this, hData);
         end %plotData  
         
         % Add masked data
@@ -665,6 +665,16 @@ classdef DispersionTab < DisplayTab
                 end
             end
         end %chooseFitStyle
+        
+        % send fileID list
+        function fileID = getFileID(this)
+            % check if available data
+            if isempty(this.hDispersion)
+                fileID = [];
+            else
+                fileID = {this.hDispersion.fileID};
+            end
+        end %getFileID
     end   
 end
 

@@ -111,23 +111,35 @@ classdef FileManager < handle
         end %addData
         
         % Remove data from the tree. 
-        function this = removeData(this, varargin)
+        function this = removeData(this)
             % just delete the selected nodes and their children
             delete(this.gui.tree.CheckedNodes);
         end %removeData       
+        
+        % Reset tree: uncheck all the nodes
+        function this = resetTree(this)
+            % check the tree state
+            if ~isempty(this.gui.tree.CheckedNodes)
+               % uncheck
+               for k = 1:numel(this.gui.tree.CheckedNodes)
+                   this.gui.tree.CheckedNodes(k).Checked = 0;
+               end
+            end
+        end %resetTree
         
         % check or delete the nodes corresponding to fileID. fileID can be
         % partial.
         % mode = {'check','uncheck','delete'};
         function this = fileID2tree(this, fileID, mode)
-            % format input
-            if numel(fileID) == 1
+            % format input and split fileID
+            if isempty(fileID)
+                return
+            elseif numel(fileID) == 1
                 str = split(fileID,'@');
             else
                 if size(fileID,2) ~= 1
                     fileID = fileID';
                 end
-                % split the fileID 
                 str = split(fileID,'@');
                 str = str';
             end

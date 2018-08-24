@@ -90,11 +90,11 @@ classdef DisplayManager < handle
             % move the new tab to this index
             uistack(this.gui.tab.Children(end), 'up', n-indx);
             % delete the old tab
-            delete(oldTab)
+            delete(oldTab);
             % set the selection to the new tab
             this.gui.tab.SelectedTab = this.gui.tab.Children(indx); 
             % reset tab
-            setUIMenu(this)
+            setUIMenu(this);
         end %replaceTab
         
         % Reset uicontextmenu and tab titles
@@ -143,7 +143,7 @@ classdef DisplayManager < handle
             % get the selected tab 
             tab = this.gui.tab.SelectedTab;
             for k = 1:numel(fileID)
-                removePlot(tab.Children, fileID{k})
+                removePlot(tab.Children, fileID{k});
             end
         end
     end

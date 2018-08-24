@@ -29,18 +29,18 @@ classdef FitLike < handle
             %%%-----------%%%
             % call open
             open(this);
-            loadPipeline(this.ProcessingManager)
+            loadPipeline(this.ProcessingManager);
             % runProcess
-            runProcess(this)
+            runProcess(this);
             % expand
-            expand(this.FileManager.gui.tree.Root.Children.Children(3))
-            expand(this.FileManager.gui.tree.Root.Children.Children(3).Children)
+            expand(this.FileManager.gui.tree.Root.Children.Children(3));
+            expand(this.FileManager.gui.tree.Root.Children.Children(3).Children);
             % select IRCPMG files
             tf = strcmp({this.RelaxData.sequence}, 'IRCPMG/S [DefaultFfcSequences.ssf]');
             fileID2tree(this.FileManager, {this.RelaxData(tf).fileID}, 'check');
             % fire callback
             event.Nodes = this.FileManager.gui.tree.Root.Children.Children(3);
-            selectFile(this, this, event)
+            selectFile(this, this, event);
             %%%-----------%%%
         end %FitLike
         
@@ -380,8 +380,11 @@ classdef FitLike < handle
         function selectFile(this, ~, event)
             % check if nodes was selected
             if ~isempty(event.Nodes)
+                % avoid problems: enable 'off'
+                this.FileManager.gui.tree.Enable = 'off';
                 % get the fileID list of the checked object
                 fileID = FileManager.Checkbox2fileID(event.Nodes); %#ok<PROPLC>
+                disp(fileID)
                 % check the state of the node
                 if event.Nodes.Checked
                     % get the data and call addPlot()
@@ -402,24 +405,29 @@ classdef FitLike < handle
                 else
                     removePlot(this.DisplayManager, fileID);
                 end
+                % enable tree
+                this.FileManager.gui.tree.Enable = 'on';
             end
             
         end %selectFile
     end   
     %% -------------------- DisplayManager Callback -------------------- %% 
     methods (Access = public)
-        % Tab selection callback: add new tab
+        % Tab selection callback
         function selectTab(this, src)
-            % reset FileManager selection
-%             selection = false(size(this.FileManager.gui.table.Data(:,1)));
-%             this.FileManager.gui.table.Data(:,1) = num2cell(selection);
-            % check if user select the '+' tab or another one
+            % get the selected tab
             hTab = src.SelectedTab.Children;
             if isa(hTab,'EmptyPlusTab')
-                % add tab
+                % add new tab
                 addTab(this.DisplayManager);
-            elseif isa(hTab,'Dispersion')
-
+                resetTree(this.FileManager);
+            elseif isa(hTab,'EmptyTab')
+                % reset tree
+                resetTree(this.FileManager);
+            elseif isa(hTab,'DispersionTab')
+                % get the fileID plotted and check them
+                fileID = getFileID(hTab);
+                fileID2tree(this.FileManager,fileID,'check');
             end
         end %selectTab
     end
@@ -508,7 +516,7 @@ classdef FitLike < handle
             tag = strrep(src.Name,' ',''); %just remove space
             src = this.FitLikeView.gui.(tag);
             showWindow(this, src);
-        end %hideWindowPressed     
-    end    
+        end %hideWindowPressed    
+    end
 end
 
