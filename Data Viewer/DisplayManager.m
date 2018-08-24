@@ -24,7 +24,7 @@ classdef DisplayManager < handle
             
             % Add an empty tab and one with the mention "+"
             EmptyTab(uitab(this.gui.tab));
-            EmptyPlusTab(uitab(this.gui.tab));            
+            EmptyPlusTab(uitab(this.gui.tab));          
             
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
@@ -35,8 +35,8 @@ classdef DisplayManager < handle
             set(this.gui.tab, 'SelectionChangedFcn',...
                 @(src, event) this.FitLike.selectTab(src));   
             
-            % Set UIContextMenu for tab
-            resetUIMenu(this);
+            % reset tab
+            setUIMenu(this)
         end %DisplayManager
         
         % Destructor
@@ -53,7 +53,7 @@ classdef DisplayManager < handle
     
     methods (Access = public)
         % Add tab to DisplayManager
-        function addTab(this)
+        function this = addTab(this)
             % add an empty tab: Just to try different gui objects
             EmptyTab(uitab(this.gui.tab));
             % push this new tab to the position just before '+' tab
@@ -61,32 +61,83 @@ classdef DisplayManager < handle
             % set the selection to this tab
             this.gui.tab.SelectedTab = this.gui.tab.Children(end-1);
             % reset tab
-            resetUIMenu(this);
+            setUIMenu(this);
         end %addTab
         
-        %Remove tab from DisplayManager
-        function removeTab(this,idx)
-            % delete the selected tab
-            delete(this.gui.tab.Children(idx));
-            % avoid selection of the panel '+'
-            if strcmp(this.gui.tab.SelectedTab.Title,'+')
-                this.gui.tab.SelectedTab = this.gui.tab.Children(end-1);
+        %Remove tab
+        function this = removeTab(this)
+            % check the number of children
+            n = numel(this.gui.tab.Children);
+            % if more than 1 + 1, delete it
+            if n > 2
+                % delete the selected tab
+                delete(this.gui.tab.SelectedTab);
+                % check if the new selected tab is not '+'
+                if isa(this.gui.tab.SelectedTab.Children,'EmptyPlusTab')
+                    this.gui.tab.SelectedTab = this.gui.tab.Children(end-1);
+                end
             end
-            % reset tab
-            resetUIMenu(this); 
         end %removeTab       
-                
-        %Set tab names
-        function resetUIMenu(this)           
-            % set the contextmenu and loop them to create unique name
-            n = length(this.gui.tab.Children);
-            for i = 1:n-1
-                cmenu = uicontextmenu;
-                uimenu(cmenu, 'Label', 'Close Tab', 'Tag', ['UIContextMenu' num2str(i)],...
-                    'Callback',@(src,event) this.FitLike.removeTab(src));
-                this.gui.tab.Children(i).UIContextMenu = cmenu;
-            end         
-        end %resetUIMenu        
-    end    
+        
+        %Replace tab
+        function this = replaceTab(this, oldTab, newTab)
+            % create the new tab
+            fh = str2func(newTab);
+            fh(uitab(this.gui.tab));
+            % get the index of the oldTab
+            indx = find(this.gui.tab.Children == oldTab);
+            n = numel(this.gui.tab.Children);
+            % move the new tab to this index
+            uistack(this.gui.tab.Children(end), 'up', n-indx);
+            % delete the old tab
+            delete(oldTab)
+            % set the selection to the new tab
+            this.gui.tab.SelectedTab = this.gui.tab.Children(indx); 
+            % reset tab
+            setUIMenu(this)
+        end %replaceTab
+        
+        % Reset uicontextmenu and tab titles
+        % Set UIContextMenu
+        function this = setUIMenu(this)
+            % set contextmenu to the selected tab
+            cmenu = uicontextmenu(this.gui.fig);
+            uimenu(cmenu, 'Label', 'Close Tab',...
+                'Callback',@(src,event) removeTab(this));
+            this.gui.tab.SelectedTab.UIContextMenu = cmenu;  
+        end
+
+        % call the tab plot method
+        function this = addPlot(this, hData)
+            % get the selected tab 
+            tab = this.gui.tab.SelectedTab;
+            % check if it is an empty tab
+            if isa(tab.Children, 'EmptyTab')
+                % check the class of hData
+                switch class(hData)
+                    case 'Bloc'
+                        return % TO DO
+                    case 'Zone'
+                        return % TO DO
+                    case 'Dispersion'
+                        newTab = 'DispersionTab';
+                end
+                % replace the empty tab
+                replaceTab(this, tab, newTab);
+                % get the new tab
+                tab = this.gui.tab.SelectedTab;
+            end
+            % call addPlot method of this tab
+            addPlot(tab.Children, hData)
+        end
+        
+        % call the tab remove method
+        function this = removePlot(this, fileID)
+            % get the selected tab 
+            tab = this.gui.tab.SelectedTab;
+            % call addPlot method of this tab
+            removePlot(tab.Children, fileID)
+        end
+    end
 end
 
