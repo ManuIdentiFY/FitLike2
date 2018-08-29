@@ -454,47 +454,48 @@ classdef FitLike < handle
                 % check the selected pipeline
                 tf = ProcessTab.checkProcess(tab);
                 % check output
-                if tf
-                    % get the process array
-                    ProcessArray = flip(tab.ProcessArray);
-                    % loop over the file
-                    for k = 1:numel(fileID)
-                        % get fileID
-                        ifileID = split(fileID{k},'@');
-                        % check for correspondance
-                        indx = find(strcmp(ifileID{1},{this.RelaxData.dataset}) &... 
-                            strcmp(ifileID{2},{this.RelaxData.sequence}) &... 
-                            strcmp(ifileID{3},{this.RelaxData.filename}));
-                        % get the ancestor
-                        bloc = this.RelaxData(indx(1)); %take the first one
-                        while ~isempty(bloc.parent)
-                            bloc = bloc.parent;
-                        end
-                        % create a copy of the object, for the process
-                        relaxObj = copy(bloc);
-                        if ~isempty(relaxObj.children)
-                            remove(relaxObj.children); % remove children
-                        end
-                        % apply the pipeline
-                        for j = 1:numel(ProcessArray) 
-                            % assign the process
-                            assignProcessingFunction(relaxObj, ProcessArray(j));
-                            % apply the process
-                            relaxObj = processData(relaxObj);
-                        end                        
-                        % replace the new relaxObj in the main array
-                        this.RelaxData = remove(this.RelaxData, indx);
-                        this.RelaxData = [this.RelaxData, relaxObj];
-                        % update FileManager
-                        this.FileManager = fileID2tree(this.FileManager, fileID(k), 'delete'); %delete old file
-                        % loop over the new obj
-                        for i = 1:numel(relaxObj)
-                           addData(this.FileManager, class(relaxObj(i)),...
-                               relaxObj(i).dataset, relaxObj(i).sequence,...
-                               relaxObj(i).filename,relaxObj(i).displayName);
-                        end
-                    end %for
+                if ~tf
+                    return
                 end
+                % get the process array
+                ProcessArray = flip(tab.ProcessArray);
+                % loop over the file
+                for k = 1:numel(fileID)
+                    % get fileID
+                    ifileID = split(fileID{k},'@');
+                    % check for correspondance
+                    indx = find(strcmp(ifileID{1},{this.RelaxData.dataset}) &... 
+                        strcmp(ifileID{2},{this.RelaxData.sequence}) &... 
+                        strcmp(ifileID{3},{this.RelaxData.filename}));
+                    % get the ancestor
+                    bloc = this.RelaxData(indx(1)); %take the first one
+                    while ~isempty(bloc.parent)
+                        bloc = bloc.parent;
+                    end
+                    % create a copy of the object, for the process
+                    relaxObj = copy(bloc);
+                    if ~isempty(relaxObj.children)
+                        remove(relaxObj.children); % remove children
+                    end
+                    % apply the pipeline
+                    for j = 1:numel(ProcessArray) 
+                        % assign the process
+                        assignProcessingFunction(relaxObj, ProcessArray(j));
+                        % apply the process
+                        relaxObj = processData(relaxObj);
+                    end                        
+                    % replace the new relaxObj in the main array
+                    this.RelaxData = remove(this.RelaxData, indx);
+                    this.RelaxData = [this.RelaxData, relaxObj];
+                    % update FileManager
+                    this.FileManager = fileID2tree(this.FileManager, fileID(k), 'delete'); %delete old file
+                    % loop over the new obj
+                    for i = 1:numel(relaxObj)
+                       addData(this.FileManager, class(relaxObj(i)),...
+                           relaxObj(i).dataset, relaxObj(i).sequence,...
+                           relaxObj(i).filename,relaxObj(i).displayName);
+                    end
+                end %for
             else
                 % Simulation mode
                 % TO DO
@@ -508,8 +509,33 @@ classdef FitLike < handle
         
     end
     %% --------------------- ModelManager Callback --------------------- %%
-     methods (Access = public)
-        
+    methods (Access = public)
+        % Run Fit
+        function this = runFit(this)
+            % check if data are selected
+            nodes = this.ProcessingManager.gui.tree.UserData.CheckedNodes;
+            fileID = FileManager.Checkbox2fileID(nodes); %#ok<PROP>
+            % according to the mode process, run it
+            if isempty(fileID)
+                warndlg('You need to select file to run process!','Warning')
+                return
+            elseif this.ModelManager.gui.BatchRadioButton.Value
+                % Batch mode
+                tab = this.ProcessingManager.gui.tab.SelectedTab.Children;
+                % get the process array
+                ModelArray = tab.ModelArray;
+                 % loop over the file
+                for k = 1:numel(fileID)
+                    % check for correspondance
+                    tf = strcmp(fileID{k},{this.RelaxData.fileID});
+                     % apply the fit to the file
+                     
+                     % TO DO   
+                end
+            else
+                % Simualation mode
+            end
+        end %runFit
     end
     %% ------------------ AcquisitionManager Callback ------------------ %%
     methods (Access = public)

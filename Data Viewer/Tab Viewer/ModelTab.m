@@ -25,10 +25,23 @@ classdef ModelTab < uix.Container & handle
             this.Parent = tab;
             this.Parent.Title = this.TabTitle;            
            
-            % add "add" pushbutton and container
+            % add treetable
             this.container = uicontainer( 'Parent', box);
+            
+            header = {'M','Parameter','isFixed?','MinBound','MaxBound','StartPoint'};
+            type = {'char','char','logical','','',''};
+            editable = {false,false,true,true,true,true};
+            dummy_data = {'','',true,0,0,0};
+            treetable = treeTable(this.container,header,dummy_data,...
+                   'ColumnTypes',type,'ColumnEditable',editable); 
+               
+            % store handle to the data and remove the dummy row   
+            this.jtable = treetable.getModel.getActualModel.getActualModel;
+            javaMethodEDT('removeRow',this.jtable,0);   
+               
+            % add add/remove model pushbuttons    
             addbox = uix.HButtonBox( 'Parent', box,...
-                'Padding', 2,'ButtonSize',[100 22],'Spacing',20);
+                'Padding', 2,'ButtonSize',[100 25],'Spacing',20);
             uicontrol( 'Parent', addbox,...
                        'Style','pushbutton',...
                        'FontSize',7,...
@@ -39,7 +52,7 @@ classdef ModelTab < uix.Container & handle
                        'FontSize',7,...
                        'String','Remove model',...
                        'Callback',@(src, event) removeModel(this)); 
-             box.Heights = [-1 22];
+             box.Heights = [-1 25];
         end %ModelTab
     end
     
@@ -48,27 +61,10 @@ classdef ModelTab < uix.Container & handle
        function this = addModel(this)
             % call the model selector
            [modelName, modelObj] = ModelTab.modeldlg();
-           % add this model to the array
-           this.ModelArray = [this.ModelArray modelObj];
            % update the gui
-           if isempty(this.jtable)
-               % create treetable
-               header = {'M','Parameter','isFixed?','MinBound','MaxBound','StartPoint'};
-               type = {'char','char','logical','','',''};
-               editable = {false,false,true,true,true,true};
-               data = [repmat({modelName},numel(modelObj.parameterName),1),...
-                   modelObj.parameterName',num2cell(logical(modelObj.isFixed')),...
-                   num2cell(modelObj.minValue'),num2cell(modelObj.maxValue'),...
-                   num2cell(modelObj.startPoint')];
-
-               treetable = treeTable(this.container,header,data,...
-                   'ColumnTypes',type,'ColumnEditable',editable);
-               this.jtable = treetable.getModel.getActualModel.getActualModel;
-           else
-               % count number of row and get jtable
-               n = numel(modelObj.parameterName);
+           if ~isempty(modelName)
                % add row one by one
-               for k = 1:n
+               for k = 1:numel(modelObj.parameterName)
                    row = {modelName,modelObj.parameterName{k},...
                       logical(modelObj.isFixed(k)),modelObj.minValue(k),...
                       modelObj.maxValue(k),modelObj.startPoint(k)};
@@ -76,11 +72,17 @@ classdef ModelTab < uix.Container & handle
                    % see https://undocumentedmatlab.com/blog/matlab-and-the-event-dispatch-thread-edt
                    javaMethodEDT('addRow',this.jtable,row);
                end
+               % add this model to the array
+               this.ModelArray = [this.ModelArray modelObj];
            end
        end %addModel
        
        % Remove model
        function this = removeModel(this)
+           % check if model is available
+           if isempty(this.ModelArray)
+               return
+           end
            % get the name of the model imported
            name_list = ModelTab.getJTableData(this.jtable, [], 1);
            % get unique list
@@ -101,7 +103,6 @@ classdef ModelTab < uix.Container & handle
                this.ModelArray(indx) = [];
            end
        end %removeModel
-       
     end
     
     methods (Static = true, Access = public)
