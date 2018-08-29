@@ -18,7 +18,8 @@ classdef DisplayManager < handle
             % Make the figure
             this.gui.fig = figure('Name','Display Manager','NumberTitle','off',...
                 'MenuBar','none','ToolBar','none','DockControls','off',...
-                'Units','normalized','Position',[0.25 0.1 0.5 0.78]);
+                'Units','normalized','Position',[0.25 0.1 0.5 0.78],...
+                'Visible','off');
             % Make a tab group
             this.gui.tab = uitabgroup(this.gui.fig,'Position',[0 0 1 1]);
             
@@ -36,7 +37,7 @@ classdef DisplayManager < handle
                 @(src, event) this.FitLike.selectTab(src));   
             
             % reset tab
-            setUIMenu(this)
+            setUIMenu(this);
         end %DisplayManager
         
         % Destructor

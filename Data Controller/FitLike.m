@@ -22,10 +22,14 @@ classdef FitLike < handle
             this.ProcessingManager = ProcessingManager(this);
             this.ModelManager = ModelManager(this);
             % this.AcquisitionManager = AcquisitionManager(this);
-
+            
             % Add the main View
             this.FitLikeView = FitLikeView(this);
             
+            % Set visible the main windows
+            this.FileManager.gui.fig.Visible = 'on';
+            this.DisplayManager.gui.fig.Visible = 'on';
+            this.ModelManager.gui.fig.Visible = 'on';
             %%%-----------%%%
             % call open
             open(this);

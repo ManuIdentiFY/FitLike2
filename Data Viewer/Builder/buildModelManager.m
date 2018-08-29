@@ -9,7 +9,7 @@ import uiextras.jTree.*
 % Make the figure
 fig = figure('Name','Model Manager','NumberTitle','off',...
     'MenuBar','none','ToolBar','none','Units','normalized',...
-    'Position',[0.76 0.1 0.22 0.78],'Tag','fig');
+    'Position',[0.76 0.1 0.22 0.78],'Visible','off','Tag','fig');
 
 % Add grid & box for panels
 grid = uix.Grid( 'Parent', fig, 'Spacing', 0); 
