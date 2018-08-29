@@ -132,6 +132,10 @@ classdef DispersionTab < DisplayTab
     
     % Abstract methods
     methods (Access = public)
+        function this = test(this, src, event)
+            h = 1;
+        end %test
+        
         % Add new data to the tab using handle. hData must be a Dispersion
         % object. 
         function [this, tf] = addPlot(this, hData)
@@ -147,7 +151,9 @@ classdef DispersionTab < DisplayTab
             end
             
             % append data
-            this.hDispersion = [this.hDispersion hData];
+            this.hDispersion = [this.hDispersion hData];                        
+            % add listener 
+            addlistener(hData,'FileDeletion',@(src, event) removePlot(this, src));
             
             % + data
             plotData(this, hData);
@@ -168,9 +174,9 @@ classdef DispersionTab < DisplayTab
         %   *Delete children in main axis
         %   *Delete children in residual axis
         %   *Delete data handle
-        function this = removePlot(this, fileID)
+        function this = removePlot(this, hData)
             % get data handle
-            tf = strcmp(fileID, {this.hDispersion.fileID});
+            tf = strcmp(hData.fileID, {this.hDispersion.fileID});
             % check if possible
             if all(tf == 0)
                 return
@@ -179,14 +185,14 @@ classdef DispersionTab < DisplayTab
             this.hDispersion = this.hDispersion(~tf);
 
             % get the corresponding line handle(s) in main axis
-            tf = strcmp(fileID, get(this.axe.Children,'Tag'));
+            tf = strcmp(hData.fileID, get(this.axe.Children,'Tag'));
             % get the color of the line to update accumColor
             color = get(findobj(this.axe.Children(tf),'-property','Color'),'Color');
             % delete line
             delete(this.axe.Children(tf));               
 
             % delete associated residual if needed
-            removeResidual(this, fileID, []);
+            removeResidual(this, hData.fileID, []);
 
             % update accumColor
             if iscell(color)

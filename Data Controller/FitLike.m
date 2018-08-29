@@ -265,7 +265,7 @@ classdef FitLike < handle
             fileID = FileManager.Checkbox2fileID(nodes); %#ok<PROP>
             % remove files in RelaxData 
             [~,idx,~] = intersect({this.RelaxData.fileID},fileID);
-            this.RelaxData(idx) = [];
+            this.RelaxData = delete(this.RelaxData, idx);
             % update FileManager
             removeData(this.FileManager);
             % update ProcessingManager
@@ -384,10 +384,11 @@ classdef FitLike < handle
                 this.FileManager.gui.tree.Enable = 'off';
                 % get the fileID list of the checked object
                 fileID = FileManager.Checkbox2fileID(event.Nodes); %#ok<PROPLC>
+                % get the corresponding index
+                [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
                 % check the state of the node
                 if event.Nodes.Checked
-                    % get the data and call addPlot()
-                    [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
+                    % add data to current plot
                     [~, plotFlag, tf] = addPlot(this.DisplayManager, this.RelaxData(indx));
                     % check if everything have been plotted 
                     if ~plotFlag
@@ -402,7 +403,8 @@ classdef FitLike < handle
                             {this.RelaxData(indx(tf)).fileID}, 'uncheck');
                     end
                 else
-                    removePlot(this.DisplayManager, fileID);
+                    % add data from the current plot
+                    removePlot(this.DisplayManager, this.RelaxData(indx));
                 end
                 % enable tree
                 this.FileManager.gui.tree.Enable = 'on';

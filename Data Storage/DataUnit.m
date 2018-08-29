@@ -46,6 +46,10 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         children@DataUnit;          % children of the object
     end
     
+    events
+        FileDeletion
+    end
+    
     methods 
         % Constructor: obj = DataUnit('field1',val1,'field2','val2',...)
         % DataUnit can build structure or array of structure depending on
@@ -174,10 +178,15 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 end
             end
         end
-        
     end % methods
     
     methods (Access = public, Sealed = true)
+        % respond to the events
+        function self = delete(self, idx)
+            notify(self(idx),'FileDeletion');
+            self(idx) = [];
+        end
+        
         % other removal method to be used in arrays of objects (array =
         % remove(array,indexes);
         function self = remove(self,ind)

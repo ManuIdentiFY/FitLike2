@@ -139,11 +139,11 @@ classdef DisplayManager < handle
         end
         
         % call the tab remove method
-        function this = removePlot(this, fileID)
+        function this = removePlot(this, hData)
             % get the selected tab 
             tab = this.gui.tab.SelectedTab;
-            for k = 1:numel(fileID)
-                removePlot(tab.Children, fileID{k});
+            for k = 1:numel(hData)
+                removePlot(tab.Children, hData(k));
             end
         end
     end
