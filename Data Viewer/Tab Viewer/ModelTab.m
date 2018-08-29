@@ -28,12 +28,17 @@ classdef ModelTab < uix.Container & handle
             % add "add" pushbutton and container
             this.container = uicontainer( 'Parent', box);
             addbox = uix.HButtonBox( 'Parent', box,...
-                'Padding', 2,'ButtonSize',[150 22]);
+                'Padding', 2,'ButtonSize',[100 22],'Spacing',20);
             uicontrol( 'Parent', addbox,...
                        'Style','pushbutton',...
                        'FontSize',7,...
                        'String','Add model',...
                        'Callback',@(src, event) addModel(this));
+            uicontrol( 'Parent', addbox,...
+                       'Style','pushbutton',...
+                       'FontSize',7,...
+                       'String','Remove model',...
+                       'Callback',@(src, event) removeModel(this)); 
              box.Heights = [-1 22];
         end %ModelTab
     end
@@ -56,12 +61,12 @@ classdef ModelTab < uix.Container & handle
                    num2cell(modelObj.minValue'),num2cell(modelObj.maxValue'),...
                    num2cell(modelObj.startPoint')];
 
-               this.jtable = treeTable(this.container,header,data,...
+               treetable = treeTable(this.container,header,data,...
                    'ColumnTypes',type,'ColumnEditable',editable);
+               this.jtable = treetable.getModel.getActualModel.getActualModel;
            else
                % count number of row and get jtable
                n = numel(modelObj.parameterName);
-               treetable = this.jtable.getModel.getActualModel.getActualModel;
                % add row one by one
                for k = 1:n
                    row = {modelName,modelObj.parameterName{k},...
@@ -69,14 +74,32 @@ classdef ModelTab < uix.Container & handle
                       modelObj.maxValue(k),modelObj.startPoint(k)};
                    % here we use the javaMethodEDT to handle EDT
                    % see https://undocumentedmatlab.com/blog/matlab-and-the-event-dispatch-thread-edt
-                   javaMethodEDT('addRow',treetable,row);
+                   javaMethodEDT('addRow',this.jtable,row);
                end
            end
        end %addModel
        
        % Remove model
-       function this = removeModel(this, ~)
-
+       function this = removeModel(this)
+           % get the name of the model imported
+           name_list = ModelTab.getJTableData(this.jtable, [], 1);
+           % get unique list
+           [name,~,ic] = unique(name_list,'stable');
+           % ask user which model need to be deleted
+           [indx,~] = listdlg('PromptString','Select a model to remove:',...
+                           'SelectionMode','single',...
+                           'ListString',name);
+           % check answer and remove the corresponding model if needed
+           if ~isempty(indx)
+               idxToRemove = find(ic == indx);
+               for k = 1:numel(idxToRemove)
+                   % here we use the javaMethodEDT to handle EDT
+                   % see https://undocumentedmatlab.com/blog/matlab-and-the-event-dispatch-thread-edt
+                   javaMethodEDT('removeRow',this.jtable,idxToRemove(1)-1);
+               end
+               % update ModelArray
+               this.ModelArray(indx) = [];
+           end
        end %removeModel
        
     end
@@ -109,7 +132,29 @@ classdef ModelTab < uix.Container & handle
             else
                 name = [];  modelObj = [];
             end
-        end %modeldlg()  
+        end %modeldlg()
+        
+        % Get data in jtable Java
+        function data = getJTableData(jtable, rowIdx, colIdx)
+            % check input
+            if isempty(rowIdx)
+                rowIdx = 1:jtable.getRowCount;
+            end
+            
+            if isempty(colIdx)
+                colIdx = 1:jtable.getColumnCount;
+            end
+            % loop over the requested col and row
+            for i = numel(rowIdx):-1:1
+                for j = numel(colIdx):-1:1
+                    data{i,j} = jtable.getValueAt(rowIdx(i)-1,colIdx(j)-1);
+                end
+            end
+            % check if possible to convert to array
+            if all(all(cellfun(@isnumeric, data(1,:)) == 1) == 1)
+                data = cell2mat(data);
+            end
+        end
     end
 end
 
