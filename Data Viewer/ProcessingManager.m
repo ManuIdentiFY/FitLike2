@@ -21,7 +21,7 @@ classdef ProcessingManager < handle
             
             % Set the first tab and the '+' tab
             ProcessTab(uitab(this.gui.tab),'Pipeline1');
-            %EmptyPlusTab(this.gui.tab);
+            EmptyPlusTab(uitab(this.gui.tab));
             
             % Set the UI ContextMenu
             setUIMenu(this);
