@@ -17,8 +17,8 @@ classdef DisplayManager < handle
                       
             % Make the figure
             this.gui.fig = figure('Name','Display Manager','NumberTitle','off',...
-                'MenuBar','none','ToolBar','figure','DockControls','off',...
-                'Units','normalized','Position',[0.25 0.1 0.5 0.75]);
+                'MenuBar','none','ToolBar','none','DockControls','off',...
+                'Units','normalized','Position',[0.25 0.1 0.5 0.78]);
             % Make a tab group
             this.gui.tab = uitabgroup(this.gui.fig,'Position',[0 0 1 1]);
             
@@ -62,6 +62,8 @@ classdef DisplayManager < handle
             this.gui.tab.SelectedTab = this.gui.tab.Children(end-1);
             % reset tab
             setUIMenu(this);
+            % EDT synchronisation
+            drawnow;
         end %addTab
         
         %Remove tab
@@ -128,6 +130,7 @@ classdef DisplayManager < handle
             tf = false(1,numel(hData));
             for k = 1:numel(hData)
                 [~,tf(k)] = addPlot(tab.Children, hData(k));
+                drawnow; %for EDT synchronisation
             end
             % check if everything have been plotted or not and send a call
             % to the presenter if not
@@ -144,6 +147,7 @@ classdef DisplayManager < handle
             tab = this.gui.tab.SelectedTab;
             for k = 1:numel(hData)
                 removePlot(tab.Children, hData(k));
+                drawnow; %for EDT synchronisation
             end
         end
     end
