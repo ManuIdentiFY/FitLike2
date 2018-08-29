@@ -9,7 +9,7 @@ classdef FitLike < handle
         FileManager % Other view for the Presenter (subView)
         DisplayManager % Other view for the Presenter (subView)
         ProcessingManager % Other view for the Presenter  (subView)
-%         ModelManager % Other view for the Presenter (subView)
+        ModelManager % Other view for the Presenter (subView)
 %         AcquisitionManager % Other view for the Presenter (subView)
     end
     
@@ -20,7 +20,7 @@ classdef FitLike < handle
             this.FileManager = FileManager(this);
             this.DisplayManager = DisplayManager(this);
             this.ProcessingManager = ProcessingManager(this);
-            % this.ModelManager = ModelManager(this);
+            this.ModelManager = ModelManager(this);
             % this.AcquisitionManager = AcquisitionManager(this);
 
             % Add the main View
@@ -51,7 +51,7 @@ classdef FitLike < handle
            this.FileManager.deleteWindow();
            this.DisplayManager.deleteWindow();
            this.ProcessingManager.deleteWindow();
-%          this.ModelManager.deleteWindow();
+           this.ModelManager.deleteWindow();
 %          this.AcquisitionManager.deleteWindow();
 
            % Delete this and clear to avoid memory leak
@@ -224,6 +224,7 @@ classdef FitLike < handle
                 {bloc.filename}, {bloc.displayName});
             % update ProcessingManager
             updateTree(this.ProcessingManager);
+            updateTree(this.ModelManager);
                 %%-------------------------------------------------------%%
                 % Check if duplicates are imported and let the user decides
                 % if we keep them and add '_bis' to their filename or just
@@ -270,6 +271,7 @@ classdef FitLike < handle
             removeData(this.FileManager);
             % update ProcessingManager
             updateTree(this.ProcessingManager);
+            updateTree(this.ModelManager);
         end %remove
         
         % Export function: allow to export data (dispersion, model)
@@ -493,6 +495,8 @@ classdef FitLike < handle
                 % Simulation mode
                 % TO DO
             end
+            % update model tree
+            updateTree(this.ModelManager);
         end %runProcess
     end
     

@@ -30,7 +30,7 @@ classdef FileManager < handle
             % Make the figure
             this.gui.fig = figure('Name','File Manager','NumberTitle','off',...
                 'MenuBar','none','ToolBar','none','Units','normalized',...
-                'Position',[0.04 0.1 0.2 0.775],'Tag','fig');
+                'Position',[0.02 0.1 0.22 0.78],'Tag','fig');
             
             % Make the tree
             this.gui.tree = CheckboxTree('Parent',this.gui.fig,...
@@ -319,6 +319,7 @@ classdef FileManager < handle
                 end
                 % update ProcessingManager
                 updateTree(this.FitLike.ProcessingManager);
+                updateTree(this.FitLike.ModelManager);
             end
         end %DragNodeCallback
         
