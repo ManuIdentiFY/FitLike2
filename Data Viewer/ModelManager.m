@@ -40,6 +40,9 @@ classdef ModelManager < handle
             set(this.gui.SimulationRadioButton, 'Callback',...
                 @(src, event) switchFitMode(this, src));
             
+            % Set callback for the run pushbutton
+            set(this.gui.RunPushButton, 'Callback',...
+                @(src, event) this.FitLike.runFit());
         end %ModelManager
         
         % Destructor
@@ -54,7 +57,7 @@ classdef ModelManager < handle
         end  %deleteWindow 
     end
     
-        methods (Access = public)
+    methods (Access = public)
         % Set UIContextMenu
         function this = setUIMenu(this)
             % set contextmenu to the selected tab
@@ -135,16 +138,16 @@ classdef ModelManager < handle
         
         % Load Model
         function this = loadModel(this)
-
+            % TO DO
         end %loadModel
         
         % Save Model
         function this = saveModel(this)
-
+            %TO DO
         end %saveModel
         
         % Switch Process Mode
-        function this = switchProcessMode(this, src)
+        function this = switchFitMode(this, src)
             % check if we need to change the value
             if all([src.Parent.Children.Value] == 1)
                 % check the source and reset the other one
