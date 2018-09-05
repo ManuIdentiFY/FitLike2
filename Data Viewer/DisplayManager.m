@@ -131,7 +131,6 @@ classdef DisplayManager < handle
             tf = false(1,numel(hData));
             for k = 1:numel(hData)
                 [~,tf(k)] = addPlot(tab.Children, hData(k));
-                drawnow; %for EDT synchronisation
             end
             % check if everything have been plotted or not and send a call
             % to the presenter if not
@@ -148,7 +147,6 @@ classdef DisplayManager < handle
             tab = this.gui.tab.SelectedTab;
             for k = 1:numel(hData)
                 removePlot(tab.Children, hData(k));
-                drawnow; %for EDT synchronisation
             end
         end
     end

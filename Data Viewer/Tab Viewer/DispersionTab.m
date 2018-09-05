@@ -187,7 +187,8 @@ classdef DispersionTab < DisplayTab
             % get the line handle(s) in main axis and delete them
             tf = strcmp(hData.fileID, get(this.axe.Children,'Tag'));
             delete(this.axe.Children(tf));               
-
+            drawnow;
+            
             % delete associated residual if needed
             removeResidual(this, hData.fileID, []);
 
@@ -196,6 +197,8 @@ classdef DispersionTab < DisplayTab
                 legend(this.axe,'off');
                 % clear pointer - prevent memory leaks
                 this.hDispersion = [];
+            else
+                checkDisplayName(this);
             end
         end %removePlot
                 
@@ -291,6 +294,7 @@ classdef DispersionTab < DisplayTab
                             'MarkerSize',this.DataMarkerSize,...
                             'MarkerFaceColor','auto',...
                             'Tag',hData(k).fileID); 
+                    drawnow;
                 end
             else
                 % loop over the data
@@ -309,6 +313,7 @@ classdef DispersionTab < DisplayTab
                             'MarkerSize',this.DataMarkerSize,...
                             'MarkerFaceColor','auto',...
                             'Tag',hData(k).fileID);
+                     drawnow;
                 end
             end
             
@@ -340,6 +345,7 @@ classdef DispersionTab < DisplayTab
                     'SizeData',this.DataMarkerSize,...
                     'MarkerFaceColor','auto',...
                     'Tag',hData(k).fileID);
+                drawnow;
                 % remove this plot from legend
                 set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
             end
@@ -385,6 +391,7 @@ classdef DispersionTab < DisplayTab
                         'Marker',this.FitMarkerStyle,...
                         'Tag',hData(k).fileID,...
                         'UserData',this.selectedModel{iModel}); 
+                    drawnow;
                 end
             end
         end %plotFit
@@ -395,10 +402,10 @@ classdef DispersionTab < DisplayTab
             idx = strcmp(modelName, get(this.axe.Children,'UserData'));
             % delete them
             delete(this.axe.Children(idx));
-            
+            drawnow;
             % delete its residuals if needed
             if ~isempty(this.axeResScatter)
-                removeResidual(this, [], modelName)
+                removeResidual(this, [], modelName);
             end
         end %removeFit
         
@@ -455,7 +462,8 @@ classdef DispersionTab < DisplayTab
                         'MarkerFaceColor','auto',...
                         'MarkerSize',2,...
                         'Tag',hData.Tag,...
-                        'UserData',hFit(iModel).UserData); 
+                        'UserData',hFit(iModel).UserData);
+                    drawnow;
                     % addlistener to update dynamically the graph
                     addlistener(hData,'Tag','PostSet',@(~,~)set(h,'Tag',hData.Tag)); 
                 end % loop model
@@ -488,7 +496,7 @@ classdef DispersionTab < DisplayTab
             % delete them
             toDelete = TF_fileID & TF_modelName;
             delete(this.axeResScatter.Children(toDelete));             
-            
+            drawnow;
             % check if no more children and clear axis
             if isempty(this.axeResScatter.Children)
                 cla(this.axeResHist)
@@ -522,7 +530,8 @@ classdef DispersionTab < DisplayTab
             % legend settings         
             title(this.axeResHist,txt); 
             % axis settings
-            this.axeResHist.XLabel.String = this.axeResScatter.YLabel.String;  
+            this.axeResHist.XLabel.String = this.axeResScatter.YLabel.String; 
+            drawnow;
         end %makeResidualHistogram
     end
     
@@ -537,10 +546,12 @@ classdef DispersionTab < DisplayTab
             tf_plot = strcmp({this.axe.Children.Tag},src.fileID);
             % update their ID
             [this.axe.Children(tf_plot).Tag] = deal(newFileID);
-            % if filename has changed, update legend
+            % if filename or displayname has changed, update legend
             if tf_prop(3) == 0
                 [this.axe.Children(tf_plot).DisplayName] = deal(src.filename);
-                setLegend(this) % avoid same legend
+                checkDisplayName(this);
+            elseif tf_prop(4) == 0
+                checkDisplayName(this);
             end
         end
     end
@@ -577,27 +588,60 @@ classdef DispersionTab < DisplayTab
             else 
                 legend(this.axe,'show')
             end
-            % check if duplicates
-            str_leg = {this.axe.Children.DisplayName};
-            if numel(str_leg) ~= numel(unique(str_leg))
-                % find which plot is duplicates
-                [unique_str,~,idx] = unique(str_leg);
-                count = accumarray(idx,1);
-                val_count = [unique_str, count];
-                % loop over the result
-                duplicate_str = unique_str(val_count{end} ~= 1);
-                for k = 1:numel(duplicate_str)
-                    tf_plot = strcmp(str_leg,duplicate_str{k});
-                    hPlot = this.axe.Children(tf_plot);
-                    % replace their displayname
-                    for j = 1:numel(hPlot)
-                        tf_data = strcmp({this.hDispersion.fileID},hPlot(j).Tag);
-                        hPlot(j).DisplayName = [hPlot(j).DisplayName,...
-                            ' (',this.hDispersion(tf_data).displayName,')'];                        
+            % check display names
+            checkDisplayName(this);
+        end %checkLegend
+        
+        % This function check the legend and check for duplicates. If
+        % duplicates are found, the displayName property is added to the
+        % input. If this property is not longer required (no duplicate), it
+        % is removed.
+        function this = checkDisplayName(this)
+            % check if several children are displayed
+            if numel(this.axe.Children) > 1
+                % check data plot
+                hPlot = findobj(this.axe.Children,'Type','ErrorBar');
+                str_leg = get(hPlot,'DisplayName');
+                fileID = get(hPlot,'Tag');
+                % check if several data plot
+                if iscell(str_leg)
+                    % check if plot are coming from the same file
+                    fileID = cellfun(@(x) strsplit(x,'@'),fileID,'Uniform',0);
+                    plotID = cellfun(@(x) strcat(x{1:3}),fileID,'Uniform',0);
+                    
+                    [~,~,idx] = unique(plotID,'stable');
+                    
+                    for k = 1:max(idx)
+                        % get plot coming from same file
+                        tf = idx == k;
+                        if sum(tf) > 1
+                            % check if duplicate
+                            if numel(unique({hPlot(tf).DisplayName})) ~= sum(tf)
+                                hDuplicate = hPlot(tf);
+                                % add extansion
+                                for i = 1:numel(hDuplicate)
+                                   ext = strsplit(hDuplicate(i).Tag,'@');
+                                   new_leg = [hDuplicate(i).DisplayName,' (',ext{4},')'];
+                                   hDuplicate(i).DisplayName = new_leg;
+                                end
+                            end
+                        else
+                            % check if same as filename
+                            filename = fileID{tf};
+                            if ~strcmp(hPlot(tf).DisplayName, filename{3})
+                                hPlot(tf).DisplayName = filename{3};
+                            end
+                        end
+                    end
+                else
+                    fileID = strsplit(str_leg,'@');
+                    if strcmp(fileID{3},str_leg)
+                        % reset filename
+                        set(hPlot,'DisplayName',fileID{3});
                     end
                 end
             end
-        end %checkLegend
+        end %checkDisplayName
         
         % This function set the color, the marker and the style for the
         % hDispersion object according to the possible Color, Marker and

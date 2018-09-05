@@ -89,7 +89,7 @@ classdef DispersionTab < DisplayTab
                                   'Value',1,...
                                   'String', 'Show legend',...
                                   'Tag','LegendCheckButton',...
-                                  'Callback',@(src,event) update(this, src));
+                                  'Callback',@(src,event) setLegend(this));
 
             % show fit options: error, mask
             opts_button_box2 = uix.VButtonBox( 'Parent', hbox,...
@@ -166,7 +166,7 @@ classdef DispersionTab < DisplayTab
 
             % update graph
             sortChildren(this);
-            checkLegend(this);
+            setLegend(this);
         end %addPlot
         
         % Remove data from the tab:
@@ -196,6 +196,8 @@ classdef DispersionTab < DisplayTab
                 legend(this.axe,'off');
                 % clear pointer - prevent memory leaks
                 this.hDispersion = [];
+            else
+                checkDisplayName(this);
             end
         end %removePlot
                 
@@ -226,13 +228,6 @@ classdef DispersionTab < DisplayTab
                         % just replace the error by an empty array
                         set(findobj(this.axe.Children,'Type','ErrorBar'),...
                             'YNegativeDelta',[],'YPositiveDelta',[]);
-                    end
-                    
-                case 'LegendCheckButton'
-                    if ~src.Value 
-                        legend(this.axe,'off');
-                    else
-                        legend(this.axe,'show');
                     end
                     
                 case 'FitCheckButton'
@@ -266,7 +261,7 @@ classdef DispersionTab < DisplayTab
                         this.axe.Position = [0.09 0.09 0.86 0.86];
                     end
             end %switch  
-            checkLegend(this);
+            setLegend(this);
         end %update
     
     end
@@ -285,7 +280,7 @@ classdef DispersionTab < DisplayTab
                 % loop over the data
                 for k = 1:length(hData)
                     % find the index of the dispersion object
-                    tf = this.hDispersion == hData;
+                    tf = this.hDispersion == hData(k);
                     % plot
                     errorbar(this.axe,...
                             hData(k).x(hData(k).mask),...
@@ -303,7 +298,7 @@ classdef DispersionTab < DisplayTab
                 % loop over the data
                 for k = 1:length(hData)
                     % find the index of the dispersion object
-                    tf = this.hDispersion == hData;
+                    tf = this.hDispersion == hData(k);
                     % plot
                     errorbar(this.axe,...
                             hData(k).x(hData(k).mask),...
@@ -336,17 +331,18 @@ classdef DispersionTab < DisplayTab
                 if isempty(hData(k).y(~hData(k).mask))
                     continue
                 end
-                                    % find the index of the dispersion object
-                tf = this.hDispersion == hData;
+                % find the index of the dispersion object
+                tf = this.hDispersion == hData(k);
                 % plot
                 scatter(this.axe,...
                     hData(k).x(~hData(k).mask),...
                     hData(k).y(~hData(k).mask),...
-                    'MarkerEdgeColor',this.PlotSpec(k).Color,...
+                    'MarkerEdgeColor',this.PlotSpec(tf).Color,...
                     'Marker',this.DataMaskedMarkerStyle,...
                     'SizeData',this.DataMarkerSize,...
                     'MarkerFaceColor','auto',...
                     'Tag',hData(k).fileID);
+                drawnow;
                 % remove this plot from legend
                 set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
             end
@@ -405,7 +401,7 @@ classdef DispersionTab < DisplayTab
             
             % delete its residuals if needed
             if ~isempty(this.axeResScatter)
-                removeResidual(this, [], modelName)
+                removeResidual(this, [], modelName);
             end
         end %removeFit
         
@@ -544,10 +540,12 @@ classdef DispersionTab < DisplayTab
             tf_plot = strcmp({this.axe.Children.Tag},src.fileID);
             % update their ID
             [this.axe.Children(tf_plot).Tag] = deal(newFileID);
-            % if filename has changed, update legend
+            % if filename or displayname has changed, update legend
             if tf_prop(3) == 0
                 [this.axe.Children(tf_plot).DisplayName] = deal(src.filename);
-                checkLegend(this) % avoid same legend
+                checkDisplayName(this);
+            elseif tf_prop(4) == 0
+                checkDisplayName(this);
             end
         end
     end
@@ -572,9 +570,9 @@ classdef DispersionTab < DisplayTab
         % reset the legend if needed and check if unique names are
         % displayed. If not, set an unique name by adding the field
         % 'displayName' from hDispersion array handle.
-        function this = checkLegend(this)                
+        function this = setLegend(this)                
             % check if we have children
-            if isempty(this.axe.Children)
+            if isempty(this.axe.Children) || ~this.LegendCheckButton.Value
                 legend(this.axe,'off');
                 return
             elseif isempty({this.axe.Children.DisplayName})
@@ -584,27 +582,60 @@ classdef DispersionTab < DisplayTab
             else 
                 legend(this.axe,'show')
             end
-            % check if duplicates
-            str_leg = {this.axe.Children.DisplayName};
-            if numel(str_leg) ~= numel(unique(str_leg))
-                % find which plot is duplicates
-                [unique_str,~,idx] = unique(str_leg);
-                count = accumarray(idx,1);
-                val_count = [unique_str, count];
-                % loop over the result
-                duplicate_str = unique_str(val_count{end} ~= 1);
-                for k = 1:numel(duplicate_str)
-                    tf_plot = strcmp(str_leg,duplicate_str{k});
-                    hPlot = this.axe.Children(tf_plot);
-                    % replace their displayname
-                    for j = 1:numel(hPlot)
-                        tf_data = strcmp({this.hDispersion.fileID},hPlot(j).Tag);
-                        hPlot(j).DisplayName = [hPlot(j).DisplayName,...
-                            ' (',this.hDispersion(tf_data).displayName,')'];                        
+            % check display names
+            checkDisplayName(this);
+        end %checkLegend
+        
+        % This function check the legend and check for duplicates. If
+        % duplicates are found, the displayName property is added to the
+        % input. If this property is not longer required (no duplicate), it
+        % is removed.
+        function this = checkDisplayName(this)
+            % check if several children are displayed
+            if numel(this.axe.Children) > 1
+                % check data plot
+                hPlot = findobj(this.axe.Children,'Type','ErrorBar');
+                str_leg = get(hPlot,'DisplayName');
+                fileID = get(hPlot,'Tag');
+                % check if several data plot
+                if iscell(str_leg)
+                    % check if plot are coming from the same file
+                    fileID = cellfun(@(x) strsplit(x,'@'),fileID,'Uniform',0);
+                    plotID = cellfun(@(x) strcat(x{1:3}),fileID,'Uniform',0);
+                    
+                    [~,~,idx] = unique(plotID,'stable');
+                    
+                    for k = 1:max(idx)
+                        % get plot coming from same file
+                        tf = idx == k;
+                        if sum(tf) > 1
+                            % check if duplicate
+                            if numel(unique({hPlot(tf).DisplayName})) ~= sum(tf)
+                                hDuplicate = hPlot(tf);
+                                % add extansion
+                                for i = 1:numel(hDuplicate)
+                                   ext = strsplit(hDuplicate(i).Tag,'@');
+                                   new_leg = [hDuplicate(i).DisplayName,' (',ext{4},')'];
+                                   hDuplicate(i).DisplayName = new_leg;
+                                end
+                            end
+                        else
+                            % check if same as filename
+                            filename = fileID{tf};
+                            if ~strcmp(hPlot(tf).DisplayName, filename{3})
+                                hPlot(tf).DisplayName = filename{3};
+                            end
+                        end
+                    end
+                else
+                    fileID = strsplit(str_leg,'@');
+                    if strcmp(fileID{3},str_leg)
+                        % reset filename
+                        set(hPlot,'DisplayName',fileID{3});
                     end
                 end
             end
-        end %checkLegend
+        end %checkDisplayName
         
         % This function set the color, the marker and the style for the
         % hDispersion object according to the possible Color, Marker and
@@ -626,15 +657,13 @@ classdef DispersionTab < DisplayTab
                 tf_plot = strcmp(plotID, strcat(hData.dataset,...
                                         hData.sequence, hData.filename));
                 if all(tf_plot == 0)
+                    color_count = zeros(1,size(this.Color,1));
                     % set the color that appear the less
                     [~,count] = ismember(vertcat(this.PlotSpec.Color),this.Color,  'rows');
                     count = accumarray(count,1);
-                    if numel(count) < size(this.Color,1) 
-                        this.PlotSpec(n+1).Color = this.Color(numel(count)+1,:);
-                    else
-                        [~,idx] = min(count);
-                        this.PlotSpec(n+1).Color = this.Color(idx,:);
-                    end
+                    color_count(1:numel(count)) = count;
+                    [~,idx] = min(color_count);
+                    this.PlotSpec(n+1).Color = this.Color(idx,:);
                     % set the first marker
                     this.PlotSpec(n+1).DataMarker = this.DataMarkerStyle{1};
                 else
