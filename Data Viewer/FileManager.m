@@ -90,12 +90,15 @@ classdef FileManager < handle
                 % + dataset
                 hDataset = FileManager.checkNodeExistence(this.gui.tree.Root,...
                     dataset{k}, this.DatasetIcon, 'dataset');
+                expand(hDataset);
                 % + sequence
                 hSequence = FileManager.checkNodeExistence(hDataset,...
                     sequence{k}, this.SequenceIcon, 'sequence');
+                expand(hSequence);
                 % + filename
                 hFile = FileManager.checkNodeExistence(hSequence,...
                     filename{k}, this.FileIcon, 'file');
+                expand(hFile);
                 % + relaxobj
                 switch lower(type{k}) % case-insensitive
                     case 'bloc'
