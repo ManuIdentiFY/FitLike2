@@ -26,6 +26,9 @@ classdef Dispersion < DataUnit
 
             % check if array of struct
             if ~iscell(varargin{2})
+                % add listeners
+                addlistener(obj,{'dataset','sequence','filename','displayName'},...
+                    'PostSet',@(src, event) generateID(obj));
                 % struct
                 for ind = 1:2:nargin
                     try 
@@ -34,11 +37,8 @@ classdef Dispersion < DataUnit
                         error(['Wrong argument ''' varargin{ind} ''' or invalid value/attribute associated.'])
                     end                           
                 end  
-                % add listeners
-                addlistener(obj,{'dataset','sequence','filename','displayName'},...
-                    'PostSet',@(src, event) generateID(obj));
                 % dispersion
-                obj.displayName = 'dispersion'; 
+                %obj.displayName = 'dispersion'; 
             else
                 % array of struct
                 % check for cell sizes
@@ -52,15 +52,15 @@ classdef Dispersion < DataUnit
                     for k = n:-1:1
                         % initialisation required to create unique handle!
                         obj(1,k) = Dispersion();
+                        % add listeners
+                        addlistener(obj(k),{'dataset','sequence','filename','displayName'},...
+                            'PostSet',@(src, event) generateID(obj(k)));
                         % fill arguments
                         for ind = 1:2:nargin 
                             [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
                         end
-                        % add listeners
-                        addlistener(obj(k),{'dataset','sequence','filename','displayName'},...
-                            'PostSet',@(src, event) generateID(obj(k)));
                         % add dispersion
-                        obj(k).displayName = 'dispersion';
+                        %obj(k).displayName = 'dispersion';
                     end
                 end
             end   
