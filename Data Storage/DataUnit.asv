@@ -37,7 +37,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     end
     
     % file properties
-    properties (SetObservable = true, GetObservable = true, AbortSet = true)
+    properties (SetObservable = true, AbortSet = true)
         displayName@char = '';         % char array to place in the legend associated with the data
         filename@char = '';     % name of the file ('file1.sdf')
         sequence@char = '';     % name of the sequence ('IRCPMG')
@@ -81,7 +81,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         error(['Wrong argument ''' varargin{ind} ''' or invalid value/attribute associated.'])
                     end                           
                 end   
-                
             else
                 % array of struct
                 % check for cell sizes
@@ -99,8 +98,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         for ind = 1:2:nargin 
                             [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
                         end
-                        % add listeners
-                        addlistener(obj(k),'PostSet',@(src, event) generateID(src));
                     end
                 end
             end   
@@ -108,7 +105,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             % generate mask if missing
             resetmask(obj);
             % generate fileID
-            generateID(obj);
+            %generateID(obj);
         end %DataUnit    
         
         % assign a processing function to the data object
@@ -217,6 +214,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 obj.fileID = [obj.dataset,'@',obj.sequence,'@',...
                     obj.filename,'@',obj.displayName];
             end
+            notify(obj,'FileHasChanged',);
         end %generateID
         
         % Fill or adapt the mask to the "y" field 

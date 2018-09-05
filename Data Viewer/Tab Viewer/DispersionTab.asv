@@ -150,7 +150,6 @@ classdef DispersionTab < DisplayTab
             this.hDispersion = [this.hDispersion hData];                        
             % add listener 
             addlistener(hData,'FileDeletion',@(src, event) removePlot(this, src));
-            addlistener(hData,'FileHasChanged',@(src, event) updateID(this, src));
             
             % + data
             plotData(this, hData);
@@ -273,24 +272,6 @@ classdef DispersionTab < DisplayTab
             resetLegend(this);
         end %update
     
-    end
-    
-    methods (Access = protected)
-        % update fileID
-        function this = updateID(this, src)
-            % find which field has changed
-            tf_prop = strcmp(split(src.fileID,'@'),...
-                {src.dataset, src.sequence, src.filename, src.displayName}');
-            newFileID = strcat(src.dataset,'@',src.sequence,'@',src.filename,'@',src.displayName);
-            % get the corresponding plot
-            tf_plot = strcmp({this.axe.Children.Tag},src.fileID);
-            % update their ID
-            [this.axe.Children(tf_plot).Tag] = deal(newFileID);
-            % if filename has changed, update legend
-            if tf_prop(3) == 0
-                [this.axe.Children(tf_plot).DisplayName] = deal(src.filename);
-            end
-        end
     end
     
     % Plot methods: data, mask, fit, residual
@@ -565,6 +546,9 @@ classdef DispersionTab < DisplayTab
             this.axeResHist.XLabel.String = this.axeResScatter.YLabel.String;  
         end %makeResidualHistogram
     end
+    
+    % update fileID
+    function this = updateID(this)
     
     % Other function
     methods (Access = public)

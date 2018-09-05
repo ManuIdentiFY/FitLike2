@@ -205,6 +205,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         
         % Generate fileID field
         function obj = generateID(obj)
+            % notify listeners
+            notify(obj,'FileHasChanged');
+            % change fileID
             if length(obj) > 1
                 sep = repmat({'@'},1,numel({obj.dataset}));
                 ID = strcat({obj.dataset},sep,{obj.sequence},sep,...
