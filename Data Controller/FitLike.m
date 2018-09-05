@@ -32,20 +32,20 @@ classdef FitLike < handle
             this.ModelManager.gui.fig.Visible = 'on';
             %%%-----------%%%
             % call open
-            open(this);
-            loadPipeline(this.ProcessingManager);
-            % runProcess
-            runProcess(this);
-            % expand
-            expand(this.FileManager.gui.tree.Root.Children.Children(3));
-            expand(this.FileManager.gui.tree.Root.Children.Children(3).Children);
-            % select IRCPMG files
-            tf = strcmp({this.RelaxData.sequence}, 'IRCPMG/S [DefaultFfcSequences.ssf]');
-            fileID2tree(this.FileManager, {this.RelaxData(tf).fileID}, 'check');
-            % fire callback
-            event.Nodes = this.FileManager.gui.tree.Root.Children.Children(3);
-            event.Action = 'NodeChecked';
-            selectFile(this, this.FileManager.gui.tree, event);
+%             open(this);
+%             loadPipeline(this.ProcessingManager);
+%             % runProcess
+%             runProcess(this);
+%             % expand
+%             expand(this.FileManager.gui.tree.Root.Children.Children(3));
+%             expand(this.FileManager.gui.tree.Root.Children.Children(3).Children);
+%             % select IRCPMG files
+%             tf = strcmp({this.RelaxData.sequence}, 'IRCPMG/S [DefaultFfcSequences.ssf]');
+%             fileID2tree(this.FileManager, {this.RelaxData(tf).fileID}, 'check');
+%             % fire callback
+%             event.Nodes = this.FileManager.gui.tree.Root.Children.Children(3);
+%             event.Action = 'NodeChecked';
+%             selectFile(this, this.FileManager.gui.tree, event);
             %%%-----------%%%
         end %FitLike
         
@@ -72,17 +72,17 @@ classdef FitLike < handle
         function this = open(this)
             % open interface to select files
             %%%%---------------------%%%%
-%             [file, path, indx] = uigetfile({'*.sdf','Stelar Raw Files (*.sdf)';...
-%                                      '*.sef','Stelar Processed Files (*.sef)';...
-%                                      '*.mat','FitLike Dataset (*.mat)'},...
-%                                      'Select One or More Files', ...
-%                                      'MultiSelect', 'on');
+            [file, path, indx] = uigetfile({'*.sdf','Stelar Raw Files (*.sdf)';...
+                                     '*.sef','Stelar Processed Files (*.sef)';...
+                                     '*.mat','FitLike Dataset (*.mat)'},...
+                                     'Select One or More Files', ...
+                                     'MultiSelect', 'on');
             
-            path = 'C:/Users/Manu/Desktop/FFC-NMR DATA/PIGS/SAIN/2/';
-            file = {'20170728_cochonsain2_corpscalleux2_ML.sdf',...
-                    '20170728_cochonsain2_corpscalleux4_ML.sdf',...
-                    '20170728_cochonsain2_corpscalleux2_QP_ML.sdf'};
-            indx = 1;
+%             path = 'C:/Users/Manu/Desktop/FFC-NMR DATA/PIGS/SAIN/2/';
+%             file = {'20170728_cochonsain2_corpscalleux2_ML.sdf',...
+%                     '20170728_cochonsain2_corpscalleux4_ML.sdf',...
+%                     '20170728_cochonsain2_corpscalleux2_QP_ML.sdf'};
+%             indx = 1;
             %%%%---------------------%%%%
             % check output
             if isequal(file,0)
@@ -516,13 +516,10 @@ classdef FitLike < handle
                     this.RelaxData = remove(this.RelaxData, indx);
                     this.RelaxData = [this.RelaxData, relaxObj];
                     % update FileManager
-                    this.FileManager = fileID2tree(this.FileManager, fileID(k), 'delete'); %delete old file
-                    % loop over the new obj
-                    for i = 1:numel(relaxObj)
-                       addData(this.FileManager, class(relaxObj(i)),...
-                           relaxObj(i).dataset, relaxObj(i).sequence,...
-                           relaxObj(i).filename,relaxObj(i).displayName);
-                    end
+                    fileID2tree(this.FileManager, fileID(k), 'delete'); %delete old file
+                    addData(this.FileManager, repmat({class(relaxObj)},1,numel(relaxObj)),...
+                           {relaxObj.dataset}, {relaxObj.sequence},...
+                           {relaxObj.filename},{relaxObj.displayName});
                 end %for
             else
                 % Simulation mode
