@@ -431,7 +431,6 @@ classdef FitLike < handle
                     end
                     % now update the data
                     [this.RelaxData(tf).(PROP_LIST{k})] = deal(event.NewName);
-                    notify(this.RelaxData(tf),'FileHasChanged');
                 end
             end
         end %selectFile

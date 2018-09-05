@@ -53,7 +53,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     
     events
         FileDeletion
-        FileHasChanged
     end
     
     methods 
@@ -205,8 +204,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         
         % Generate fileID field
         function obj = generateID(obj)
-            % notify listeners
-            notify(obj,'FileHasChanged');
             % change fileID
             if length(obj) > 1
                 sep = repmat({'@'},1,numel({obj.dataset}));
