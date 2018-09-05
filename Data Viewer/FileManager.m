@@ -37,7 +37,7 @@ classdef FileManager < handle
                 'Editable',true, 'DndEnabled',true,...
                 'NodeDraggedCallback', @(s,e) FileManager.DragDrop_Callback(this, s,e),...
                 'NodeDroppedCallback', @(s,e) FileManager.DragDrop_Callback(this, s,e),...
-                'MouseClickedCallback', @(s,e) this.FitLike.selectFile(s, e),...
+                'MouseClickedCallback',@(s,e) this.FitLike.selectFile(s, e),...
                 'Tag','tree','RootVisible',false);           
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
@@ -64,11 +64,8 @@ classdef FileManager < handle
             % check input type
             if ischar(dataset) && ischar(sequence) && ischar(filename) && ischar(type)
                 % convert to cell
-                type = {type};
-                dataset = {dataset};
-                sequence = {sequence};
-                filename = {filename};
-                displayName = {displayName};
+                type = {type}; dataset = {dataset};sequence = {sequence};
+                filename = {filename}; displayName = {displayName};
             elseif iscell(dataset) && iscell(sequence) && iscell(filename) &&...
                     iscell(type) && iscell(displayName)
                 % check if size is consistent
@@ -124,7 +121,7 @@ classdef FileManager < handle
                [this.gui.tree.CheckedNodes.Checked] = deal(false);
             end
         end %resetTree
-        
+                
         % check or delete the nodes corresponding to fileID. fileID can be
         % partial.
         % mode = {'check','uncheck','delete'};
@@ -166,7 +163,70 @@ classdef FileManager < handle
     
     % Methods to help tree construction/modification
     methods (Access = public, Static = true)       
-        % Get the fileID list of the selected nodes
+        % Get the partial fileID of the node ancestor:
+        % Example: dataset@sequence@ for a given node (file type)
+        function ancestorID = getAncestorID(node)
+            % initialise the ancestorID
+            ancestorID = '';
+            % check if an ancestor if available
+            if strcmp(node.Parent.Name,'Root')
+                return
+            end
+            
+            hAncestor = node;
+            % loop until we reach the root    
+            while ~strcmp(hAncestor.Parent.Name,'Root')
+                hAncestor = hAncestor.Parent;
+                ancestorID = [hAncestor.Name,'@',ancestorID]; %#ok<AGROW>
+            end
+        end %getAncestorID
+        
+        % Get the partial fileID of the node descendants:
+        % Example: {@file1@relaxObj1, @file2@relaxObj1,...} for a given
+        % node (sequence type)
+        function descendantID = getDescendantID(node)
+            % initialise
+            currentID = [];
+            descendantID = [];
+            % check if children
+            if isempty(node.Children)
+                return
+            end
+            % start at the first descendant
+            hDescendant = node.Children(1);
+            stopFlag = 1;
+            idx = 1;
+            while stopFlag
+                % go to the object at the same tree level
+                hDescendant = hDescendant.Parent.Children(idx);
+                % move to the next level until reaching relaxObj
+                while ~isempty(hDescendant.Children)                      
+                    currentID = [currentID,'@',hDescendant.Name]; %#ok<AGROW>
+                    hDescendant = hDescendant.Children(1);
+                end
+                % store the relaxObj found
+                descendantID = [descendantID, {[currentID,'@',hDescendant.Name]}]; %#ok<AGROW>
+                % find the index of the current obj
+                idx = find(hDescendant.Parent.Children == hDescendant);
+                % check if other branch at the same level
+                while numel(hDescendant.Parent.Children) == idx && stopFlag
+                    % no more object at this level, go back
+                    hDescendant = hDescendant.Parent;
+                    % reset the index
+                    idx = find(hDescendant.Parent.Children == hDescendant);
+                    % remove the current level name
+                    currentID = currentID(1:end-numel(hDescendant.Name)-1);
+                    % check if we reach the end of the selection
+                    if hDescendant == node
+                        stopFlag = 0;
+                    end
+                end
+                % increment to reach the nex branch
+                idx = idx + 1;
+            end % while
+        end %getDescendantID
+        
+        % Get the fileID list of the nodes and their children
         function fileID = Checkbox2fileID(nodes)
             % check input
             if isempty(nodes)
@@ -175,9 +235,9 @@ classdef FileManager < handle
             end
             % initialise fileID
             fileID = [];
-            % loop over the selected nodes
+            % loop over the nodes
             for k = 1:numel(nodes)                                
-                % check if the selected node is the root
+                % check if the node is the root
                 if strcmp(nodes(k).Name,'Root')
                     nodes(k) = nodes(k).Children(1);
                 end
