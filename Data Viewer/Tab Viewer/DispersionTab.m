@@ -131,11 +131,7 @@ classdef DispersionTab < DisplayTab
     end
     
     % Abstract methods
-    methods (Access = public)
-        function this = test(this, src, event)
-            h = 1;
-        end %test
-        
+    methods (Access = public)        
         % Add new data to the tab using handle. hData must be a Dispersion
         % object. 
         function [this, tf] = addPlot(this, hData)
