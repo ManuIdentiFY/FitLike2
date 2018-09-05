@@ -44,7 +44,8 @@ classdef FitLike < handle
             fileID2tree(this.FileManager, {this.RelaxData(tf).fileID}, 'check');
             % fire callback
             event.Nodes = this.FileManager.gui.tree.Root.Children.Children(3);
-            selectFile(this, this, event);
+            event.Action = 'NodeChecked';
+            selectFile(this, this.FileManager.gui.tree, event);
             %%%-----------%%%
         end %FitLike
         
@@ -381,13 +382,13 @@ classdef FitLike < handle
         end %help
     end      
     %% --------------------- FileManager Callback ---------------------- %%  
-    methods (Access = public)
+    methods (Access = public)                
         % File selection callback
-        function selectFile(this, ~, event)
-            % check if nodes was selected
-            if ~isempty(event.Nodes)
+        function selectFile(this, src, event)
+            % check the current action: select or edit
+            if strcmp(event.Action,'NodeChecked')
                 % avoid problems: enable 'off'
-                this.FileManager.gui.tree.Enable = 'off';
+                src.Enable = 'off';
                 % get the fileID list of the checked object
                 fileID = FileManager.Checkbox2fileID(event.Nodes); %#ok<PROPLC>
                 % get the corresponding index
@@ -404,6 +405,7 @@ classdef FitLike < handle
                         warndlg(sprintf(['The following data have not been '...
                             'displayed because their type do not fit with '...
                             'the graph type: \n\n%s.'], sprintf('%s \n',str{:})))
+                        drawnow; pause(0.05);
                         % uncheck these nodes
                         fileID2tree(this.FileManager,...
                             {this.RelaxData(indx(tf)).fileID}, 'uncheck');
@@ -413,9 +415,25 @@ classdef FitLike < handle
                     removePlot(this.DisplayManager, this.RelaxData(indx));
                 end
                 % enable tree
-                this.FileManager.gui.tree.Enable = 'on';
+                src.Enable = 'on';  
+            elseif strcmp(event.Action,'NodeEdited')
+                % check if the node has been edited
+                if ~strcmp(event.NewName,event.OldName)
+                    PROP_LIST = {'dataset','sequence','filename','displayName'};
+                    % get the path ID of the nodes and split it
+                    ancestorID = FileManager.getAncestorID(event.Nodes); %#ok<PROPLC>
+                    ancestorID = strsplit([ancestorID event.OldName],'@');
+                    % get the selection by looping over the properties
+                    tf = true(size(this.RelaxData));
+                    for k = 1:numel(ancestorID)
+                        tf = tf & strcmp({this.RelaxData.(PROP_LIST{k})},...
+                            ancestorID{k});
+                    end
+                    % now update the data
+                    [this.RelaxData(tf).(PROP_LIST{k})] = deal(event.NewName);
+                    notify(this.RelaxData(tf),'FileHasChanged');
+                end
             end
-            
         end %selectFile
     end   
     %% -------------------- DisplayManager Callback -------------------- %% 
