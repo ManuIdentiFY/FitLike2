@@ -150,6 +150,7 @@ classdef DispersionTab < DisplayTab
             this.hDispersion = [this.hDispersion hData];                        
             % add listener 
             addlistener(hData,'FileDeletion',@(src, event) removePlot(this, src));
+            addlistener(hData,'FileHasChanged',@(src, event) updateID(this, src));
             
             % + data
             plotData(this, hData);
@@ -303,9 +304,6 @@ classdef DispersionTab < DisplayTab
                             'MarkerSize',this.DataMarkerSize,...
                             'MarkerFaceColor','auto',...
                             'Tag',hData(k).fileID); 
-                    % addlistener to update dynamically the graph
-                    addlistener(hData(k),'filename','PostSet',@(~,~)set(h,'DisplayName',hData(k).filename)); 
-                    addlistener(hData(k),'fileID','PostSet',@(~,~)set(h,'Tag',hData(k).fileID)); 
                 end
             else
                 % loop over the data
@@ -326,9 +324,6 @@ classdef DispersionTab < DisplayTab
                             'MarkerSize',this.DataMarkerSize,...
                             'MarkerFaceColor','auto',...
                             'Tag',hData(k).fileID);
-                    % addlistener to update dynamically the graph
-                    addlistener(hData(k),'filename','PostSet',@(~,~)set(h,'DisplayName',hData(k).filename)); 
-                    addlistener(hData(k),'fileID','PostSet',@(~,~)set(h,'Tag',hData(k).fileID)); 
                 end
             end
             
@@ -362,8 +357,6 @@ classdef DispersionTab < DisplayTab
                     'Tag',hData(k).fileID);
                 % remove this plot from legend
                 set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-                % addlistener to update dynamically the graph
-                addlistener(hData(k),'fileID','PostSet',@(~,~)set(h,'Tag',hData(k).fileID)); 
             end
         end %plotMaskedData
         
@@ -416,8 +409,6 @@ classdef DispersionTab < DisplayTab
                         'Marker',this.FitMarkerStyle,...
                         'Tag',hData(k).fileID,...
                         'UserData',this.selectedModel{iModel}); 
-                    % addlistener to update dynamically the graph
-                    addlistener(hData(k),'fileID','PostSet',@(~,~)set(h,'Tag',hData(k).fileID)); 
                 end
             end
         end %plotFit
@@ -557,6 +548,24 @@ classdef DispersionTab < DisplayTab
             % axis settings
             this.axeResHist.XLabel.String = this.axeResScatter.YLabel.String;  
         end %makeResidualHistogram
+    end
+    
+    methods (Access = protected)
+        % update fileID
+        function this = updateID(this, src)
+            % find which field has changed
+            tf_prop = strcmp(split(src.fileID,'@'),...
+                {src.dataset, src.sequence, src.filename, src.displayName}');
+            newFileID = strcat(src.dataset,'@',src.sequence,'@',src.filename,'@',src.displayName);
+            % get the corresponding plot
+            tf_plot = strcmp({this.axe.Children.Tag},src.fileID);
+            % update their ID
+            [this.axe.Children(tf_plot).Tag] = deal(newFileID);
+            % if filename has changed, update legend
+            if tf_prop(3) == 0
+                [this.axe.Children(tf_plot).DisplayName] = deal(src.filename);
+            end
+        end
     end
     
     % Other function

@@ -44,15 +44,19 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         dataset@char = 'myDataset';      % name of the dataset('ISMRM2018')
     end
     
-    % other properties
-    properties (Access = public, Hidden = true)
+    % ID properties
+    properties (SetObservable = true, AbortSet = true, Hidden = true)
         fileID@char = '';       % ID of the file: [dataset sequence filename] 
+    end
+    % other properties
+    properties (Hidden = true)
         parent@DataUnit;            % parent of the object
         children@DataUnit;          % children of the object
     end
     
     events
         FileDeletion
+        FileHasChanged
     end
     
     methods 
@@ -204,6 +208,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         
         % Generate fileID field
         function obj = generateID(obj)
+            % notify listeners
+            notify(obj,'FileHasChanged');
             % change fileID
             if length(obj) > 1
                 sep = repmat({'@'},1,numel({obj.dataset}));
