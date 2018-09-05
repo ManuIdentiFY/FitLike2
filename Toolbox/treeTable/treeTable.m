@@ -711,7 +711,7 @@ function tableChangedCallback(hModel,hEvent,jtable)
     newData = hModel.getValueAt(modifiedRow,modifiedCol);
 
     % Now do something useful with this info
-    fprintf('Modified cell %d,%d (%s) to: %s\n', modifiedRow+1, modifiedCol+1, char(label), num2str(newData));
+    %fprintf('Modified cell %d,%d (%s) to: %s\n', modifiedRow+1, modifiedCol+1, char(label), num2str(newData));
 end  % tableChangedCallback
 
 %% Sample table-selection callback
@@ -722,5 +722,5 @@ function selectionCallback(hSelectionModel,hEvent,jtable)
     LeadSelectionIndex = get(hSelectionModel,'LeadSelectionIndex');
 
     % Now do something useful with this info
-    fprintf('Selected rows #%d-%d\n', MinSelectionIndex+1, MaxSelectionIndex+1);
+   % fprintf('Selected rows #%d-%d\n', MinSelectionIndex+1, MaxSelectionIndex+1);
 end  % selectionCallback
