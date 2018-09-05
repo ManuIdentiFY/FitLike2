@@ -352,8 +352,12 @@ classdef FileManager < handle
                     if ~strcmp(src.Value, target.Value)
                         hChildren = target.Children;
                         new_order = [NaN 1:numel(hChildren)];
+                        % get target fileID
+                        ancestorID_target = FileManager.getAncestorID(target.Children(1));
                     else
                         new_order = [1:(idxTarget-1) NaN idxTarget:numel(hChildren)];
+                        % get target fileID
+                        ancestorID_target = FileManager.getAncestorID(target);
                     end
                     
                     % check if duplicate
@@ -365,6 +369,11 @@ classdef FileManager < handle
                             hParent.Value, src.Value, src.Name);
                         warndlg(msg, 'Warning: duplicate');
                         return
+                    else
+                        % update data
+                        ancestorID_src = FileManager.getAncestorID(src);
+                        editDragDropFile(this.FitLike, [ancestorID_src src.Name],...
+                            [ancestorID_target, src.Name]);
                     end
                     
                     % De-parent

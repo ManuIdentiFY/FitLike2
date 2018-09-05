@@ -425,26 +425,10 @@ classdef FitLike < handle
                     end
                     % now update the data
                     [this.RelaxData(tf).(PROP_LIST{k})] = deal(event.NewName);
+                    fprintf(%d
                 end
             end
         end %selectFile
-        
-        % Callback to update data when using DragDrop method
-        function editDragDropFile(this, oldFileID, newFileID)
-            PROP_LIST = {'dataset','sequence','filename','displayName'};
-            % get the corresponding object
-            oldFileID = strsplit(oldFileID,'@');
-            tf = true(size(this.RelaxData));
-            for k = 1:numel(oldFileID)
-                tf = tf & strcmp({this.RelaxData.(PROP_LIST{k})},...
-                    oldFileID{k});
-            end
-            % update their properties
-            newFileID = strsplit(newFileID,'@');
-            for k = 1:numel(newFileID)-1
-                [this.RelaxData(tf).(PROP_LIST{k})] = deal(newFileID{k});
-            end
-        end %editDragDropFile
     end   
     %% -------------------- DisplayManager Callback -------------------- %% 
     methods (Access = public)
