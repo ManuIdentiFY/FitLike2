@@ -91,6 +91,7 @@ classdef ModelManager < handle
         function this = selectModel(this)
             if strcmp(this.gui.tab.SelectedTab.Title,'+')
                 addModel(this);
+                drawnow;
             end
         end %selectModel
         
@@ -105,7 +106,7 @@ classdef ModelManager < handle
             % set the selection to this tab
             this.gui.tab.SelectedTab = this.gui.tab.Children(end-1);
             % add UI menu to this tab
-            setUIMenu(this);          
+            setUIMenu(this);  
         end %addModel
         
         % Remove Model
