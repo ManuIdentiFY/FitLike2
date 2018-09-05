@@ -603,7 +603,7 @@ classdef Tree < hgsetget
                 
                 % Get the position clicked
                 x = e.getX;
-                y = e.getY;
+                y = e.getY;            
                 
                 if e.isMetaDown %Right-click
                     
@@ -644,12 +644,41 @@ classdef Tree < hgsetget
                 elseif ~isempty(tObj.MouseClickedCallback)
                     % Do the following for a custom MouseClickedCallback
                     
-                    % Call the custom callback
-                    e1 = struct(...
-                        'Position',[x,y],...
-                        'Nodes',nObj);
-                    hgfeval(tObj.MouseClickedCallback,tObj,e1);
+                    %%% -------- M.Petit modified, 09/2018 -------- %%%
+                    % check if a node was selected
+                    if ~isempty(nObj)
+                        % check if the node is selected
+                        treePath = tObj.jTree.getPathForLocation(x,y); 
+                        isSelected = tObj.jTree.isPathSelected(treePath); 
+                        
+                        % if node selected, fire the edit callback
+                        if isSelected
+                            % get the current name
+                            oldName = nObj.Name;
+                            % Edit the selected nodes
+                            tObj.jTree.startEditingAtPath(treePath)
+                            % wait until the path is not edit anymore
+                            while tObj.jTree.isEditing
+                                % loop
+                            end
+                            % get new name and call the custom callback
+                            newName = nObj.Name;
+                            e1 = struct('Nodes',nObj,'Action','NodeEdited',...
+                                'OldName',oldName,'NewName',newName);
+                            hgfeval(tObj.MouseClickedCallback,tObj,e1);
+                        else
+                            % Call the custom callback
+                            e1 = struct('Nodes',nObj,'Action','NodeChecked');
+                            hgfeval(tObj.MouseClickedCallback,tObj,e1);
+                        end
+                    end                   
+                    %%% ------------------------------------------- %%%
                     
+                    % Call the custom callback
+%                     e1 = struct(...
+%                         'Position',[x,y],...
+%                         'Nodes',nObj);
+%                                       
                 end %if e.isMetaDown
                 
             end %if callbacksEnabled(tObj)
