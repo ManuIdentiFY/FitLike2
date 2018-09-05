@@ -5,7 +5,6 @@ classdef Dispersion < DataUnit
     % SEE ALSO BLOC, ZONE, DATAUNIT, DISPERSIONMODEL
     
     properties
-        displayName = 'dispersion';
 %         model = [];  % DispersionModel object that sums up all the contributions from the sub-model list
 %         subModel = [] % cell array of DispersionModel object
         % See DataUnit for other properties
@@ -34,7 +33,12 @@ classdef Dispersion < DataUnit
                     catch ME
                         error(['Wrong argument ''' varargin{ind} ''' or invalid value/attribute associated.'])
                     end                           
-                end   
+                end  
+                % add listeners
+                addlistener(obj,{'dataset','sequence','filename','displayName'},...
+                    'PostSet',@(src, event) generateID(obj));
+                % dispersion
+                obj.displayName = 'dispersion'; 
             else
                 % array of struct
                 % check for cell sizes
@@ -52,6 +56,11 @@ classdef Dispersion < DataUnit
                         for ind = 1:2:nargin 
                             [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
                         end
+                        % add listeners
+                        addlistener(obj(k),{'dataset','sequence','filename','displayName'},...
+                            'PostSet',@(src, event) generateID(obj(k)));
+                        % add dispersion
+                        obj(k).displayName = 'dispersion';
                     end
                 end
             end   

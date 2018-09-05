@@ -10,7 +10,6 @@ classdef Bloc < DataUnit
     % SEE ALSO BLOC, ZONE, DISPERSION, DATAUNIT, RELAXOBJ
     
     properties 
-        displayName = 'bloc';
         % See DataUnit for other properties
     end
     
@@ -30,6 +29,11 @@ classdef Bloc < DataUnit
                 for ind = 1:2:nargin
                     obj.(varargin{ind}) = varargin{ind+1};                       
                 end   
+                % add listeners
+                addlistener(obj,{'dataset','sequence','filename','displayName'},...
+                    'PostSet',@(src, event) generateID(obj));
+                % add bloc
+                obj.displayName = 'bloc';
             else
                 % array of struct
                 % check for cell sizes
@@ -47,6 +51,11 @@ classdef Bloc < DataUnit
                         for ind = 1:2:nargin 
                             [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
                         end
+                        % add listeners
+                        addlistener(obj(k),{'dataset','sequence','filename','displayName'},...
+                            'PostSet',@(src, event) generateID(obj(k)));
+                        % add bloc
+                        obj(k).displayName = 'bloc';
                     end
                 end
             end   
@@ -54,7 +63,7 @@ classdef Bloc < DataUnit
             % generate mask if missing
             resetmask(obj);
             % generate fileID
-            generateID(obj);
+            %generateID(obj);
         end %Bloc
         
         function x = getZoneAxis(self)

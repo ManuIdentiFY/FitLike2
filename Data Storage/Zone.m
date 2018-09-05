@@ -5,7 +5,6 @@ classdef Zone < DataUnit
     % SEE ALSO BLOC, ZONE, DISPERSION, DATAUNIT, RELAXOBJ
        
     properties 
-        displayName = 'zone';
         % See DataUnit for other properties
     end
     
@@ -33,6 +32,8 @@ classdef Zone < DataUnit
                         error(['Wrong argument ''' varargin{ind} ''' or invalid value/attribute associated.'])
                     end                           
                 end   
+                % zone
+                obj.displayName = 'zone';
             else
                 % array of struct
                 % check for cell sizes
@@ -50,6 +51,8 @@ classdef Zone < DataUnit
                         for ind = 1:2:nargin 
                             [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
                         end
+                        % add zone
+                        obj(k).displayName = 'zone';
                     end
                 end
             end   
