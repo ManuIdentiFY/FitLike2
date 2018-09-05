@@ -18,10 +18,6 @@ classdef FileManager < handle
                         fullfile(matlabroot,'toolbox','matlab','icons','unknownicon.gif')};
     end
     
-    events
-        TreeUpdate
-    end
-    
     methods (Access = public)
         % Constructor
         function this = FileManager(FitLike)
@@ -47,6 +43,8 @@ classdef FileManager < handle
             % Replace the close function by setting the visibility to off
             set(this.gui.fig,  'closerequestfcn', ...
                 @(src, event) this.FitLike.hideWindowPressed(src)); 
+            % remove file callback
+            addlistener(hData,'FileDeletion',@(src, event) removeData(this));
         end %FileManager
         
         % Destructor
@@ -108,16 +106,12 @@ classdef FileManager < handle
                 FileManager.checkNodeExistence(hFile, displayName{k},...
                     this.RelaxObjIcon{idx}, 'relaxObj');
             end
-            % notify 
-            notify(this, 'TreeUpdate')
         end %addData
         
         % Remove data from the tree. 
         function this = removeData(this)
             % just delete the selected nodes and their children
             delete(this.gui.tree.CheckedNodes);
-            % notify 
-            notify(this,'TreeUpdate')
         end %removeData       
         
         % Reset tree: uncheck all the nodes
@@ -384,8 +378,9 @@ classdef FileManager < handle
                     % reorder children
                     FileManager.stackNodes(tree, hChildren, new_order, []);
                 end
-                % notify 
-                notify(this,'TreeUpdate')
+                % update ProcessingManager
+                updateTree(this.FitLike.ProcessingManager);
+                updateTree(this.FitLike.ModelManager);
             end
         end %DragNodeCallback
         

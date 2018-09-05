@@ -43,6 +43,10 @@ classdef ProcessingManager < handle
             % Set callback for the run pushbutton
             set(this.gui.RunPushButton, 'Callback',...
                 @(src, event) this.FitLike.runProcess());
+            
+            % Add listener to the FileManager tree
+            addlistener(this.FitLike.FileManager,...
+                'TreeUpdate',@(src, event) updateTree(this, src));
         end %ProcessingManager
         
         % Destructor
@@ -74,7 +78,7 @@ classdef ProcessingManager < handle
         end
         
         % Update tree
-        function this = updateTree(this)
+        function this = updateTree(this, src)
             % define new parent container
             hParent = this.gui.tree.UserData.Root;
             % delete children
@@ -82,7 +86,7 @@ classdef ProcessingManager < handle
                 delete(hParent.Children)
             end
             % get children
-            hChildren = this.FitLike.FileManager.gui.tree.Root.Children;
+            hChildren = src.gui.tree.Root.Children;
             % get the tree from FileManager
             copy(hChildren, hParent);
             % delete all relaxObj: just select files

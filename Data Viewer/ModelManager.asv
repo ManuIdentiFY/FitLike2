@@ -44,9 +44,7 @@ classdef ModelManager < handle
             set(this.gui.RunPushButton, 'Callback',...
                 @(src, event) this.FitLike.runFit());
             
-            % Add listener to the FileManager tree
-            addlistener(this.FitLike.FileManager,...
-                'TreeUpdate',@(src, event) updateTree(this, src));
+            % Add listener
         end %ModelManager
         
         % Destructor
@@ -78,7 +76,7 @@ classdef ModelManager < handle
         end
         
         % Update tree
-        function this = updateTree(this, src)
+        function this = updateTree(this)
             % define new parent container
             hParent = this.gui.tree.UserData.Root;
             % delete children
@@ -86,7 +84,7 @@ classdef ModelManager < handle
                 delete(hParent.Children)
             end
             % get children
-            hChildren = src.gui.tree.Root.Children;
+            hChildren = this.FitLike.FileManager.gui.tree.Root.Children;
             % get the tree from FileManager
             copy(hChildren, hParent);
         end %updateTree

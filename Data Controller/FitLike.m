@@ -227,9 +227,6 @@ classdef FitLike < handle
             addData(this.FileManager,repmat({'bloc'},[1,size(bloc)]),...
                 {bloc.dataset}, {bloc.sequence},...
                 {bloc.filename}, {bloc.displayName});
-            % update ProcessingManager
-            updateTree(this.ProcessingManager);
-            updateTree(this.ModelManager);
                 %%-------------------------------------------------------%%
                 % Check if duplicates are imported and let the user decides
                 % if we keep them and add '_bis' to their filename or just
@@ -274,9 +271,6 @@ classdef FitLike < handle
             this.RelaxData = delete(this.RelaxData, idx);
             % update FileManager
             removeData(this.FileManager);
-            % update ProcessingManager
-            updateTree(this.ProcessingManager);
-            updateTree(this.ModelManager);
         end %remove
         
         % Export function: allow to export data (dispersion, model)
@@ -517,8 +511,6 @@ classdef FitLike < handle
                 % Simulation mode
                 % TO DO
             end
-            % update model tree
-            updateTree(this.ModelManager);
         end %runProcess
     end
     
