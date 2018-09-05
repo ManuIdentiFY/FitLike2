@@ -32,20 +32,20 @@ classdef FitLike < handle
             this.ModelManager.gui.fig.Visible = 'on';
             %%%-----------%%%
             % call open
-%             open(this);
-%             loadPipeline(this.ProcessingManager);
-%             % runProcess
-%             runProcess(this);
-%             % expand
-%             expand(this.FileManager.gui.tree.Root.Children.Children(3));
-%             expand(this.FileManager.gui.tree.Root.Children.Children(3).Children);
-%             % select IRCPMG files
-%             tf = strcmp({this.RelaxData.sequence}, 'IRCPMG/S [DefaultFfcSequences.ssf]');
-%             fileID2tree(this.FileManager, {this.RelaxData(tf).fileID}, 'check');
-%             % fire callback
-%             event.Nodes = this.FileManager.gui.tree.Root.Children.Children(3);
-%             event.Action = 'NodeChecked';
-%             selectFile(this, this.FileManager.gui.tree, event);
+            open(this);
+            loadPipeline(this.ProcessingManager);
+            % runProcess
+            runProcess(this);
+            % expand
+            expand(this.FileManager.gui.tree.Root.Children.Children(3));
+            expand(this.FileManager.gui.tree.Root.Children.Children(3).Children);
+            % select IRCPMG files
+            tf = strcmp({this.RelaxData.sequence}, 'IRCPMG/S [DefaultFfcSequences.ssf]');
+            fileID2tree(this.FileManager, {this.RelaxData(tf).fileID}, 'check');
+            % fire callback
+            event.Nodes = this.FileManager.gui.tree.Root.Children.Children(3);
+            event.Action = 'NodeChecked';
+            selectFile(this, this.FileManager.gui.tree, event);
             %%%-----------%%%
         end %FitLike
         
@@ -72,17 +72,17 @@ classdef FitLike < handle
         function this = open(this)
             % open interface to select files
             %%%%---------------------%%%%
-            [file, path, indx] = uigetfile({'*.sdf','Stelar Raw Files (*.sdf)';...
-                                     '*.sef','Stelar Processed Files (*.sef)';...
-                                     '*.mat','FitLike Dataset (*.mat)'},...
-                                     'Select One or More Files', ...
-                                     'MultiSelect', 'on');
+%             [file, path, indx] = uigetfile({'*.sdf','Stelar Raw Files (*.sdf)';...
+%                                      '*.sef','Stelar Processed Files (*.sef)';...
+%                                      '*.mat','FitLike Dataset (*.mat)'},...
+%                                      'Select One or More Files', ...
+%                                      'MultiSelect', 'on');
             
-%             path = 'C:/Users/Manu/Desktop/FFC-NMR DATA/PIGS/SAIN/2/';
-%             file = {'20170728_cochonsain2_corpscalleux2_ML.sdf',...
-%                     '20170728_cochonsain2_corpscalleux4_ML.sdf',...
-%                     '20170728_cochonsain2_corpscalleux2_QP_ML.sdf'};
-%             indx = 1;
+            path = 'C:/Users/Manu/Desktop/FFC-NMR DATA/PIGS/SAIN/2/';
+            file = {'20170728_cochonsain2_corpscalleux2_ML.sdf',...
+                    '20170728_cochonsain2_corpscalleux4_ML.sdf',...
+                    '20170728_cochonsain2_corpscalleux2_QP_ML.sdf'};
+            indx = 1;
             %%%%---------------------%%%%
             % check output
             if isequal(file,0)
@@ -382,7 +382,7 @@ classdef FitLike < handle
             % check the current action: select or edit
             if strcmp(event.Action,'NodeChecked')
                 % avoid problems: enable 'off'
-                src.Enable = 'off';
+                %src.Enable = 'off';
                 % get the fileID list of the checked object
                 fileID = FileManager.Checkbox2fileID(event.Nodes); %#ok<PROPLC>
                 % get the corresponding index
@@ -409,7 +409,7 @@ classdef FitLike < handle
                     removePlot(this.DisplayManager, this.RelaxData(indx));
                 end
                 % enable tree
-                src.Enable = 'on';  
+                %src.Enable = 'on';  
             elseif strcmp(event.Action,'NodeEdited')
                 % check if the node has been edited
                 if ~strcmp(event.NewName,event.OldName)
