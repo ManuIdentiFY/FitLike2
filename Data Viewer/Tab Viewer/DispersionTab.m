@@ -63,8 +63,8 @@ classdef DispersionTab < DisplayTab
             this.axe.Position = this.mainAxisPosition; %reset Position
             
             % add display options under the axis
-            optsButton = buildDisplayOptions(this.box);
-            this.optsButton = guihandles(optsButton);
+            this.optsButton = buildDisplayOptions(this.box);
+            %this.optsButton = guihandles(optsButton);
             
             % set the default axis
             this.axe.XScale = this.optsButton.XAxisPopup.String{this.optsButton.XAxisPopup.Value};
@@ -96,7 +96,10 @@ classdef DispersionTab < DisplayTab
                 @(src, event) setAxis(this, src)); 
             
             % Mask callback
-
+            set(this.optsButton.MaskDataPushButton,'Callback',...
+                @(src, event) maskData(this));
+            set(this.optsButton.ResetMaskPushButton,'Callback',...
+                @(src, event) resetMaskData(this));
             %%% ------------------------------------------------------- %%%            
             % set heights                  
             this.box.Heights = [-8 -1];
@@ -682,6 +685,26 @@ classdef DispersionTab < DisplayTab
                 this.axe.YScale = src.String{src.Value};
             end           
         end %setAxis
+        
+        % Mask data
+        function maskData(this)
+            
+        end % maskData
+        
+        % Reset mask data
+        function resetMaskData(this)
+            
+        end % resetMaskData
+        
+        % Get fileID 
+        function fileID = getFileID(this)
+            % check if possible 
+            if isempty(this.hDispersion)
+                fileID = [];
+            else
+                fileID = {this.hDispersion.fileID};
+            end
+        end % getFileID
     end  
 end
 
