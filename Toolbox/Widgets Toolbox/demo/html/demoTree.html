@@ -1,0 +1,321 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Tree</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2018-03-06"><meta name="DC.source" content="demoTree.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Tree</h1><!--introduction--><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Create the widget</a></li><li><a href="#2">Expand branches</a></li><li><a href="#3">Hide the root</a></li><li><a href="#4">Change selection mode</a></li><li><a href="#5">Select nodes programmatically</a></li><li><a href="#6">Toggle Enable</a></li><li><a href="#7">Toggle Enable back on</a></li><li><a href="#8">Change some node properties</a></li><li><a href="#9">Allow interactively renaming a node</a></li><li><a href="#10">Relocate nodes</a></li><li><a href="#11">Add context menus</a></li><li><a href="#12">Drag and drop support</a></li></ul></div><h2 id="1">Create the widget</h2><pre class="codeinput">f = figure(<span class="keyword">...</span>
+    <span class="string">'Toolbar'</span>,<span class="string">'none'</span>,<span class="keyword">...</span>
+    <span class="string">'MenuBar'</span>,<span class="string">'none'</span>,<span class="keyword">...</span>
+    <span class="string">'NumberTitle'</span>,<span class="string">'off'</span>,<span class="keyword">...</span>
+    <span class="string">'Units'</span>,<span class="string">'pixels'</span>,<span class="keyword">...</span>
+    <span class="string">'Position'</span>,[100 100 220 320]);
+movegui(f,[100 -100])
+
+w = uiw.widget.Tree(<span class="keyword">...</span>
+    <span class="string">'Parent'</span>,f,<span class="keyword">...</span>
+    <span class="string">'SelectionChangeFcn'</span>,@(h,e)disp(e),<span class="keyword">...</span>
+    <span class="string">'Label'</span>,<span class="string">'Tree:'</span>, <span class="keyword">...</span>
+    <span class="string">'LabelLocation'</span>,<span class="string">'top'</span>,<span class="keyword">...</span>
+    <span class="string">'LabelHeight'</span>,18,<span class="keyword">...</span>
+    <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="keyword">...</span>
+    <span class="string">'Position'</span>, [10 10 200 300]);
+
+topNode =  uiw.widget.TreeNode(<span class="string">'Name'</span>,<span class="string">'TopNode'</span>,<span class="string">'Parent'</span>,w.Root);
+branchA = uiw.widget.TreeNode(<span class="string">'Name'</span>,<span class="string">'BranchA'</span>,<span class="string">'Parent'</span>,w.Root);
+branchB = uiw.widget.TreeNode(<span class="string">'Name'</span>,<span class="string">'BranchB'</span>,<span class="string">'Parent'</span>,w.Root);
+
+<span class="keyword">for</span> idx = 1:5
+    nodesA(idx) = uiw.widget.TreeNode(<span class="string">'Name'</span>,sprintf(<span class="string">'NodeA %d'</span>,idx),<span class="string">'Parent'</span>,branchA); <span class="comment">%#ok&lt;SAGROW&gt;</span>
+    nodesB(idx) = uiw.widget.TreeNode(<span class="string">'Name'</span>,sprintf(<span class="string">'NodeB %d'</span>,idx),<span class="string">'Parent'</span>,branchB); <span class="comment">%#ok&lt;SAGROW&gt;</span>
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="demoTree_01.png" alt=""> <h2 id="2">Expand branches</h2><pre class="codeinput">branchA.expand();
+branchB.expand();
+</pre><h2 id="3">Hide the root</h2><pre class="codeinput">w.RootVisible = false;
+</pre><h2 id="4">Change selection mode</h2><pre class="codeinput">w.SelectionType = <span class="string">'discontiguous'</span>;
+w.SelectionChangeFcn = @(h,e)disp({h.SelectedNodes.Name}');
+</pre><h2 id="5">Select nodes programmatically</h2><pre class="codeinput">w.SelectedNodes = [nodesA(2) nodesB(4)];
+</pre><h2 id="6">Toggle Enable</h2><pre class="codeinput">w.Enable = <span class="string">'off'</span>;
+</pre><img vspace="5" hspace="5" src="demoTree_02.png" alt=""> <h2 id="7">Toggle Enable back on</h2><pre class="codeinput">w.Enable = <span class="string">'on'</span>;
+</pre><img vspace="5" hspace="5" src="demoTree_03.png" alt=""> <h2 id="8">Change some node properties</h2><pre class="codeinput"><span class="comment">% Rename a node</span>
+topNode.Name = <span class="string">'TopNode (renamed)'</span>;
+
+<span class="comment">% Set an icon</span>
+branchIcon = fullfile(matlabroot,<span class="string">'toolbox'</span>,<span class="string">'matlab'</span>,<span class="string">'icons'</span>,<span class="string">'pagesicon.gif'</span>);
+nodeIcon = fullfile(matlabroot,<span class="string">'toolbox'</span>,<span class="string">'matlab'</span>,<span class="string">'icons'</span>,<span class="string">'pageicon.gif'</span>);
+setIcon(branchA,branchIcon);
+setIcon(topNode,nodeIcon);
+</pre><h2 id="9">Allow interactively renaming a node</h2><pre class="codeinput"><span class="comment">% Not working consistently</span>
+<span class="comment">% w.Editable = true;</span>
+<span class="comment">% w.NodeEditedCallback = @(h,e)disp({h.SelectedNodes.Name}');</span>
+</pre><h2 id="10">Relocate nodes</h2><pre class="codeinput"><span class="comment">% Move nodes around</span>
+nodesB(1).Parent = nodesA(1);
+</pre><h2 id="11">Add context menus</h2><pre class="codeinput"><span class="comment">% For the whole tree</span>
+treeContextMenu = uicontextmenu(<span class="string">'Parent'</span>,f);
+uimenu(treeContextMenu,<span class="string">'Label'</span>,<span class="string">'Refresh'</span>);
+set(w,<span class="string">'UIContextMenu'</span>,treeContextMenu)
+
+<span class="comment">% For nodesA only</span>
+nodesAContextMenu = uicontextmenu(<span class="string">'Parent'</span>,f);
+uimenu(nodesAContextMenu,<span class="string">'Label'</span>,<span class="string">'Node1'</span>);
+set(nodesA,<span class="string">'UIContextMenu'</span>,nodesAContextMenu)
+</pre><img vspace="5" hspace="5" src="demoTree_04.png" alt=""> <h2 id="12">Drag and drop support</h2><pre class="codeinput"><span class="comment">% Note this only supports moving nodes within the tree. It does not support</span>
+<span class="comment">% dragging to/from other parts of the user interface.</span>
+
+w.DndEnabled = true;
+w.NodeDraggedCallback = @(h,e)dragDropCallback(h,e);
+w.NodeDroppedCallback = @(h,e)dragDropCallback(h,e);
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">% Callback for drag and drop</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="keyword">function</span> dropOk = dragDropCallback(h,e) <span class="comment">%#ok&lt;INUSL&gt;</span>
+
+<span class="comment">% Is this the drag or drop part?</span>
+doDrop = ~(nargout); <span class="comment">% The drag callback expects an output, drop does not</span>
+
+<span class="comment">% Get the source and destination</span>
+srcNode = e.Source;
+dstNode = e.Target;
+
+<span class="comment">% If drop is allowed</span>
+<span class="keyword">if</span> ~doDrop
+    <span class="comment">% Is dstNode a valid drop location?</span>
+
+    <span class="comment">% For example, assume it always is. Tree will prevent dropping on</span>
+    <span class="comment">% itself or existing parent.</span>
+    dropOk = true;
+
+<span class="keyword">elseif</span> strcmpi(e.DropAction,<span class="string">'move'</span>)
+
+    <span class="comment">% De-parent</span>
+    srcNode.Parent = [];
+
+    <span class="comment">% Then get index of destination</span>
+    dstLevelNodes = [dstNode.Parent.Children];
+    dstIndex = find(dstLevelNodes == dstNode);
+
+    <span class="comment">% Re-order children and re-parent</span>
+    dstLevelNodes = [dstLevelNodes(1:(dstIndex-1)) srcNode dstLevelNodes(dstIndex:end)];
+    <span class="keyword">for</span> idx = 1:numel(dstLevelNodes)
+        dstLevelNodes(idx).Parent = dstNode.Parent;
+    <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+<span class="keyword">end</span> <span class="comment">%function</span>
+</pre><p class="footer">Copyright 2012-2018 The MathWorks, Inc.<br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2017a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Tree
+%   Copyright 2012-2018 The MathWorks, Inc.
+
+%% Create the widget
+
+f = figure(...
+    'Toolbar','none',...
+    'MenuBar','none',...
+    'NumberTitle','off',...
+    'Units','pixels',...
+    'Position',[100 100 220 320]);
+movegui(f,[100 -100])
+
+w = uiw.widget.Tree(...
+    'Parent',f,...
+    'SelectionChangeFcn',@(h,e)disp(e),...
+    'Label','Tree:', ...
+    'LabelLocation','top',...
+    'LabelHeight',18,...
+    'Units', 'pixels', ...
+    'Position', [10 10 200 300]);
+
+topNode =  uiw.widget.TreeNode('Name','TopNode','Parent',w.Root);
+branchA = uiw.widget.TreeNode('Name','BranchA','Parent',w.Root);
+branchB = uiw.widget.TreeNode('Name','BranchB','Parent',w.Root);
+
+for idx = 1:5
+    nodesA(idx) = uiw.widget.TreeNode('Name',sprintf('NodeA %d',idx),'Parent',branchA); %#ok<SAGROW>
+    nodesB(idx) = uiw.widget.TreeNode('Name',sprintf('NodeB %d',idx),'Parent',branchB); %#ok<SAGROW>
+end
+
+
+%% Expand branches
+
+branchA.expand();
+branchB.expand();
+
+
+%% Hide the root
+
+w.RootVisible = false;
+
+
+%% Change selection mode
+
+w.SelectionType = 'discontiguous';
+w.SelectionChangeFcn = @(h,e)disp({h.SelectedNodes.Name}');
+
+
+%% Select nodes programmatically
+
+w.SelectedNodes = [nodesA(2) nodesB(4)];
+
+
+%% Toggle Enable
+
+w.Enable = 'off';
+
+
+%% Toggle Enable back on
+
+w.Enable = 'on';
+
+
+%% Change some node properties
+
+% Rename a node
+topNode.Name = 'TopNode (renamed)';
+
+% Set an icon
+branchIcon = fullfile(matlabroot,'toolbox','matlab','icons','pagesicon.gif');
+nodeIcon = fullfile(matlabroot,'toolbox','matlab','icons','pageicon.gif');
+setIcon(branchA,branchIcon);
+setIcon(topNode,nodeIcon);
+
+
+%% Allow interactively renaming a node
+
+% Not working consistently
+% w.Editable = true;
+% w.NodeEditedCallback = @(h,e)disp({h.SelectedNodes.Name}');
+
+
+%% Relocate nodes
+
+% Move nodes around
+nodesB(1).Parent = nodesA(1);
+
+
+%% Add context menus
+
+% For the whole tree
+treeContextMenu = uicontextmenu('Parent',f);
+uimenu(treeContextMenu,'Label','Refresh');
+set(w,'UIContextMenu',treeContextMenu)
+
+% For nodesA only
+nodesAContextMenu = uicontextmenu('Parent',f);
+uimenu(nodesAContextMenu,'Label','Node1');
+set(nodesA,'UIContextMenu',nodesAContextMenu)
+
+
+%% Drag and drop support
+
+% Note this only supports moving nodes within the tree. It does not support
+% dragging to/from other parts of the user interface.
+
+w.DndEnabled = true;
+w.NodeDraggedCallback = @(h,e)dragDropCallback(h,e);
+w.NodeDroppedCallback = @(h,e)dragDropCallback(h,e);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Callback for drag and drop
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function dropOk = dragDropCallback(h,e) %#ok<INUSL>
+
+% Is this the drag or drop part?
+doDrop = ~(nargout); % The drag callback expects an output, drop does not
+
+% Get the source and destination
+srcNode = e.Source;
+dstNode = e.Target;
+
+% If drop is allowed
+if ~doDrop
+    % Is dstNode a valid drop location?
+    
+    % For example, assume it always is. Tree will prevent dropping on
+    % itself or existing parent.
+    dropOk = true;
+    
+elseif strcmpi(e.DropAction,'move')
+    
+    % De-parent
+    srcNode.Parent = [];
+    
+    % Then get index of destination
+    dstLevelNodes = [dstNode.Parent.Children];
+    dstIndex = find(dstLevelNodes == dstNode);
+    
+    % Re-order children and re-parent
+    dstLevelNodes = [dstLevelNodes(1:(dstIndex-1)) srcNode dstLevelNodes(dstIndex:end)];
+    for idx = 1:numel(dstLevelNodes)
+        dstLevelNodes(idx).Parent = dstNode.Parent;
+    end
+    
+end
+
+end %function
+##### SOURCE END #####
+--></body></html>

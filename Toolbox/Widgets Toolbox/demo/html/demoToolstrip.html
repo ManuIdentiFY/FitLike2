@@ -1,0 +1,193 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Toolstrip</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2018-03-06"><meta name="DC.source" content="demoToolstrip.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Toolstrip</h1><!--introduction--><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Create the widget</a></li><li><a href="#2">Add a section</a></li><li><a href="#3">Add a section</a></li><li><a href="#4">Add a section</a></li><li><a href="#5">Add a section</a></li></ul></div><h2 id="1">Create the widget</h2><pre class="codeinput"><span class="comment">% Performance Tip: For best launch performance, instantiate the toolstrip</span>
+<span class="comment">% with no Parent and/or Visible 'off'. Set Parent and Visible 'on' after</span>
+<span class="comment">% all sections and buttons have been added.</span>
+
+<span class="comment">% Positioning: Normally, you should have a fixed height for the toolstrip.</span>
+<span class="comment">% The width may adjust on resize. This example just uses normalized to</span>
+<span class="comment">% demonstrate the width resizing, but the height resizing will look odd.</span>
+
+f = figure(<span class="keyword">...</span>
+    <span class="string">'Toolbar'</span>,<span class="string">'none'</span>,<span class="keyword">...</span>
+    <span class="string">'MenuBar'</span>,<span class="string">'none'</span>,<span class="keyword">...</span>
+    <span class="string">'NumberTitle'</span>,<span class="string">'off'</span>,<span class="keyword">...</span>
+    <span class="string">'Units'</span>,<span class="string">'pixels'</span>,<span class="keyword">...</span>
+    <span class="string">'Position'</span>,[100 100 880 160]);
+movegui(f,[100 -100])
+
+w = uiw.widget.Toolstrip(<span class="keyword">...</span>
+    <span class="string">'Parent'</span>,f,<span class="keyword">...</span><span class="comment"> %Normally start with this empty, until later</span>
+    <span class="string">'Visible'</span>,<span class="string">'on'</span>,<span class="keyword">...</span><span class="comment"> %Normally start with this 'off'</span>
+    <span class="string">'Callback'</span>,@(h,e)disp(e),<span class="keyword">...</span>
+    <span class="string">'Units'</span>,<span class="string">'normalized'</span>,<span class="keyword">...</span>
+    <span class="string">'Position'</span>,[0 0.5 1 0.5]);
+
+<span class="comment">% Initially, the toolstrip will be blank</span>
+</pre><img vspace="5" hspace="5" src="demoToolstrip_01.png" alt=""> <h2 id="2">Add a section</h2><pre class="codeinput">w.addSection(<span class="string">'FILES'</span>);
+w.addButton(<span class="string">'folder_24.png'</span>,<span class="string">'Folder'</span>);
+w.addButton(<span class="string">'folder_file_24.png'</span>,<span class="string">'FolderFile'</span>);
+w.addButton(<span class="string">'folder_file_open_24.png'</span>,<span class="string">'FolderFileOpen'</span>);
+w.addButton(<span class="string">'save_24.png'</span>,<span class="string">'Save'</span>);
+w.addButton(<span class="string">'save_all_24.png'</span>,<span class="string">'SaveAll'</span>);
+w.addButton(<span class="string">'save_as_24.png'</span>,<span class="string">'SaveAs'</span>);
+</pre><img vspace="5" hspace="5" src="demoToolstrip_02.png" alt=""> <h2 id="3">Add a section</h2><pre class="codeinput">w.addSection(<span class="string">'ARROWS'</span>,4); <span class="comment">%Priority=4: lower gets space first</span>
+w.addButton(<span class="string">'arrow_down_24.png'</span>,<span class="string">'Down'</span>);
+w.addButton(<span class="string">'arrow_left_24.png'</span>,<span class="string">'Left'</span>);
+w.addButton(<span class="string">'arrow_right_24.png'</span>,<span class="string">'Right'</span>);
+w.addButton(<span class="string">'arrow_up_24.png'</span>,<span class="string">'Up'</span>);
+</pre><img vspace="5" hspace="5" src="demoToolstrip_03.png" alt=""> <h2 id="4">Add a section</h2><pre class="codeinput">w.addSection(<span class="string">'VISUALIZE'</span>,1); <span class="comment">%Priority=1: lower gets space first</span>
+w.addButton(<span class="string">'play_24.png'</span>,<span class="string">'Play'</span>);
+w.addButton(<span class="string">'visualize_24.png'</span>,<span class="string">'Plot'</span>);
+</pre><img vspace="5" hspace="5" src="demoToolstrip_04.png" alt=""> <h2 id="5">Add a section</h2><pre class="codeinput">w.addSection(<span class="string">'LISTS'</span>);
+w.addButton(<span class="string">'add_24.png'</span>,<span class="string">'Add'</span>);
+w.addButton(<span class="string">'check_24.png'</span>,<span class="string">'Check'</span>);
+w.addButton(<span class="string">'close_24.png'</span>,<span class="string">'Close'</span>);
+w.addButton(<span class="string">'delete_24.png'</span>,<span class="string">'Delete'</span>);
+w.addButton(<span class="string">'edit_24.png'</span>,<span class="string">'Edit'</span>);
+w.addButton(<span class="string">'report_24.png'</span>,<span class="string">'Report'</span>);
+
+
+<span class="comment">% Now is when you would set Parent and Visible, if they were not already</span>
+w.Parent = f;
+w.Visible = <span class="string">'on'</span>;
+</pre><img vspace="5" hspace="5" src="demoToolstrip_05.png" alt=""> <p class="footer">Copyright 2017-2018 The MathWorks, Inc.<br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2017a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Toolstrip
+%   Copyright 2017-2018 The MathWorks, Inc.
+
+%% Create the widget
+
+% Performance Tip: For best launch performance, instantiate the toolstrip
+% with no Parent and/or Visible 'off'. Set Parent and Visible 'on' after
+% all sections and buttons have been added.
+
+% Positioning: Normally, you should have a fixed height for the toolstrip.
+% The width may adjust on resize. This example just uses normalized to
+% demonstrate the width resizing, but the height resizing will look odd.
+
+f = figure(...
+    'Toolbar','none',...
+    'MenuBar','none',...
+    'NumberTitle','off',...
+    'Units','pixels',...
+    'Position',[100 100 880 160]);
+movegui(f,[100 -100])
+
+w = uiw.widget.Toolstrip(...
+    'Parent',f,... %Normally start with this empty, until later
+    'Visible','on',... %Normally start with this 'off'
+    'Callback',@(h,e)disp(e),...
+    'Units','normalized',...
+    'Position',[0 0.5 1 0.5]);
+
+% Initially, the toolstrip will be blank
+
+%% Add a section
+w.addSection('FILES');
+w.addButton('folder_24.png','Folder');
+w.addButton('folder_file_24.png','FolderFile');
+w.addButton('folder_file_open_24.png','FolderFileOpen');
+w.addButton('save_24.png','Save');
+w.addButton('save_all_24.png','SaveAll');
+w.addButton('save_as_24.png','SaveAs');
+
+
+
+%% Add a section
+w.addSection('ARROWS',4); %Priority=4: lower gets space first
+w.addButton('arrow_down_24.png','Down');
+w.addButton('arrow_left_24.png','Left');
+w.addButton('arrow_right_24.png','Right');
+w.addButton('arrow_up_24.png','Up');
+
+
+%% Add a section
+w.addSection('VISUALIZE',1); %Priority=1: lower gets space first
+w.addButton('play_24.png','Play');
+w.addButton('visualize_24.png','Plot');
+
+
+%% Add a section
+w.addSection('LISTS');
+w.addButton('add_24.png','Add');
+w.addButton('check_24.png','Check');
+w.addButton('close_24.png','Close');
+w.addButton('delete_24.png','Delete');
+w.addButton('edit_24.png','Edit');
+w.addButton('report_24.png','Report');
+
+
+% Now is when you would set Parent and Visible, if they were not already
+w.Parent = f;
+w.Visible = 'on';
+
+
+##### SOURCE END #####
+--></body></html>
