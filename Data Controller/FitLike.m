@@ -430,6 +430,7 @@ classdef FitLike < handle
         end %selectFile
         
         % Callback to update data when using DragDrop method
+        % NOTE: UPDATE CHECK VALUE IF NEEDED!
         function editDragDropFile(this, oldFileID, newFileID)
             PROP_LIST = {'dataset','sequence','filename','displayName'};
             % get the corresponding object
@@ -544,16 +545,21 @@ classdef FitLike < handle
                 return
             elseif this.ModelManager.gui.BatchRadioButton.Value
                 % Batch mode
-                tab = this.ProcessingManager.gui.tab.SelectedTab.Children;
+                tab = this.ModelManager.gui.tab.SelectedTab.Children;
                 % get the process array
                 ModelArray = tab.ModelArray;
                  % loop over the file
                 for k = 1:numel(fileID)
                     % check for correspondance
                     tf = strcmp(fileID{k},{this.RelaxData.fileID});
-                     % apply the fit to the file
-                     
-                     % TO DO   
+                    tf = false(1,10);
+                    tf(10) = true;
+                    % apply the fit to the file
+                    procObj = DispersionLsqCurveFit;
+                    procObj = addModel(procObj,ModelArray);
+                    assignProcessingFunction(this.RelaxData(tf), procObj);
+                    % apply the process
+                    processData(this.RelaxData(tf)); 
                 end
             else
                 % Simualation mode
