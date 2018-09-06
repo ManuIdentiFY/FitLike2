@@ -684,9 +684,6 @@ classdef DispersionTab < DisplayTab
                 warning('Show or import data to mask them!')
                 return
             end
-            
-            % let the user create a rectangle to select the data. Wait until
-            % user double-click to get rectangle position
             warning off all %problem with negative value
 
             rectObj = imrect(this.axe);
@@ -694,33 +691,20 @@ classdef DispersionTab < DisplayTab
                 this.axe.YLim);
             setPositionConstraintFcn(rectObj, fcn);
             pos = wait(rectObj);
-            
             % delete the rectangle obj
             delete(rectObj)
             warning on all
-            
             % range
             xrange = [pos(1) pos(1)+pos(3)];
             yrange = [pos(2) pos(2)+pos(4)];
             % call the presenter to update database
-            eventdata = struct('Data',this.hDispersion,...
-                               'Action', 'SetMask',...
-                               'XRange',xrange,'YRange',yrange);
+            eventdata = struct('Data',this.hDispersion,'XRange',xrange,'YRange',yrange);
             setMask(this.FitLike, this, eventdata);
         end % maskData
         
         % Reset mask data
         function resetMaskData(this)
-            % check if data are displayed
-            if ~this.optsButton.DataCheckButton.Value || isempty(this.hDispersion)
-                warning('Show or import data to reset mask!')
-                return
-            end
             
-            % call the presenter with the axis limit
-            eventdata = struct('Data',this.hDispersion,...
-                               'Action', 'ResetMask');
-            setMask(this.FitLike, this, eventdata);
         end % resetMaskData
         
         % Get fileID 

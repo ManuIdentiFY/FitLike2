@@ -37,7 +37,7 @@ classdef DisplayManager < handle
             % Set callback when moving mouse
             set (this.gui.fig,'WindowButtonMotionFcn',...
                     @(src, event) moveMouse(this));
-            
+                
             % reset tab
             setUIMenu(this);
         end %DisplayManager
@@ -88,7 +88,7 @@ classdef DisplayManager < handle
         function this = replaceTab(this, oldTab, newTab)
             % create the new tab
             fh = str2func(newTab);
-            fh(uitab(this.gui.tab));
+            fh(this.FitLike, uitab(this.gui.tab));
             % get the index of the oldTab
             indx = find(this.gui.tab.Children == oldTab);
             n = numel(this.gui.tab.Children);
