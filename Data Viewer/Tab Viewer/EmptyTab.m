@@ -35,6 +35,10 @@ classdef EmptyTab < DisplayTab
         function this = update(this)
             return
         end %update()
+        
+        function moveMouse(this)
+            return
+        end
     end
     
 end

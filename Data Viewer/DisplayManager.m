@@ -10,7 +10,7 @@ classdef DisplayManager < handle
     
     % List of the wanted uitoggletool and uipushtool (TooltipString)
     properties
-        ToggleToolList = {'Data Cursor','Zoom Out','Zoom In','Pan'};
+        ToggleToolList = {'Zoom Out','Zoom In','Pan'};
         PushToolList = [];
     end
     
@@ -153,6 +153,7 @@ classdef DisplayManager < handle
                 tab = this.gui.tab.SelectedTab;
             end
             % call addPlot method of this tab
+            % NOTE: REMOVE LOOP
             tf = false(1,numel(hData));
             for k = 1:numel(hData)
                 [~,tf(k)] = addPlot(tab.Children, hData(k));

@@ -239,8 +239,7 @@ classdef DispersionTab < DisplayTab
                     end
             end %switch  
             setLegend(this);
-        end %update
-    
+        end %update    
     end
     
     % Plot methods: data, mask, fit, residual
