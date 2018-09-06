@@ -56,13 +56,7 @@ classdef DisplayTab < uix.Container & handle
             % range
             xrange = [pos(1) pos(1)+pos(3)];
             yrange = [pos(2) pos(2)+pos(4)];
-        end %mask
-        
-        % Set the axis scaling (linear/log): setAxis()
-        function this = setAxis(this,XScale,YScale)
-            this.axe.XScale = XScale;
-            this.axe.YScale = YScale;
-        end %setAxis
+        end %mask       
         
         % Export current axis in a new fig: createFig()
         function createFig(this)
