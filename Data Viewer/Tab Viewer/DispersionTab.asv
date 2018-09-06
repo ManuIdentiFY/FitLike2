@@ -4,14 +4,13 @@ classdef DispersionTab < DisplayTab
     %
     % SEE ALSO DISPLAYTAB, DISPLAYMANAGER, DISPERSION
     
+    % M.Petit Note: Plotting data requires lot of time, especially because
+    % we need to dynamically update the legend (50% maybe) and the axis
+    % (10%). Could be improved.
     
     % Data: Dispersion
     properties (Access = public)
         hDispersion = [] % handle array to Dispersion data (see class Dispersion)
-    end
-    
-    % Fit: model selected
-    properties (Access = public)
         selectedModel = ''; % cell array of string (handle)
     end
     
@@ -34,6 +33,7 @@ classdef DispersionTab < DisplayTab
     
     % Axis properties (residuals)
     properties (Access = public)
+        optsButton % all the display/data options uicontrol
         axeResScatter = [] % axis for the scatter plot (residuals)
         axeResHist = [] % axis for the histogram (residuals)
         mainAxisPosition = [0.09 0.09 0.86 0.86]; %position of the main axis
@@ -65,68 +65,41 @@ classdef DispersionTab < DisplayTab
             this.axe.XScale = 'log';
             this.axe.YScale = 'log';
             
-            % add new components to the tab
-            % add a panel in box to display options
-            panel = uix.Panel( 'Parent', this.box,...
-                               'Title', 'Display options',...
-                               'Padding',2);
-            grid = uix.Grid( 'Parent', panel); 
-            hbox = uix.HBox( 'Parent', grid);
+            % add display options under the axis
+            optsButton = buildDisplayOptions(this.box);
+            this.optsButton = guihandles(optsButton);
+            
+            %%% ----------------------- CALLBACK ---------------------- %%%
+            % checkbox callback
+            set(this.optsButton.DataCheckButton,'Callback',...
+                @(src, event) update(this, src));
+            
+            set(this.optsButton.ErrorCheckButton,'Callback',...
+                @(src, event) update(this, src));
+            
+            set(this.optsButton.FitCheckButton,'Callback',...
+                @(src, event) update(this, src));
+            
+            set(this.optsButton.MaskCheckButton,'Callback',...
+                @(src, event) update(this, src));
+            
+            set(this.optsButton.ResidualCheckButton,'Callback',...
+                @(src, event) update(this, src));  
+            
+            set(this.optsButton.LegendCheckButton,'Callback',...
+                @(src, event) setLegend(this)); 
+                       
+            % X/Y axis callback
+            set(this.optsButton.XAxisPopup,'Callback',...
+                @(src, event) setAxis(this, src));
+            set(this.optsButton.YAxisPopup,'Callback',...
+                @(src, event) setAxis(this, src)); 
+            
+            % Mask callback
 
-            % show data options: data, legend
-            opts_button_box1 = uix.VButtonBox( 'Parent', hbox,...
-                                               'Spacing', 5,...
-                                               'ButtonSize', [100 20] );                                
-
-            this.DataCheckButton = uicontrol( 'Parent', opts_button_box1,...
-                                  'Style', 'checkbox',...
-                                  'Value',1,...
-                                  'String', 'Show data',...
-                                  'Tag','DataCheckButton',...
-                                  'Callback',@(src, event) update(this, src));                
-            this.LegendCheckButton = uicontrol( 'Parent', opts_button_box1,...
-                                  'Style', 'checkbox',...
-                                  'Value',1,...
-                                  'String', 'Show legend',...
-                                  'Tag','LegendCheckButton',...
-                                  'Callback',@(src,event) setLegend(this));
-
-            % show fit options: error, mask
-            opts_button_box2 = uix.VButtonBox( 'Parent', hbox,...
-                                               'Spacing', 5,...
-                                               'ButtonSize', [100 20] );  
-                                           
-            this.ErrorCheckButton = uicontrol( 'Parent', opts_button_box2,...
-                                  'Style', 'checkbox',...
-                                  'Value',0,...
-                                  'String', 'Show error',...
-                                  'Tag','ErrorCheckButton',...
-                                  'Callback',@(src,event) update(this, src));                                 
-             this.MaskCheckButton = uicontrol( 'Parent', opts_button_box2,...
-                                  'Style', 'checkbox',...
-                                  'Tag','MaskCheckButton',...
-                                  'String', 'Show mask data',...
-                                  'Callback',@(src,event) update(this, src));
-                              
-            % show fit options: fit, residuals
-            opts_button_box3 = uix.VButtonBox( 'Parent', hbox,...
-                                               'Spacing', 5,...
-                                               'ButtonSize', [100 20] );  
-                                           
-            this.FitCheckButton = uicontrol( 'Parent', opts_button_box3,...
-                                  'Style', 'checkbox',...
-                                  'Value',1,...
-                                  'Tag','FitCheckButton',...
-                                  'String', 'Show fit',...
-                                  'Callback',@(src,event) update(this, src));
-            this.ResidualCheckButton = uicontrol( 'Parent', opts_button_box3,...
-                                  'Style', 'checkbox',...
-                                  'Tag','ResidualCheckButton',...
-                                  'String', 'Show residual',...
-                                  'Callback',@(src,event) update(this, src));
-
+            %%% ------------------------------------------------------- %%%            
             % set heights                  
-            this.box.Heights = [-10 -1];
+            this.box.Heights = [-8 -1];
         end
     end
     
@@ -187,7 +160,8 @@ classdef DispersionTab < DisplayTab
             % get the line handle(s) in main axis and delete them
             tf = strcmp(hData.fileID, get(this.axe.Children,'Tag'));
             delete(this.axe.Children(tf));               
-
+            drawnow;
+            
             % delete associated residual if needed
             removeResidual(this, hData.fileID, []);
 
@@ -218,12 +192,15 @@ classdef DispersionTab < DisplayTab
                     
                 case 'ErrorCheckButton'
                     if src.Value
-                        % reset errorbar
-                        delete(findobj(this.axe.Children,'Type','ErrorBar'));
-                        delete(findobj(this.axe.Children,'Type','Scatter'));
-                        % plot with error
-                        plotData(this, this.hDispersion); % TO IMPROVE
-                        sortChildren(this);
+                        % get all the errorbar
+                        hPlot = findobj(this.axe.Children,'Type','Errorbar');
+                        fileID = {this.hDispersion.fileID};
+                        % loop to add error
+                        for k = 1:numel(hPlot)
+                            tf = strcmp(hPlot(k).Tag, fileID);
+                            hPlot(k).YNegativeDelta = -this.hDispersion(tf).dy;
+                            hPlot(k).YPositiveDelta = this.hDispersion(tf).dy;
+                        end
                     else
                         % just replace the error by an empty array
                         set(findobj(this.axe.Children,'Type','ErrorBar'),...
@@ -271,12 +248,12 @@ classdef DispersionTab < DisplayTab
         % Add dispersion data to the main axis. 
         function this = plotData(this, hData) 
             % check if we need to plot something
-            if ~this.DataCheckButton.Value
+            if ~this.optsButton.DataCheckButton.Value
                 return
             end
             
             % check if we plot error or not
-            if ~this.ErrorCheckButton.Value
+            if ~this.optsButton.ErrorCheckButton.Value
                 % loop over the data
                 for k = 1:length(hData)
                     % find the index of the dispersion object
@@ -293,6 +270,8 @@ classdef DispersionTab < DisplayTab
                             'MarkerSize',this.DataMarkerSize,...
                             'MarkerFaceColor','auto',...
                             'Tag',hData(k).fileID); 
+                    drawnow;
+                    pause(0.001)
                 end
             else
                 % loop over the data
@@ -311,6 +290,7 @@ classdef DispersionTab < DisplayTab
                             'MarkerSize',this.DataMarkerSize,...
                             'MarkerFaceColor','auto',...
                             'Tag',hData(k).fileID);
+                     drawnow;
                 end
             end
             
@@ -321,7 +301,7 @@ classdef DispersionTab < DisplayTab
         % Add masked data
         function this = plotMaskedData(this, hData) 
             % check if we need to plot something
-            if ~this.MaskCheckButton.Value
+            if ~this.optsButton.MaskCheckButton.Value
                 return
             end
             
@@ -351,7 +331,7 @@ classdef DispersionTab < DisplayTab
         % Add fit
         function this = plotFit(this, hData) 
             % check if we need to plot something
-            if ~this.FitCheckButton.Value || isempty(this.selectedModel)
+            if ~this.optsButton.FitCheckButton.Value || isempty(this.selectedModel)
                 return
             end
             
@@ -388,6 +368,7 @@ classdef DispersionTab < DisplayTab
                         'Marker',this.FitMarkerStyle,...
                         'Tag',hData(k).fileID,...
                         'UserData',this.selectedModel{iModel}); 
+                    drawnow;
                 end
             end
         end %plotFit
@@ -398,7 +379,7 @@ classdef DispersionTab < DisplayTab
             idx = strcmp(modelName, get(this.axe.Children,'UserData'));
             % delete them
             delete(this.axe.Children(idx));
-            
+            drawnow;
             % delete its residuals if needed
             if ~isempty(this.axeResScatter)
                 removeResidual(this, [], modelName);
@@ -408,7 +389,7 @@ classdef DispersionTab < DisplayTab
         % Add residual data
         function this = plotResidual(this)
             % check if we need to plot something
-            if ~this.ResidualCheckButton.Value 
+            if ~this.optsButton.ResidualCheckButton.Value 
                 return
             end
             
@@ -458,7 +439,8 @@ classdef DispersionTab < DisplayTab
                         'MarkerFaceColor','auto',...
                         'MarkerSize',2,...
                         'Tag',hData.Tag,...
-                        'UserData',hFit(iModel).UserData); 
+                        'UserData',hFit(iModel).UserData);
+                    drawnow;
                     % addlistener to update dynamically the graph
                     addlistener(hData,'Tag','PostSet',@(~,~)set(h,'Tag',hData.Tag)); 
                 end % loop model
@@ -471,7 +453,7 @@ classdef DispersionTab < DisplayTab
         % Remove residual data.
         function this = removeResidual(this, fileID, modelName)
             % check if we need to remove something
-            if ~this.ResidualCheckButton.Value 
+            if ~this.optsButton.ResidualCheckButton.Value 
                 return
             end
             
@@ -491,7 +473,7 @@ classdef DispersionTab < DisplayTab
             % delete them
             toDelete = TF_fileID & TF_modelName;
             delete(this.axeResScatter.Children(toDelete));             
-            
+            drawnow;
             % check if no more children and clear axis
             if isempty(this.axeResScatter.Children)
                 cla(this.axeResHist)
@@ -525,29 +507,9 @@ classdef DispersionTab < DisplayTab
             % legend settings         
             title(this.axeResHist,txt); 
             % axis settings
-            this.axeResHist.XLabel.String = this.axeResScatter.YLabel.String;  
+            this.axeResHist.XLabel.String = this.axeResScatter.YLabel.String; 
+            drawnow;
         end %makeResidualHistogram
-    end
-    
-    methods (Access = protected)
-        % update fileID
-        function this = updateID(this, src)
-            % find which field has changed
-            tf_prop = strcmp(split(src.fileID,'@'),...
-                {src.dataset, src.sequence, src.filename, src.displayName}');
-            newFileID = strcat(src.dataset,'@',src.sequence,'@',src.filename,'@',src.displayName);
-            % get the corresponding plot
-            tf_plot = strcmp({this.axe.Children.Tag},src.fileID);
-            % update their ID
-            [this.axe.Children(tf_plot).Tag] = deal(newFileID);
-            % if filename or displayname has changed, update legend
-            if tf_prop(3) == 0
-                [this.axe.Children(tf_plot).DisplayName] = deal(src.filename);
-                checkDisplayName(this);
-            elseif tf_prop(4) == 0
-                checkDisplayName(this);
-            end
-        end
     end
     
     % Other function
@@ -567,12 +529,10 @@ classdef DispersionTab < DisplayTab
             end
         end %sortChildren
         
-        % reset the legend if needed and check if unique names are
-        % displayed. If not, set an unique name by adding the field
-        % 'displayName' from hDispersion array handle.
+        % reset the legend if needed.
         function this = setLegend(this)                
             % check if we have children
-            if isempty(this.axe.Children) || ~this.LegendCheckButton.Value
+            if isempty(this.axe.Children) || ~this.optsButton.LegendCheckButton.Value
                 legend(this.axe,'off');
                 return
             elseif isempty({this.axe.Children.DisplayName})
@@ -584,7 +544,7 @@ classdef DispersionTab < DisplayTab
             end
             % check display names
             checkDisplayName(this);
-        end %checkLegend
+        end %setLegend
         
         % This function check the legend and check for duplicates. If
         % duplicates are found, the displayName property is added to the
@@ -674,7 +634,48 @@ classdef DispersionTab < DisplayTab
                     this.PlotSpec(n+1).DataMarker = this.DataMarkerStyle{sum(tf_plot)+1};
                 end
             end
-        end % setPlotSpec        
-    end   
+        end % setPlotSpec  
+        
+        % update fileID if user change something
+        function this = updateID(this, src)
+            % find which field has changed
+            tf_prop = strcmp(split(src.fileID,'@'),...
+                {src.dataset, src.sequence, src.filename, src.displayName}');
+            newFileID = strcat(src.dataset,'@',src.sequence,'@',src.filename,'@',src.displayName);
+            % get the corresponding plot
+            tf_plot = strcmp({this.axe.Children.Tag},src.fileID);
+            % update their ID
+            [this.axe.Children(tf_plot).Tag] = deal(newFileID);
+            % if filename or displayname has changed, update legend
+            if tf_prop(3) == 0
+                [this.axe.Children(tf_plot).DisplayName] = deal(src.filename);
+                checkDisplayName(this);
+            elseif tf_prop(4) == 0
+                checkDisplayName(this);
+            end
+        end %updateID
+        
+        % Display the mouse position
+        function moveMouse(this)
+            % get the current position
+            C = get(this.axe,'CurrentPoint');
+            % check if we are between boundaries
+            if C(1,1) > this.axe.XLim(1) && C(1,1) < this.axe.XLim(2) &&...
+                C(1,2) > this.axe.YLim(1) && C(1,2) < this.axe.YLim(2)
+                % update the position in X/Y options
+                set(this.optsButton.XPosText,'String',sprintf('%5.3e',C(1,1)));
+                set(this.optsButton.YPosText,'String',sprintf('%5.3e',C(1,2)));
+                drawnow;
+            else
+                
+            end
+        end %moveMouse
+        
+        % Change axis scaling
+        function setAxis(this, src)
+            h = 1;
+            
+        end %setAxis
+    end  
 end
 
