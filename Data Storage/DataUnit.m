@@ -91,12 +91,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 if ~all(cellfun(@length,varargin(2:2:end)) == n)
                     error('Size input is not consistent for array of struct.')
                 else
+                    fh = str2func(class(obj));
                     % initialise explicitely the array of object (required
                     % for heterogeneous array)
                     % for loop required to create unique handle.
                     for k = n:-1:1
                         % initialisation required to create unique handle!
-                        obj(1,k) = DataUnit();
+                        obj(1,k) = fh();
                         % fill arguments
                         for ind = 1:2:nargin 
                             [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
