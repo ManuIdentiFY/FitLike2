@@ -8,6 +8,12 @@ classdef DisplayManager < handle
         FitLike % Presenter
     end
     
+    % List of the wanted uitoggletool and uipushtool (TooltipString)
+    properties
+        ToggleToolList = {'Data Cursor','Zoom Out','Zoom In','Pan'};
+        PushToolList = [];
+    end
+    
     methods (Access = public)
         % Constructor
         function this = DisplayManager(FitLike)
@@ -17,9 +23,25 @@ classdef DisplayManager < handle
                       
             % Make the figure
             this.gui.fig = figure('Name','Display Manager','NumberTitle','off',...
-                'MenuBar','none','ToolBar','none','DockControls','off',...
-                'Units','normalized','Position',[0.25 0.1 0.5 0.78],...
+                'MenuBar','none','ToolBar','figure','DockControls','off',...
+                'Units','normalized','Position',[0.25 0.1 0.5 0.75],...
                 'Visible','off');
+            
+            % List all the uipushtool and uitoggletool and remove the
+            % unwanted tool.
+            tgl = findall(this.gui.fig,'Type','uitoggletool');
+            psh = findall(this.gui.fig,'Type','uipushtool');
+            
+            [tgl.Separator] = deal('off');
+            [psh.Separator] = deal('off');
+            
+            tf_tgl = arrayfun(@(x) all(strcmp(x.TooltipString, this.ToggleToolList) == 0), tgl);
+            tf_psh = arrayfun(@(x) all(strcmp(x.TooltipString, this.PushToolList) == 0), psh);
+            
+            delete(tgl(tf_tgl));
+            delete(psh(tf_psh));
+            delete(findall(this.gui.fig,'Type','uitogglesplittool'));
+
             % Make a tab group
             this.gui.tab = uitabgroup(this.gui.fig,'Position',[0 0 1 1]);
             
@@ -35,6 +57,9 @@ classdef DisplayManager < handle
             % Set SelectionChangedFcn calback for tab
             set(this.gui.tab, 'SelectionChangedFcn',...
                 @(src, event) this.FitLike.selectTab(src));   
+            
+            % Set callback when moving mouse
+            set (this.gui.fig,'WindowButtonMotionFcn', @(src, event) moveMouse(this));
             
             % reset tab
             setUIMenu(this);
@@ -148,6 +173,16 @@ classdef DisplayManager < handle
             for k = 1:numel(hData)
                 removePlot(tab.Children, hData(k));
             end
+        end
+        
+        % mouse move
+        function moveMouse(this)
+            % check the selected tab
+            tab = this.gui.tab.SelectedTab;
+            % call the mouse callback fonction of this tab
+            moveMouse(tab.Children);
+            % pause
+            pause(0.001);
         end
     end
 end
