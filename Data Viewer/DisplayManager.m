@@ -21,33 +21,9 @@ classdef DisplayManager < handle
             % Store a reference to the presenter
             this.FitLike = FitLike;
                       
-            % Make the figure
-            this.gui.fig = figure('Name','Display Manager','NumberTitle','off',...
-                'MenuBar','none','ToolBar','figure','DockControls','off',...
-                'Units','normalized','Position',[0.25 0.1 0.5 0.75],...
-                'Visible','off');
-            
-            % List all the uipushtool and uitoggletool and remove the
-            % unwanted tool.
-            tgl = findall(this.gui.fig,'Type','uitoggletool');
-            psh = findall(this.gui.fig,'Type','uipushtool');
-            
-            [tgl.Separator] = deal('off');
-            [psh.Separator] = deal('off');
-            
-            tf_tgl = arrayfun(@(x) all(strcmp(x.TooltipString, this.ToggleToolList) == 0), tgl);
-            tf_psh = arrayfun(@(x) all(strcmp(x.TooltipString, this.PushToolList) == 0), psh);
-            
-            delete(tgl(tf_tgl));
-            delete(psh(tf_psh));
-            delete(findall(this.gui.fig,'Type','uitogglesplittool'));
-
-            % Make a tab group
-            this.gui.tab = uitabgroup(this.gui.fig,'Position',[0 0 1 1]);
-            
-            % Add an empty tab and one with the mention "+"
-            EmptyTab(uitab(this.gui.tab));
-            EmptyPlusTab(uitab(this.gui.tab));          
+            % Build GUI        
+            gui = buildDisplayManager(this.ToggleToolList, this.PushToolList);
+            this.gui = guihandles(gui);
             
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
@@ -59,7 +35,8 @@ classdef DisplayManager < handle
                 @(src, event) this.FitLike.selectTab(src));   
             
             % Set callback when moving mouse
-            set (this.gui.fig,'WindowButtonMotionFcn', @(src, event) moveMouse(this));
+            set (this.gui.fig,'WindowButtonMotionFcn',...
+                    @(src, event) moveMouse(this));
             
             % reset tab
             setUIMenu(this);
