@@ -561,7 +561,7 @@ classdef DispersionTab < DisplayTab
                 makeResidualHistogram(this);
             end
             % reset legend ?
-            
+            sortChildren(this);
         end %resetData
     end
     
