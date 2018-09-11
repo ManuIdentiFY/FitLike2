@@ -1,4 +1,4 @@
-function fig = buildModelManager()
+function [fig, jtable] = buildModelManager()
 %
 % Builder for the ModelManager View
 %
@@ -73,6 +73,33 @@ box_process = uix.VBox( 'Parent', grid_process,'Padding',2,'Spacing',2,...
 % + TabGroup
 uitabgroup(box_process,'Position',[0 0 1 1],'Tag','tab');
 
+% Result Panel
+grid_result = uix.Grid( 'Parent', result_panel, 'Spacing', 0 ); 
+box_result = uix.VBox( 'Parent', grid_result,'Padding',2,'Spacing',2);
+% add selection file
+hbox_result = uix.HBox( 'Parent', box_result,'Padding',2,'Spacing',2);
+uix.Text( 'Parent', hbox_result,...
+          'String','Select a file: ','HorizontalAlignment','left');
+uicontrol( 'Parent', hbox_result,...
+                    'Style','popup',...
+                    'String', {''},...
+                    'Value',1,...
+                    'Tag','FileSelectionPopup');
+hbox_result.Widths = [80 -1];
+% add treetable
+container = uicontainer( 'Parent', box_result);
+
+header = {'M','Parameter','Best','Error'};
+type = {'char','char','',''};
+editable = {false,false,false,false};
+dummy_data = {'','',0,0};
+jtable = treeTable(container,header,dummy_data,...
+       'ColumnTypes',type,'ColumnEditable',editable); 
+% store handle to the data and remove the dummy row   
+%this.jtable = treetable.getModel.getActualModel.getActualModel;
+javaMethodEDT('removeRow',jtable.getModel.getActualModel.getActualModel,0); 
+
+box_result.Heights = [25 -1];
 % set heights    
 box.Heights = [-1.5 -5 -7 -7 -1];
 end
