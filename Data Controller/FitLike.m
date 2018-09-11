@@ -577,7 +577,7 @@ classdef FitLike < handle
         % Run Fit
         function this = runFit(this)
             % check if data are selected
-            nodes = this.ModelManager.gui.tree.UserData.CheckedNodes;
+            nodes = this.ModelManager.gui.tree.CheckedNodes;
             fileID = FileManager.Checkbox2fileID(nodes); %#ok<PROP>
             % according to the mode process, run it
             if isempty(fileID)
@@ -598,10 +598,13 @@ classdef FitLike < handle
                     assignProcessingFunction(this.RelaxData(tf), procObj);
                     % apply the process
                     processData(this.RelaxData(tf)); 
+                    % update model name
+                    this.RelaxData(tf).processingMethod.model.modelName = tab.TabTitle;
                 end
-                % notify
-                [~,idx,~] = intersect(fileID,{this.RelaxData.fileID});
-                notify(this.RelaxData(idx), 'DataHasChanged')
+                % notify    
+                [~,~,idx] = intersect(fileID,{this.RelaxData.fileID});
+                notify(this.RelaxData(idx), 'DataHasChanged');
+                updateResultTable(this.ModelManager);
             else
                 % Simualation mode
             end
