@@ -79,12 +79,15 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             if ~iscell(varargin{2})
                 % struct
                 for ind = 1:2:nargin
-                    try 
-                        obj.(varargin{ind}) = varargin{ind+1};
-                    catch ME
-                        error(['Wrong argument ''' varargin{ind} ''' or invalid value/attribute associated.'])
-                    end                           
-                end   
+                    obj.(varargin{ind}) = varargin{ind+1};                         
+                end 
+                % add listener to update fileID
+                addlistener(obj,{'dataset','sequence','filename','displayName'},...
+                      'PostSet',@(src, event) generateID(obj));
+                % parent explicitely the object if needed
+                if ~isempty(obj.parent)
+                    link(obj.parent, obj)
+                end
             else
                 % array of struct
                 % check for cell sizes
@@ -103,14 +106,21 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         for ind = 1:2:nargin 
                             [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
                         end
+                        % add listener to update fileID
+                        addlistener(obj(k),{'dataset','sequence','filename','displayName'},...
+                            'PostSet',@(src, event) generateID(obj(k)));
+                        % parent explicitely the object if needed
+                        if ~isempty(obj(k).parent)
+                            link(obj(k).parent, obj(k))
+                        end
                     end
                 end
             end   
             
+            % set displayName
+            setDisplayName(obj)
             % generate mask if missing
             resetmask(obj);
-            % generate fileID
-            %generateID(obj);
         end %DataUnit    
         
         % update an existing data set with new properties
@@ -166,7 +176,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % the entire history of the processing chain, for precise legends
         function legendStr = collectLegend(self)
             legendStr = self.legendTag;
-            if ~isempty(self.parent.legendTag)
+            if ~isempty(self.parent)
                 legendStr = [legendStr ', ' collectLegend(self.parent)];
             end
         end
@@ -257,8 +267,30 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                     obj.mask = true(size(obj.y));
                 end
             end
-        end %resetmask   
+        end %resetmask
         
+        % set displayName following this rule:
+        % [class(obj) obj.legendTag (obj.parent.legendTag,
+        % obj.parent.parent.legendTag, ...)]
+        function obj = setDisplayName(obj)
+            % loop if multiple file
+            for k = 1:numel(obj)
+                % init
+                if isempty(obj(k).legendTag)
+                    obj(k).displayName = class(obj(k));
+                else
+                    obj(k).displayName = [class(obj(k)),' ',obj(k).legendTag];
+                end
+                % loop over the parent to get additional information
+                if ~isempty(obj(k).parent)
+                    if ~isempty(obj(k).parent.legendTag)
+                        parentTag = collectLegend(obj(k).parent);
+                        obj(k).displayName = [obj(k).displayName,' (',...
+                                                parentTag(1:end-2),')'];
+                    end
+                end     
+            end
+        end %setDisplayName
     end %methods
     
     % The methods described below are used to enable the merge capabilities
