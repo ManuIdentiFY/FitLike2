@@ -112,6 +112,22 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             %generateID(obj);
         end %DataUnit    
         
+        % update an existing data set with new properties
+        function self = updateProperties(self,varargin)
+            fieldName = varargin(1:2:end);
+            value = varargin(2:2:end);
+            selfcell = mat2cell(self(:)',1,ones(1,length(self)));
+            for nf = 1:length(fieldName)
+                if ~iscell(value{nf})
+                    value{nf} = repmat(value(nf),1,length(self));
+                elseif length(value{nf}) == 1
+                    value{nf} = repmat(value{nf},1,length(self));
+                end
+                selfcell = cellfun(@(obj,value) setfield(obj,fieldName{nf},value),selfcell,value{nf},'UniformOutput',0);
+            end
+            self = [selfcell{:}];
+        end
+        
         % assign a processing function to the data object
         function self = assignProcessingFunction(self,processObj)
             self = arrayfun(@(s)setfield(s,'processingMethod',processObj),self,'UniformOutput',0); %#ok<*SFLD>

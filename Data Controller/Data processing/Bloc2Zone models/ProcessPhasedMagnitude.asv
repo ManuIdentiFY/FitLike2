@@ -22,6 +22,10 @@ classdef ProcessPhasedMagnitude < Bloc2Zone
 %             phi = filter(a, [1 a-1], phi);
             
             yzone = squeeze(bloc.y(:,:,index(2)));
+            yfft = fft(yzone,[],1);
+            phi = unwrap(angle(yfft));
+            [~,ind] = max(abs(yfft));
+            
             phi = unwrap(angle(yzone));
 %             yzonem = mean(yzone,2);
 %             mask = abs(yzonem)>(max(abs(yzonem))/2);

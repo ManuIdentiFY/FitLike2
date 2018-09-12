@@ -1,7 +1,7 @@
-classdef ProcessAverageAbs < Bloc2Zone
+classdef PeakAverageAbs < Bloc2Zone
     
     properties
-        functionName@char = 'Average of magnitude';     % character string, name of the model, as appearing in the figure legend
+        functionName@char = 'FFT peak magnitude';     % character string, name of the model, as appearing in the figure legend
         labelY@char = 'Average magnitude (A.U.)';       % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution time (s)';             % string, labels the X-axis data in graphs
         legendTag@cell = {'Average magnitude'};         % tag appearing in the legend of data derived from this object
@@ -15,7 +15,9 @@ classdef ProcessAverageAbs < Bloc2Zone
         % NOTE: additional info from the process can be stored in the
         % structure paramFun
         function [z,dz,paramFun] = process(self,x,y,bloc,index) %#ok<*INUSD,*INUSL>
-            z = mean(abs(y));
+            Y = fftshift(abs(fft(y)));
+            [~,indPeak] = max(Y);
+            z = mean(Y(indPeak-20:indPeak+20));
             dz = 0;
             paramFun.test = index;
         end

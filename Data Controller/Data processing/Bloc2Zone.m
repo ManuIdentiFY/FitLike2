@@ -26,7 +26,12 @@ classdef Bloc2Zone < ProcessDataUnit
             [cellx,ord] = cellfun(@(c)sort(c),cellx,'UniformOutput',0);
             celly = cellfun(@(c,o)c(o),celly,ord,'UniformOutput',0);
             % cast to cell array for cellfun
-            cellindex = repmat(num2cell(1:bloc.parameter.paramList.NBLK)',1,size(bloc.y,3));
+%             cellindex = repmat(num2cell(1:bloc.parameter.paramList.NBLK)',1,size(bloc.y,3));
+            for i = 1:bloc.parameter.paramList.NBLK
+                for j = 1:size(bloc.y,3)
+                    cellindex{i,j} = [i,j]; %#ok<AGROW>
+                end
+            end
             if ~isequal(size(cellindex),size(cellx))
                 cellx = cellx';
                 celly = celly';
@@ -35,7 +40,7 @@ classdef Bloc2Zone < ProcessDataUnit
             % of acquisition within the data bloc
             cellx = cellfun(@(x)x-x(1),cellx,'UniformOutput',0);
             % process the cell array to get the zone data
-            [z, dz, paramFun] = cellfun(@(x,y,i) process(self,x,y,bloc.parameter.paramList,i),cellx,celly,cellindex,'Uniform',0);
+            [z, dz, paramFun] = cellfun(@(x,y,i) process(self,x,y,bloc,i),cellx,celly,cellindex,'Uniform',0);
             szeout = size(z{1,1});
             [szeout,ind] = max(szeout); 
             if ind == 2 % check that the result of the process is a column array
@@ -65,14 +70,53 @@ classdef Bloc2Zone < ProcessDataUnit
             x = getZoneAxis(bloc); % raw x-axis (needs to be repmat to fit the dimension of y)
             x = repmat(x,size(cellz)); % make sure that all cell arrays are consistent
             params = repmat({params},size(cellz));
-            zone = Zone('x',x,'xLabel',{self.labelX},...
-                'y',cellz,'dy',celldz,'yLabel',{self.labelY},...
-                'parameter',params,'legendTag',self.legendTag,...
-                'filename',{bloc.filename},'sequence',{bloc.sequence},...
-                'dataset',{bloc.dataset},'label',{bloc.label});
             
-            % link the children and parent objects
-            [bloc,zone] = link(bloc,zone);
+            % store the data, but do not erase previous zone objects if
+            % they were already processed
+            Nzone = length(cellz);
+            if isempty(bloc.children)
+                zone = Zone('x',x,'xLabel',{self.labelX},...
+                    'y',cellz,'dy',celldz,'yLabel',{self.labelY},...
+                    'parameter',params,'legendTag',self.legendTag,...
+                    'filename',{bloc.filename},'sequence',{bloc.sequence},...
+                    'dataset',{bloc.dataset},'label',{bloc.label});
+
+                % link the children and parent objects
+                [bloc,zone] = link(bloc,zone);
+            elseif length(bloc.children) < Nzone
+                % case when the new processing function produces more
+                % outputs than the previous one. In that case we replace
+                % when can be replaced and create new zone objects
+                index = 1:length(bloc.children);
+                bloc.children = updateProperties(bloc.children,...
+                    'x',x(index),'xLabel',{self.labelX},...
+                    'y',cellz(index),'dy',celldz(index),'yLabel',{self.labelY},...
+                    'parameter',params(index),'legendTag',self.legendTag(index),...
+                    'filename',{bloc.filename},'sequence',{bloc.sequence},...
+                    'dataset',{bloc.dataset},'label',{bloc.label});
+                index = length(bloc.children)+1 : Nzone;
+                zone = Zone('x',x(index),'xLabel',{self.labelX},...
+                    'y',cellz(index),'dy',celldz(index),'yLabel',{self.labelY},...
+                    'parameter',params(index),'legendTag',self.legendTag(index),...
+                    'filename',{bloc.filename},'sequence',{bloc.sequence},...
+                    'dataset',{bloc.dataset},'label',{bloc.label});
+                % link the children and parent objects
+                [bloc,~] = link(bloc,zone);
+                % add the other zone objects to return them all
+                zone = bloc.children;
+            else
+                % case when the new processing function provides less or as
+                % many outputs as the previous one. In that case we update
+                % all the zonea we can and discard the others.
+                bloc.children(1:Nzone) = updateProperties(bloc.children(1:Nzone),...
+                    'x',x,'xLabel',{self.labelX},...
+                    'y',cellz,'dy',celldz,'yLabel',{self.labelY},...
+                    'parameter',params,'legendTag',self.legendTag,...
+                    'filename',{bloc.filename},'sequence',{bloc.sequence},...
+                    'dataset',{bloc.dataset},'label',{bloc.label});
+                remove(bloc.children(Nzone+1:end));
+                zone = bloc.children;
+            end
         end
         
         % TO DO: make some test functions

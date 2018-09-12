@@ -1,9 +1,9 @@
-classdef Monoexp < Zone2Disp
+classdef MonoexpAbs < Zone2Disp
 %MONOEXP Compute the 1-exponential decay model. The function is based on a
 %non-linear regression using iterative least-squares estimation and returned the
 %time constant of the equation y = f(x) with its error as well as the model used.
     properties
-        functionName@char = 'Monoexponential fit';      % character string, name of the model, as appearing in the figure legend
+        functionName@char = 'Monoexponential magnitude';      % character string, name of the model, as appearing in the figure legend
         labelY@char = 'R_1 (s^{-1})';                   % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution field (MHz)';          % string, labels the X-axis data in graphs
         legendTag@cell = {'dispersion T1'};
@@ -17,15 +17,24 @@ classdef Monoexp < Zone2Disp
             T1MX = zone.parameter.paramList.T1MX(index);
             
             % Exponential fit
-            fitModel = @(c, x)((c(1)-c(2))*exp(-x*c(3))+c(2)); %exponential model
+            fitModel = @(c, x)sqrt(((c(1)-c(2))*exp(-x*c(3))+c(2)).^2 + ...
+                                 2*((c(1)-c(2))*exp(-x*c(3))+c(2)).*abs(c(4)) +...
+                                 2*c(4).^2); %exponential model with Gaussian noise
             
             opts = statset('nlinfit');
             opts.Robust = 'on';
             opts.Display = 'off';
-
-            startPoint = [y(1),y(end),1/T1MX]; 
+            opts.MaxFunEvals = 1e8;
+            opts.MaxIter = 3e4;
+            
+            startPoint = [y(1),-y(end),1/T1MX,y(1)/10]; 
+            if isfield(zone.parameter.paramList,'coeff')
+                if ~isempty(zone.parameter.paramList.coeff)
+                    startPoint = zone.parameter.paramList.coeff;
+                end
+            end
             try
-                [coeff,residuals,~,cov,MSE] = nlinfit(x,y,fitModel,startPoint,opts); %non-linear least squares fit
+                [coeff,residuals,~,cov,MSE] = nlinfit(x,abs(y),fitModel,startPoint,opts); %non-linear least squares fit
             catch ME
                 disp(ME.message)
                 coeff = startPoint;
