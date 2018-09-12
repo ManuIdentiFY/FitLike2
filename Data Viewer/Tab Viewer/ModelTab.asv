@@ -30,7 +30,7 @@ classdef ModelTab < uix.Container & handle
             
             header = {'M','Parameter','isFixed?','MinBound','MaxBound','StartPoint'};
             type = {'char','char','logical','','',''};
-            editable = {false,true,true,true,true,true};
+            editable = {false,false,true,true,true,true};
             dummy_data = {'','',true,0,0,0};
             treetable = treeTable(this.container,header,dummy_data,...
                    'ColumnTypes',type,'ColumnEditable',editable); 
@@ -111,53 +111,47 @@ classdef ModelTab < uix.Container & handle
        function editModel(this, jObj, jEvent)
            % Check the event type: -1 DELETE, 0 UPDATE or 1 INSERT
            if isequal(jEvent.getType, 0)
-               % get the row/col of interest
-               row = get(jEvent,'FirstRow');
-               col = get(jEvent,'Column');
+               % get the row/col of interest (add + 1 because Java index
+               % from 0 and not 1
+               row = get(jEvent,'FirstRow') + 1;
+               col = get(jEvent,'Column') + 1;
                % get the parameter that changed, the model and the new data
                parameter   = jObj.getValueAt(row, 1);
                modelName = jObj.getValueAt(row, 0);
                newData = jObj.getValueAt(row, col);
-               if ischar(newData)
-                   newData = str2double(newData);
-               end
                % depends on the col, update the model
-               tf_model = strcmp({this.ModelArray.modelName}, modelName);
-               model = this.ModelArray(tf_model);
-               tf = strcmp(model.parameterName, parameter);
+               tf = strcmp({this.ModelArray.modelName}, modelName);
                switch col
                    % isFixed?
                    case 2
-                       this.ModelArray(tf_model).isFixed(tf) = logical(newData);
+                       this.ModelArray(tf).isFixed(row) = num2str(newData);
                    % min boundaries   
                    case 3
                        % check if it is lower than the start point
-                       if newData > model.startPoint(tf)
-                           javaMethodEDT('setValueAt',...
-                               this.jtable, model.minValue(tf), row, col);
-                           warndlg('The minBoundarie need to be lower than the startPoint')
+                       startPoint = this.ModelArray(tf).startPoint(row);
+                       if num2str(newData) > startPoint
+                           warning('The minBoundarie need to be lower than the startPoint')
                        else
-                           this.ModelArray(tf_model).minValue(tf) = newData;
+                           this.ModelArray(tf).minValue(row) = num2str(newData);
                        end
                    % max boundaries     
                    case 4
                       % check if it is higher than the start point
-                      if newData < model.startPoint(tf)
-                          javaMethodEDT('setValueAt',...
-                               this.jtable, model.maxValue(tf), row, col);
-                          warndlg('The maxBoundarie need to be higher than the startPoint')
+                      startPoint = this.ModelArray(tf).startPoint(row);
+                      if num2str(newData) < startPoint
+                          warning('The maxBoundarie need to be higher than the startPoint')
                       else
-                           this.ModelArray(tf_model).maxValue(tf) = newData;
+                           this.ModelArray(tf).maxValue(row) = num2str(newData);
                        end    
                    % start point    
                    case 5
                        % check if it is between the boundaries
-                       if model.minValue(tf) > newData || model.maxValue(tf) < newData
-                           javaMethodEDT('setValueAt',...
-                               this.jtable, model.startPoint(tf), row, col);
-                           warndlg('The startPoint need to be between the min and max boundaries')
+                       minBound = this.ModelArray(tf).minValue(row);
+                       maxBound = this.ModelArray(tf).maxValue(row);
+                       if minBound > num2str(newData) || maxBound < num2str(newData)
+                           warning('The startPoint need to be betwe than the startPoint')
                        else
-                           this.ModelArray(tf_model).startPoint(tf) = newData;
+                           this.ModelArray(tf).startPoint(row) = num2str(newData);
                        end
                end
            end
