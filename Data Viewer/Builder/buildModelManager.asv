@@ -1,4 +1,4 @@
-function [fig, jtable] = buildModelManager()
+function fig = buildModelManager()
 %
 % Builder for the ModelManager View
 %
@@ -75,17 +75,23 @@ uitabgroup(box_process,'Position',[0 0 1 1],'Tag','tab');
 
 % Result Panel
 grid_result = uix.Grid( 'Parent', result_panel, 'Spacing', 0 ); 
-box_result = uix.VBox( 'Parent', grid_result,'Padding',2,'Spacing',2);
+box_result = uix.VBox( 'Parent', grid_result,'Padding',2,'Spacing',2,...
+                        'Tag', 'box_process');
 % add selection file
-hbox_result = uix.HBox( 'Parent', box_result,'Padding',2,'Spacing',2);
+hbox_result = uix.HBox( 'Parent', box_result,'Padding',2,'Spacing',2,...
+                        'Tag', 'box_process');
+hbox_result = uix.HButtonBox( 'Parent', box_result,...
+                            'Spacing', 15,...
+                            'HorizontalAlignment','left',...
+                            'ButtonSize', [150 20] ); 
 uix.Text( 'Parent', hbox_result,...
-          'String','Select a file: ','HorizontalAlignment','left');
+            'String','Select a file: ');
 uicontrol( 'Parent', hbox_result,...
                     'Style','popup',...
                     'String', {''},...
                     'Value',1,...
                     'Tag','FileSelectionPopup');
-hbox_result.Widths = [80 -1];
+
 % add treetable
 container = uicontainer( 'Parent', box_result);
 
@@ -93,13 +99,11 @@ header = {'M','Parameter','Best','Error'};
 type = {'char','char','',''};
 editable = {false,false,false,false};
 dummy_data = {'','',0,0};
-jtable = treeTable(container,header,dummy_data,...
-       'ColumnTypes',type,'ColumnEditable',editable); 
+treetable = treeTable(container,header,dummy_data,...
+       'ColumnTypes',type,'ColumnEditable',editable,'Tag','jtable'); 
 % store handle to the data and remove the dummy row   
 %this.jtable = treetable.getModel.getActualModel.getActualModel;
-javaMethodEDT('removeRow',jtable.getModel.getActualModel.getActualModel,0); 
-
-box_result.Heights = [25 -1];
+javaMethodEDT('removeRow',treetable.getModel.getActualModel.getActualModel,0); 
 % set heights    
 box.Heights = [-1.5 -5 -7 -7 -1];
 end

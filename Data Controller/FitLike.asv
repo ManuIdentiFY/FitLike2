@@ -473,20 +473,11 @@ classdef FitLike < handle
                 xmin = event.XRange(1); xmax = event.XRange(2);
                 ymin = event.YRange(1); ymax = event.YRange(2);
                 % define mask
-                mask = arrayfun(@(data) data.mask &...
-                                        ~((xmin < data.x & data.x < xmax) &...
-                                          (ymin < data.y & data.y < ymax)),...
-                                         event.Data,'Uniform',0);
+                mask = arrayfun(@(data) xmin < data.x < xmax & ymin < data.y < ymax,...
+                                    event.Data,'Uniform',0);
                 [event.Data.mask] = mask{:};
-                % notify
-                notify(event.Data, 'DataHasChanged')
             elseif strcmp(event.Action,'ResetMask')
-                % reset mask
-                mask = arrayfun(@(data) true(size(data.y)),...
-                            event.Data,'Uniform',0);
-                [event.Data.mask] = mask{:};
-                % notify
-                notify(event.Data, 'DataHasChanged')
+                
             end
         end % setMask
     end
@@ -577,7 +568,7 @@ classdef FitLike < handle
         % Run Fit
         function this = runFit(this)
             % check if data are selected
-            nodes = this.ModelManager.gui.tree.CheckedNodes;
+            nodes = this.ProcessingManager.gui.tree.UserData.CheckedNodes;
             fileID = FileManager.Checkbox2fileID(nodes); %#ok<PROP>
             % according to the mode process, run it
             if isempty(fileID)
@@ -592,19 +583,15 @@ classdef FitLike < handle
                 for k = 1:numel(fileID)
                     % check for correspondance
                     tf = strcmp(fileID{k},{this.RelaxData.fileID});
+                    tf = false(1,10);
+                    tf(10) = true;
                     % apply the fit to the file
                     procObj = DispersionLsqCurveFit;
                     procObj = addModel(procObj,ModelArray);
                     assignProcessingFunction(this.RelaxData(tf), procObj);
                     % apply the process
                     processData(this.RelaxData(tf)); 
-                    % update model name
-                    this.RelaxData(tf).processingMethod.model.modelName = tab.TabTitle;
                 end
-                % notify    
-                [~,~,idx] = intersect(fileID,{this.RelaxData.fileID});
-                notify(this.RelaxData(idx), 'DataHasChanged');
-                updateResultTable(this.ModelManager);
             else
                 % Simualation mode
             end

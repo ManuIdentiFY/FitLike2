@@ -57,6 +57,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     events
         FileDeletion
         FileHasChanged
+        DataHasChanged
     end
     
     methods 

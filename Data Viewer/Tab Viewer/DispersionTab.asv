@@ -12,7 +12,6 @@ classdef DispersionTab < DisplayTab
     properties (Access = public)
         FitLike % Presenter
         hDispersion = [] % handle array to Dispersion data (see class Dispersion)
-        selectedModel = ''; % cell array of string (handle)
     end
     
     % Display properties
@@ -121,6 +120,7 @@ classdef DispersionTab < DisplayTab
             % add listener 
             addlistener(hData,'FileDeletion',@(src, event) removePlot(this, src));
             addlistener(hData,'FileHasChanged',@(src, event) updateID(this, src)); 
+            addlistener(hData,'DataHasChanged',@(src, event) resetData(this, src));
             
             % + data
             plotData(this, hData);
@@ -192,8 +192,9 @@ classdef DispersionTab < DisplayTab
                         % loop to add error
                         for k = 1:numel(hPlot)
                             tf = strcmp(hPlot(k).Tag, fileID);
-                            hPlot(k).YNegativeDelta = -this.hDispersion(tf).dy;
-                            hPlot(k).YPositiveDelta = this.hDispersion(tf).dy;
+                            set(hPlot(k),...
+                                'YNegativeDelta',-this.hDispersion(tf).dy(this.hDispersion(tf).mask),...
+                            'YPositiveDelta',this.hDispersion(tf).dy(this.hDispersion(tf).mask));
                         end
                     else
                         % just replace the error by an empty array
@@ -307,7 +308,7 @@ classdef DispersionTab < DisplayTab
                 % find the index of the dispersion object
                 tf = this.hDispersion == hData(k);
                 % plot
-                scatter(this.axe,...
+                h = scatter(this.axe,...
                     hData(k).x(~hData(k).mask),...
                     hData(k).y(~hData(k).mask),...
                     'MarkerEdgeColor',this.PlotSpec(tf).Color,...
@@ -315,69 +316,51 @@ classdef DispersionTab < DisplayTab
                     'SizeData',this.DataMarkerSize,...
                     'MarkerFaceColor','auto',...
                     'Tag',hData(k).fileID);
-                drawnow;
                 % remove this plot from legend
                 set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+                drawnow;
             end
         end %plotMaskedData
         
         % Add fit
         function this = plotFit(this, hData) 
             % check if we need to plot something
-            if ~this.optsButton.FitCheckButton.Value || isempty(this.selectedModel)
+            if ~this.optsButton.FitCheckButton.Value
                 return
             end
             
             % loop over the files
             for k = 1:length(hData)
+                % check if possible to plot fit
+                if isempty(hData(k).processingMethod)
+                    continue
+                end
                 % get x-values
                 x = hData(k).x(hData(k).mask);
                 % calculate yfit values and increase the  number of 
                 % point to obtain better visualisation. Ensure you dont 
                 % repeat point by geting the middle point each time
                 x_add = diff(x/2); % get the interval between x pts
-                x_fit = sort([x, x(1:end-1)+x_add]); %add it
+                x_fit = sort([x; x(1:end-1)+x_add]); %add it
                 
-                % loop over the models
-                for iModel = 1:length(this.selectedModel)
-                    % check if the model exists in the file
-                    TF = strcmp(this.selectedModel{iModel}, {hData(k).model.modelName});
-                    if all(TF == 0)
-                        continue
-                    end
-                    % get y-values
-                    y_fit = hData(k).model(TF).fitobj(x_fit);
-                    
-                    % change the displayed name and add the rsquare
-                    fitName = sprintf('%s: %s (R^2 = %.3f)',...
-                        this.selectedModel{iModel}, hData(k).filename,...
-                        hData(k).model(TF).gof.rsquare);
-                    
-                    % plot
-                    plot(this.axe, x_fit, y_fit,...
-                        'DisplayName', fitName,...
-                        'Color',this.PlotSpec(k).Color,...
-                        'LineStyle',this.PlotSpec(k).FitStyle,...
-                        'Marker',this.FitMarkerStyle,...
-                        'Tag',hData(k).fileID,...
-                        'UserData',this.selectedModel{iModel}); 
-                    drawnow;
-                end
+                % get y-values
+                y_fit = evaluate(hData(k).processingMethod,x_fit);
+
+                % change the displayed name and add the rsquare
+                fitName = sprintf('%s: %s (R^2 = %.3f)',...
+                    hData(k).processingMethod.model.modelName, hData(k).filename,...
+                    hData(k).processingMethod.model.gof.rsquare);
+
+                % plot
+                plot(this.axe, x_fit, y_fit,...
+                    'DisplayName', fitName,...
+                    'Color',this.PlotSpec(k).Color,...
+                    'LineStyle',this.PlotSpec(k).FitStyle,...
+                    'Marker',this.FitMarkerStyle,...
+                    'Tag',hData(k).fileID); 
+                drawnow;
             end
         end %plotFit
-        
-        % Remove fit
-        function this = removeFit(this, modelName)
-            % get the corresponding fit handle(s)
-            idx = strcmp(modelName, get(this.axe.Children,'UserData'));
-            % delete them
-            delete(this.axe.Children(idx));
-            drawnow;
-            % delete its residuals if needed
-            if ~isempty(this.axeResScatter)
-                removeResidual(this, [], modelName);
-            end
-        end %removeFit
         
         % Add residual data
         function this = plotResidual(this)
@@ -387,9 +370,9 @@ classdef DispersionTab < DisplayTab
             end
             
             % get the handle to the plot(s)
-            hPlot = this.axe.Children;
+            hFit = findobj(this.axe.Children, 'Type', 'Line');
             % get fileID
-            hfileID = unique({hPlot.fileID});
+            hfileID = {hFit.Tag};
             
             % check if residual axis exists
             if isempty(this.axeResScatter)
@@ -405,12 +388,8 @@ classdef DispersionTab < DisplayTab
             % loop over the plot
             for k = 1:length(hfileID)
                 % check if possible to plot residual
-                hData = hPlot(strcmp(hfileID{k}, {hPlot.fileID}) &&...
-                    strcmpi('ErrorBar', {hPlot.Type}));
-                hFit = hPlot(strcmp(hfileID{k}, {hPlot.fileID}) &&...
-                    strcmpi('Line', {hPlot.Type}));
-                
-                if isempty(hData) || isempty(hFit)
+                hData = findobj(this.axe.Children,'Type','ErrorBar','Tag',hfileID{k});
+                if isempty(hData)
                     continue
                 end
                 
@@ -503,6 +482,82 @@ classdef DispersionTab < DisplayTab
             this.axeResHist.XLabel.String = this.axeResScatter.YLabel.String; 
             drawnow;
         end %makeResidualHistogram
+        
+        % Reset data
+        function this = resetData(this, src)
+            % flag for residuals
+            residualFlag = 0;
+            % loop over the file and reset data
+            for k = 1:numel(src)
+               % find plot
+               hPlot = findobj(this.axe.Children,'Tag',src(k).fileID);
+               
+               % reset data
+               hData = findobj(hPlot,'Type','ErrorBar');
+               
+               if ~isempty(hData)
+                    hData.XData = src(k).x(src(k).mask);
+                    hData.YData = src(k).y(src(k).mask);
+                    % add error if needed
+                    if ~isempty(hData.YNegativeDelta)
+                        hData.YNegativeDelta = -src(k).dy(src(k).mask);
+                        hData.YPositiveDelta = +src(k).dy(src(k).mask);
+                    end
+                    % clear if needed
+                    if isempty(hData.YData)
+                       delete(hData); 
+                    end
+               end
+               
+               
+               % reset mask
+               hMask = findobj(hPlot,'Type','Scatter');
+               if ~isempty(hMask)
+                    hMask.XData = src(k).x(~src(k).mask);
+                    hMask.YData = src(k).y(~src(k).mask);
+                    % clear if needed
+                    if isempty(hMask.YData)
+                       delete(hMask); 
+                    end
+               elseif this.optsButton.MaskCheckButton.Value
+                   plotMaskedData(this, src(k));
+               end
+               
+               % reset fit
+               hFit = findobj(hPlot,'Type','Line');
+               if ~isempty(hFit) && ~isempty(src.processingMethod)
+                    hFit.XData = src(k).x(src(k).mask);
+                    hFit.YData = evaluate(src.processingMethod, hFit.XData);
+                    % clear if needed
+                    if isempty(hFit.YData)
+                       delete(hFit); 
+                    end
+               elseif this.optsButton.FitCheckButton.Value
+                   plotFit(this, src(k));
+               end
+               % TO DO
+               
+               % reset residuals
+               if ~isempty(this.axeResScatter)
+                    hResidual = findobj(this.axeResScatter.Children,'Tag',src(k).fileID);
+                    if ~isempty(hResidual)
+                       hResidual.XData = hData.XData;
+                       hResidual.YData = hFit.YData - hData.YData;
+                       residualFlag = 1;   
+                       % clear if needed
+                       if isempty(hResidual.YData)
+                            delete(hResidual); 
+                       end
+                    end
+               end
+            end
+            % reset residual histogram if needed
+            if residualFlag
+                makeResidualHistogram(this);
+            end
+            % reset legend ?
+            
+        end %resetData
     end
     
     % Other function
@@ -528,15 +583,11 @@ classdef DispersionTab < DisplayTab
             if isempty(this.axe.Children) || ~this.optsButton.LegendCheckButton.Value
                 legend(this.axe,'off');
                 return
-            elseif isempty({this.axe.Children.DisplayName})
-                %delete legend and return
-                legend(this.axe,'off');
-                return
-            else 
+            else
                 legend(this.axe,'show')
+                % check display names
+                checkDisplayName(this);
             end
-            % check display names
-            checkDisplayName(this);
         end %setLegend
         
         % This function check the legend and check for duplicates. If
@@ -580,7 +631,7 @@ classdef DispersionTab < DisplayTab
                             end
                         end
                     end
-                else
+                elseif ischar(str_leg)
                     fileID = strsplit(str_leg,'@');
                     if strcmp(fileID{3},str_leg)
                         % reset filename
@@ -600,7 +651,7 @@ classdef DispersionTab < DisplayTab
             if isempty(this.hDispersion)
                 this.PlotSpec(1).Color = this.Color(1,:);
                 this.PlotSpec(1).DataMarker = this.DataMarkerStyle{1};
-                %this.setPlotSpec(1).FitStyle = this.FitLineStyle{1};
+                this.PlotSpec(1).FitStyle = this.FitLineStyle{1};
             else
                 n = numel(this.PlotSpec);
                 % set specification: look if same file is plot
@@ -619,12 +670,16 @@ classdef DispersionTab < DisplayTab
                     this.PlotSpec(n+1).Color = this.Color(idx,:);
                     % set the first marker
                     this.PlotSpec(n+1).DataMarker = this.DataMarkerStyle{1};
+                    % set the first line style
+                    this.PlotSpec(n+1).FitStyle = this.FitLineStyle{1};
                 else
                     % set the same color as file found
                     color = {this.PlotSpec(tf_plot).Color};
                     this.PlotSpec(n+1).Color = color{1}; %if multiple 
                     % set the next marker
                     this.PlotSpec(n+1).DataMarker = this.DataMarkerStyle{sum(tf_plot)+1};
+                    % set the next line style
+                    this.PlotSpec(n+1).FitStyle = this.FitLineStyle{sum(tf_plot)+1};
                 end
             end
         end % setPlotSpec  
@@ -684,6 +739,9 @@ classdef DispersionTab < DisplayTab
                 warning('Show or import data to mask them!')
                 return
             end
+            
+            % let the user create a rectangle to select the data. Wait until
+            % user double-click to get rectangle position
             warning off all %problem with negative value
 
             rectObj = imrect(this.axe);
@@ -691,20 +749,33 @@ classdef DispersionTab < DisplayTab
                 this.axe.YLim);
             setPositionConstraintFcn(rectObj, fcn);
             pos = wait(rectObj);
+            
             % delete the rectangle obj
             delete(rectObj)
             warning on all
+            
             % range
             xrange = [pos(1) pos(1)+pos(3)];
             yrange = [pos(2) pos(2)+pos(4)];
             % call the presenter to update database
-            eventdata = struct('Data',this.hDispersion,'XRange',xrange,'YRange',yrange);
+            eventdata = struct('Data',this.hDispersion,...
+                               'Action', 'SetMask',...
+                               'XRange',xrange,'YRange',yrange);
             setMask(this.FitLike, this, eventdata);
         end % maskData
         
         % Reset mask data
         function resetMaskData(this)
+            % check if data are displayed
+            if ~this.optsButton.DataCheckButton.Value || isempty(this.hDispersion)
+                warning('Show or import data to reset mask!')
+                return
+            end
             
+            % call the presenter with the axis limit
+            eventdata = struct('Data',this.hDispersion,...
+                               'Action', 'ResetMask');
+            setMask(this.FitLike, this, eventdata);
         end % resetMaskData
         
         % Get fileID 
