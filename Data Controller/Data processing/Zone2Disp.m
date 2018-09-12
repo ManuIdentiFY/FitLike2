@@ -16,7 +16,7 @@ classdef Zone2Disp < ProcessDataUnit
     
     methods (Sealed)
         
-        % function that applies the processing function to one bloc only.
+        % function that applies the processing function to one zone only.
         % This is where the custom processing function is being called.
         function [dispersion,zone] = applyProcessFunction(self,zone)
             sze = size(zone.y);
@@ -37,10 +37,10 @@ classdef Zone2Disp < ProcessDataUnit
                 celly = celly';
             end
             % make sure that each acquisition is referenced from the time
-            % of acquisition within the data bloc
+            % of acquisition within the data zone
             cellx = cellfun(@(x)x-x(1),cellx,'UniformOutput',0);
             % process the cell array to get the zone data
-            [z, dz, paramFun] = cellfun(@(x,y,i) process(self,x,y,zone.parameter.paramList,i),cellx,celly,cellindex,'Uniform',0);
+            [z, dz, paramFun] = cellfun(@(x,y,i) process(self,x,y,zone,i),cellx,celly,cellindex,'Uniform',0);
             szeout = size(z{1,1});
             [szeout,ind] = max(szeout); 
             if ind == 2 % check that the result of the process is a column array
@@ -74,14 +74,53 @@ classdef Zone2Disp < ProcessDataUnit
             x = repmat(x,size(cellz)); % make sure that all cell arrays are consistent
             params = repmat({params},size(cellz));
             n = numel(x);
-            dispersion = Dispersion('x',x,'xLabel',repmat({self.labelX},1,n),...
-                'y',cellz,'dy',celldz,'yLabel',repmat({self.labelY},1,n),...
-                'parameter',params,'displayName',self.legendTag,...
-                'filename',repmat({zone.filename},1,n),'sequence',repmat({zone.sequence},1,n),...
-                'dataset',repmat({zone.dataset},1,n),'label',repmat({zone.label},1,n));
             
-            % link the children and parent objects
-            [zone,dispersion] = link(zone,dispersion);
+            % store the data, but do not erase previous zone objects if
+            % they were already processed
+            Nzone = length(cellz);
+            if isempty(zone.children)
+                dispersion = Dispersion('x',x,'xLabel',repmat({self.labelX},1,n),...
+                    'y',cellz,'dy',celldz,'yLabel',repmat({self.labelY},1,n),...
+                    'parameter',params,'displayName',self.legendTag,...
+                    'filename',repmat({zone.filename},1,n),'sequence',repmat({zone.sequence},1,n),...
+                    'dataset',repmat({zone.dataset},1,n),'label',repmat({zone.label},1,n));
+
+                % link the children and parent objects
+                [zone,dispersion] = link(zone,dispersion);
+            elseif length(zone.children) < length(cellz)
+                % case when the new processing function produces more
+                % outputs than the previous one. In that case we replace
+                % when can be replaced and create new zone objects
+                index = 1:length(zone.children);
+                zone.children = updateProperties(zone.children,...
+                    'x',x(index),'xLabel',{self.labelX},...
+                    'y',cellz(index),'dy',celldz(index),'yLabel',{self.labelY},...
+                    'parameter',params(index),'legendTag',self.legendTag(index),...
+                    'filename',{zone.filename},'sequence',{zone.sequence},...
+                    'dataset',{zone.dataset},'label',{zone.label});
+                index = length(zone.children)+1 : Nzone;
+                zone = Zone('x',x(index),'xLabel',{self.labelX},...
+                    'y',cellz(index),'dy',celldz(index),'yLabel',{self.labelY},...
+                    'parameter',params(index),'legendTag',self.legendTag(index),...
+                    'filename',{zone.filename},'sequence',{zone.sequence},...
+                    'dataset',{zone.dataset},'label',{zone.label});
+                % link the children and parent objects
+                [zone,~] = link(zone,zone);
+                % add the other zone objects to return them all
+                dispersion = zone.children;
+            else
+                % case when the new processing function provides less or as
+                % many outputs as the previous one. In that case we update
+                % all the zonea we can and discard the others.
+                zone.children(1:Nzone) = updateProperties(zone.children(1:Nzone),...
+                    'x',x,'xLabel',{self.labelX},...
+                    'y',cellz,'dy',celldz,'yLabel',{self.labelY},...
+                    'parameter',params,'legendTag',self.legendTag,...
+                    'filename',{zone.filename},'sequence',{zone.sequence},...
+                    'dataset',{zone.dataset},'label',{zone.label});
+                remove(zone.children(Nzone+1:end));
+                dispersion = zone.children;
+            end
         end
         
         % TO DO: make some test functions

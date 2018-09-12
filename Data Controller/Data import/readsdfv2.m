@@ -83,7 +83,8 @@ for acquisitionNumber = 1:length(posParamSummary)-1
     nameInd = find((posSeqName>=posParamSummary(acquisitionNumber)-1) & (posSeqName < posParamSummary(acquisitionNumber+1)-1));
     posSubSeqName = posSeqName(min(nameInd)-1:max(nameInd)-1);  % careful: this line comes before the parameters summary
     zoneParamList = arrayfun(@(start,stop)textscan(txt(start+1:stop-3),'%s','delimiter','\n'),posSubZone,posSubData,'UniformOutput',0);
-    paramZone = cellfun(@(t)ParamV2(text2structure(t{1})),zoneParamList);
+    paramZone = cellfun(@(t)ParamV2(text2structure(t{1})),zoneParamList,'UniformOutput',0);
+    paramZone = [paramZone{:}];
 
     % rename some of the fields for compatibility
     paramZone = changeFieldName(paramZone,'BR','BRLX');

@@ -281,8 +281,8 @@ classdef Disp2Exp < ProcessDataUnit
         function [exp,dispersion] = processData(self,dispersion)
             % keep track of the index of each model, for convenience
             selfindex = num2cell(1:length(self),1);
-            % update the main model list
-            self = wrapSubModelList(self);
+%             % update the main model list if necessary
+%             self = wrapSubModelList(self);
             % check that the model is not empty
             empt = arrayfun(@(o)isempty(o.subModel),self);
             if sum(empt)

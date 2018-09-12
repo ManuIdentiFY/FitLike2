@@ -17,7 +17,7 @@ classdef BiexponentialT2 < Bloc2Zone
         % a single dimension (z and dz are column arrays).
         % NOTE: additional info from the process can be stored in the
         % structure paramFun
-        function [z,dz,paramFun] = process(self,x,y,paramObj,index) %#ok<*INUSD,*INUSL>
+        function [z,dz,paramFun] = process(self,x,y,bloc,index) %#ok<*INUSD,*INUSL>
             
             % Exponential fit
             fitModel = @(c, x) abs(c(1) + c(2)*exp(-x*c(3)) + c(4)*exp(-x*c(5))); %exponential model

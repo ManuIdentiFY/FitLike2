@@ -9,9 +9,9 @@ classdef LorentzianStretched < DispersionModel
         modelEquation = '3/2*(1.2e-23/rhh^3).^2*[tau./(1+(2*pi*f*tau).^n) + 4*tau./(1+(2*2*pi*f*tau).^n)]';    
         variableName  = {'f'};     
         parameterName = {'rhh',   'tau',  'n'};  
-        minValue      = [0,       1e-9,     0];  
-        maxValue      = [Inf,     1e-3,   Inf];  
-        startPoint    = [3e-10,   1e-6,     1];  
+        minValue      = [0,       0,     0];  
+        maxValue      = [Inf,     1    ,   Inf];  
+        startPoint    = [3e-9,   1e-6,     1];  
         isFixed       = [0        0         0];
     end
     
