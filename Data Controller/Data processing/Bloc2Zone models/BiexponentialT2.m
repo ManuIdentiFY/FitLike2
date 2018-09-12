@@ -4,7 +4,7 @@ classdef BiexponentialT2 < Bloc2Zone
         functionName@char = 'Biexponential T2 decay';     % character string, name of the model, as appearing in the figure legend
         labelY@char = 'Average magnitude (A.U.)';       % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution time (s)';             % string, labels the X-axis data in graphs
-        legendTag@cell = {'Long T2 component','Short T2 component'};         % tag appearing in the legend of data derived from this object
+        legendTag@cell = {'Long T2','Short T2'};         % tag appearing in the legend of data derived from this object
    end
     
     methods
