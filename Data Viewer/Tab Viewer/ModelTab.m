@@ -32,9 +32,10 @@ classdef ModelTab < uix.Container & handle
             type = {'char','char','logical','','',''};
             editable = {false,true,true,true,true,true};
             dummy_data = {'','',true,0,0,0};
+            warning off
             treetable = treeTable(this.container,header,dummy_data,...
                    'ColumnTypes',type,'ColumnEditable',editable); 
-               
+            warning on   
             % store handle to the data and remove the dummy row   
             this.jtable = treetable.getModel.getActualModel.getActualModel;
             javaMethodEDT('removeRow',this.jtable,0);   
