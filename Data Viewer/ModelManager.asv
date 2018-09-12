@@ -92,32 +92,18 @@ classdef ModelManager < handle
         % Update tree
         function this = updateTree(this, ~, event)
             % get the tree
-            tree = this.gui.tree.Root;
+            tree = this.gui.tree.UserData.Root;
             % check the type of update: insert or delete
             if strcmp(event.Action, 'Insert')
                 % search the parent node
-                parentNode = this.FitLike.ProcessingManager.searchNode(tree,...
-                                                            event.Parent);
+                parentNode = ProcessingManager.searchNode(tree, event.Parent);
                 if isempty(parentNode)
                     copy(event.Data, tree);
                 else
                     copy(event.Data, parentNode);
                 end
             elseif strcmp(event.Action, 'Delete')
-                % search the node to delete
-                for k = 1:numel(event.Data)
-                    % search the node
-                    node = this.FitLike.ProcessingManager.searchNode(tree,...
-                                                           event.Data(k));                    
-                    delete(node);
-                end
-            elseif strcmp(event.Action,'ReOrder')
-                % reorder children
-                this.FitLike.FileManager.stackNodes(tree, event.Data,...
-                    event.NewOrder, []);
-            elseif strcmp(event.Action, 'DragDrop')
-                h = 1;
-                warning('Not Done Yet!')
+                
             end
         end %updateTree
         
