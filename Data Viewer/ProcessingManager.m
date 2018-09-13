@@ -106,6 +106,10 @@ classdef ProcessingManager < handle
                     delete(node);
                 end
             elseif strcmp(event.Action, 'ReOrder')
+                % check if relaxObj
+                if strcmp(event.Data.Value, 'relaxObj')
+                     return
+                end
                 % reorder children
                 this.FitLike.FileManager.stackNodes(tree, event.Data,...
                     event.NewOrder, []);

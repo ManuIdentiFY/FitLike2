@@ -86,7 +86,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                       'PostSet',@(src, event) generateID(obj));
                 % parent explicitely the object if needed
                 if ~isempty(obj.parent)
-                    link(obj.parent, obj)
+                    link(obj.parent, obj);
                 end
             else
                 % array of struct
@@ -111,14 +111,14 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                             'PostSet',@(src, event) generateID(obj(k)));
                         % parent explicitely the object if needed
                         if ~isempty(obj(k).parent)
-                            link(obj(k).parent, obj(k))
+                            link(obj(k).parent, obj(k));
                         end
                     end
                 end
             end   
             
             % set displayName
-            setDisplayName(obj)
+            setDisplayName(obj);
             % generate mask if missing
             resetmask(obj);
         end %DataUnit    

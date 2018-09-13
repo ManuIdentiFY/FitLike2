@@ -103,6 +103,9 @@ classdef ModelManager < handle
                 else
                     copy(event.Data, parentNode);
                 end
+                % update
+                updateFilePopup(this);
+                updateResultTable(this);
             elseif strcmp(event.Action, 'Delete')
                 % search the node to delete
                 for k = 1:numel(event.Data)
@@ -111,6 +114,9 @@ classdef ModelManager < handle
                                                            event.Data(k));                    
                     delete(node);
                 end
+                % update
+                updateFilePopup(this);
+                updateResultTable(this);
             elseif strcmp(event.Action,'ReOrder')
                 % reorder children
                 this.FitLike.FileManager.stackNodes(tree, event.Data,...
@@ -200,7 +206,7 @@ classdef ModelManager < handle
         % Check file callback
         function this = updateResultTable(this)
             % get the selected file
-            if isempty(this.gui.FileSelectionPopup.String)
+            if isempty(this.gui.FileSelectionPopup.String{this.gui.FileSelectionPopup.Value})
                 return
             end
             % get the file selected
