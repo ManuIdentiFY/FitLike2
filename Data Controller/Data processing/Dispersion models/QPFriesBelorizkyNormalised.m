@@ -21,10 +21,10 @@ classdef QPFriesBelorizkyNormalised < DispersionModel
                              '(1/3 + cos(theta)^2) *              (1/(1+((2*pi*f)-(2*pi*f_q)*2*eta)^2*tau^2)   + 1/(1+((2*pi*f)+(2*pi*f_q)*2*eta)^2*tau^2))   ]'];
             variableName  =  {'f'}; 
             parameterName = {'A_qp',  'tau',  'f_q',     'eta', 'theta', 'phi'};   
-            isFixed       = [0        0      0        0     0          0];
-            minValue      = [0,      0.4,    0.6,     0.35,  0,      -90];         
-            maxValue      = [Inf,    2,    0.9,     0.55,  90,      90];        
-            startPoint    = [1,      0.5,    0.81,   0.49,  90,      25.6]; 
+            isFixed       = [0        0      0        0          0          0];
+            minValue      = [0,      0.4e-6,    0.6e6,     0.35,      0,      -90];         
+            maxValue      = [Inf,    2e-6,    0.9e6,     0.55,        90,        90];        
+            startPoint    = [1,      0.5e-6,    0.81e6,   0.49,       90,      25.6]; 
             
     end
 end

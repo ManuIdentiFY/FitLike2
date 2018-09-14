@@ -61,7 +61,8 @@ classdef Zone2Disp < ProcessDataUnit
             fh = str2func(class(zone.parameter));
             params = fh(params);
             params = reshape(params,size(z));
-            params = merge([zone.parameter,params]);
+            params = replace([zone.parameter,params]);
+            zone.parameter = params;
             
             % generate one zone object for each component provided by the
             % processing algorithm
@@ -150,6 +151,7 @@ classdef Zone2Disp < ProcessDataUnit
             zone = [z{:}];
             disp = [d{:}];
         end
+
     end
     
 end

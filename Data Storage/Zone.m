@@ -81,6 +81,13 @@ classdef Zone < DataUnit
                 selfMerged = merge([selfMerged self(3:end)]);
             end
         end
+        
+                
+        % evaluate the fit function if present, for display purposes
+        function y = evaluate(self,zoneIndex,x)
+            model = self.parameter.paramList.modelHandle{zoneIndex};
+            y = model(self.parameter.paramList.coeff(zoneIndex,:), x);
+        end
     end % methods
     
 end

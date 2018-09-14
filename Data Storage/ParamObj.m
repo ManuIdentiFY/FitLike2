@@ -177,6 +177,19 @@ classdef ParamObj < handle
                 new = merge([new, self(3:end)]);
             end            
         end
+        
+        % replace the field values with the new ones
+        function new = replace(self)
+            for numobj = 1:length(self)
+                f2 = fieldnames(self(numobj).paramList);
+                for ind = 1:length(f2)
+                    if isfield(self(1),f2{ind})
+                        self(1).(f2{ind}) = [];
+                    end
+                end
+            end
+            new = merge(self);
+        end
                 
         function x = struct2cell(self)
             x = struct2cell(self.paramList);

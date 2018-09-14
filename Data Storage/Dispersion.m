@@ -5,8 +5,6 @@ classdef Dispersion < DataUnit
     % SEE ALSO BLOC, ZONE, DATAUNIT, DISPERSIONMODEL
     
     properties
-%         model = [];  % DispersionModel object that sums up all the contributions from the sub-model list
-%         subModel = [] % cell array of DispersionModel object
         % See DataUnit for other properties
     end
     

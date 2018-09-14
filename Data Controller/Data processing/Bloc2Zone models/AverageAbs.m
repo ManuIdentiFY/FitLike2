@@ -1,4 +1,4 @@
-classdef ProcessAverageAbs < Bloc2Zone
+classdef AverageAbs < Bloc2Zone
     
     properties
         functionName@char = 'Average of magnitude';     % character string, name of the model, as appearing in the figure legend

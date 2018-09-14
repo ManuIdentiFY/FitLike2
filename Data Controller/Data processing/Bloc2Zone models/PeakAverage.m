@@ -1,4 +1,4 @@
-classdef PeakAverageAbs < Bloc2Zone
+classdef PeakAverage < Bloc2Zone
     
     properties
         functionName@char = 'FFT peak magnitude';     % character string, name of the model, as appearing in the figure legend
@@ -15,9 +15,11 @@ classdef PeakAverageAbs < Bloc2Zone
         % NOTE: additional info from the process can be stored in the
         % structure paramFun
         function [z,dz,paramFun] = process(self,x,y,bloc,index) %#ok<*INUSD,*INUSL>
-            Y = fftshift(abs(fft(y)));
-            [~,indPeak] = max(Y);
-            z = mean(Y(indPeak-50:indPeak+50));
+            Y = fftshift(fft(y));
+            [~,indPeak] = max(abs(Y));
+            th = median(mod(angle(Y(indPeak-20:indPeak+20)),pi));
+            Y = Y*exp(-1i*th);
+            z = mean(imag(Y(indPeak-50:indPeak+50))) + 1i*mean(imag(Y(indPeak-50:indPeak+50)));
             dz = 0;
             paramFun.test = index;
         end

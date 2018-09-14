@@ -28,11 +28,11 @@ classdef MonoexpAbs < Zone2Disp
             opts.MaxIter = 3e4;
             
             startPoint = [y(1),-y(end),1/T1MX,y(1)/10]; 
-            if isfield(zone.parameter.paramList,'coeff')
-                if ~isempty(zone.parameter.paramList.coeff)
-                    startPoint = zone.parameter.paramList.coeff;
-                end
-            end
+%             if isfield(zone.parameter.paramList,'coeff')
+%                 if ~isempty(zone.parameter.paramList.coeff)
+%                     startPoint = zone.parameter.paramList.coeff(index,:);
+%                 end
+%             end
             try
                 [coeff,residuals,~,cov,MSE] = nlinfit(x,abs(y),fitModel,startPoint,opts); %non-linear least squares fit
             catch ME
@@ -65,6 +65,7 @@ classdef MonoexpAbs < Zone2Disp
             paramFun.coeff = coeff;
             paramFun.coeffError = coeffError;
             paramFun.gof = gof;
+            
         end
     end
         

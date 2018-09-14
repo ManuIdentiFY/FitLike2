@@ -1,4 +1,4 @@
-classdef PeakAverageAbs < Bloc2Zone
+classdef PeakAverageAbsRephased < Bloc2Zone
     
     properties
         functionName@char = 'FFT peak magnitude';     % character string, name of the model, as appearing in the figure legend
@@ -17,7 +17,21 @@ classdef PeakAverageAbs < Bloc2Zone
         function [z,dz,paramFun] = process(self,x,y,bloc,index) %#ok<*INUSD,*INUSL>
             Y = fftshift(abs(fft(y)));
             [~,indPeak] = max(Y);
-            z = mean(Y(indPeak-50:indPeak+50));
+            z = median(abs(Y(indPeak-50:indPeak+50)));
+            
+            % estimation of the phase (using the entire zone)
+            if index(1)==1
+                sigPh = median(angle(squeeze(bloc.y(4:10,:,index(2)))));
+                [~,indexJump] = max(abs(diff(sigPh))); % find where the phase changes using the first 10 points or so
+                ph = (1:size(bloc.y,2))<=indexJump;
+                bloc.parameter.paramList.phasingArray(:,index(2)) = ph;
+            else
+                ph = bloc.parameter.paramList.phasingArray(:,index(2));
+            end
+            if ~ph(index(1))
+                z = -z;
+            end
+            
             dz = 0;
             paramFun.test = index;
         end

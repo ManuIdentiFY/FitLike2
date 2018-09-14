@@ -1,4 +1,4 @@
-classdef Bloc2Zone < ProcessDataUnit
+classdef Bloc2Disp < ProcessDataUnit
     
     properties
         
@@ -7,58 +7,28 @@ classdef Bloc2Zone < ProcessDataUnit
     
     methods
         
-        function self = Bloc2Zone
+        function self = Bloc2Disp
             self@ProcessDataUnit;
         end
         
         % function that applies the processing function to one bloc only.
         % This is where the custom processing function is being called.
-        function [zone,bloc] = applyProcessFunction(self,bloc)
+        function [dispersion,bloc] = applyProcessFunction(self,bloc)
             sze = size(bloc.y);
             if length(sze)<3
                 sze(3) = 1;   % make sure the data is interpreted as a 3D matrix
             end
-            % prepare the cell arrays, making sure the dimensions are
-            % consistent
-            cellx = squeeze(num2cell(bloc.x,1));
-            celly = squeeze(num2cell(bloc.y,1));
-            % make sure the data is sorted
-            [cellx,ord] = cellfun(@(c)sort(c),cellx,'UniformOutput',0);
-            celly = cellfun(@(c,o)c(o),celly,ord,'UniformOutput',0);
-            % cast to cell array for cellfun
-%             cellindex = repmat(num2cell(1:bloc.parameter.paramList.NBLK)',1,size(bloc.y,3));
-            for i = 1:bloc.parameter.paramList.NBLK
-                for j = 1:size(bloc.y,3)
-                    cellindex{i,j} = [i,j]; %#ok<AGROW>
-                end
-            end
-            if ~isequal(size(cellindex),size(cellx))
-                cellx = cellx';
-                celly = celly';
-            end
-            % make sure that each acquisition is referenced from the time
-            % of acquisition within the data bloc
-            cellx = cellfun(@(x)x-x(1),cellx,'UniformOutput',0);
+            
             % process the cell array to get the zone data
-            [z, dz, paramFun] = cellfun(@(x,y,i) process(self,x,y,bloc,i),cellx,celly,cellindex,'Uniform',0);
-            szeout = size(z{1,1});
-            [szeout,ind] = max(szeout); 
-            if ind == 2 % check that the result of the process is a column array
-                z = reshape(cell2mat(z),sze(2),szeout,sze(3));
-                dz = reshape(cell2mat(dz),sze(2),szeout,sze(3));
-            else
-                z = reshape(cell2mat(z),szeout,sze(2),sze(3));
-                z = permute(z,[2 1 3]);
-                dz = reshape(cell2mat(dz),szeout,sze(2),sze(3));
-                dz = permute(dz,[2 1 3]);
-            end
+            [z, dz, paramFun] = process(self,bloc.x,bloc.y,bloc,'Uniform',0);
+            
             % finally, reshape the list of updated parameters and make a
             % list of adapted structure objects
             params = arrayofstruct2struct(paramFun);
             fh = str2func(class(bloc.parameter));
             params = fh(params);
             params = reshape(params,size(z));
-            params = replace([bloc.parameter,params]);
+            params = merge([bloc.parameter,params]);
             bloc.parameter = params;
             
             % generate one zone object for each component provided by the
@@ -68,7 +38,7 @@ classdef Bloc2Zone < ProcessDataUnit
             celldz = mat2cell(dz,size(dz,1),ones(1,size(dz,2)),size(dz,3));
             cellz = cellfun(@(x) squeeze(x),cellz,'UniformOutput',0);
             celldz = cellfun(@(x) squeeze(x),celldz,'UniformOutput',0);
-            x = getZoneAxis(bloc); % raw x-axis (needs to be repmat to fit the dimension of y)
+            x = getDispAxis(bloc); % raw x-axis (needs to be repmat to fit the dimension of y)
             x = repmat(x,size(cellz)); % make sure that all cell arrays are consistent
             params = repmat({params},size(cellz));
             
@@ -76,14 +46,14 @@ classdef Bloc2Zone < ProcessDataUnit
             % they were already processed
             Nzone = length(cellz);
             if isempty(bloc.children)
-                zone = Zone('x',x,'xLabel',{self.labelX},...
+                dispersion = Dispersion('x',x,'xLabel',{self.labelX},...
                     'y',cellz,'dy',celldz,'yLabel',{self.labelY},...
                     'parameter',params,'legendTag',self.legendTag,...
                     'filename',{bloc.filename},'sequence',{bloc.sequence},...
                     'dataset',{bloc.dataset},'label',{bloc.label});
 
                 % link the children and parent objects
-                [bloc,zone] = link(bloc,zone);
+                [bloc,dispersion] = link(bloc,dispersion);
             elseif length(bloc.children) < Nzone
                 % case when the new processing function produces more
                 % outputs than the previous one. In that case we replace
@@ -96,15 +66,15 @@ classdef Bloc2Zone < ProcessDataUnit
                     'filename',{bloc.filename},'sequence',{bloc.sequence},...
                     'dataset',{bloc.dataset},'label',{bloc.label});
                 index = length(bloc.children)+1 : Nzone;
-                zone = Zone('x',x(index),'xLabel',{self.labelX},...
+                dispersion = Dispersion('x',x(index),'xLabel',{self.labelX},...
                     'y',cellz(index),'dy',celldz(index),'yLabel',{self.labelY},...
                     'parameter',params(index),'legendTag',self.legendTag(index),...
                     'filename',{bloc.filename},'sequence',{bloc.sequence},...
                     'dataset',{bloc.dataset},'label',{bloc.label});
                 % link the children and parent objects
-                [bloc,~] = link(bloc,zone);
+                [bloc,~] = link(bloc,dispersion);
                 % add the other zone objects to return them all
-                zone = bloc.children;
+                dispersion = bloc.children;
             else
                 % case when the new processing function provides less or as
                 % many outputs as the previous one. In that case we update
@@ -116,7 +86,7 @@ classdef Bloc2Zone < ProcessDataUnit
                     'filename',{bloc.filename},'sequence',{bloc.sequence},...
                     'dataset',{bloc.dataset},'label',{bloc.label});
                 remove(bloc.children(Nzone+1:end));
-                zone = bloc.children;
+                dispersion = bloc.children;
             end
         end
         
@@ -124,22 +94,22 @@ classdef Bloc2Zone < ProcessDataUnit
                         
         % Function that makes the actual processing of the bloc. It only
         % deals with one bloc at a time and creates one zone only.
-        function [zone,bloc] = makeZone(self,bloc)
+        function [dispersion,bloc] = makeZone(self,bloc)
             % check that all the input objects are bloc objects
             % TO DO
             
             % generate the data to populate the zone object
-            [zone,bloc] = arrayfun(@self.applyProcessFunction,bloc,'Uniform',0);
-            zone = [zone{:}]; % back to array of objects
+            [dispersion,bloc] = arrayfun(@self.applyProcessFunction,bloc,'Uniform',0);
+            dispersion = [dispersion{:}]; % back to array of objects
             bloc = [bloc{:}];
         end
     end
     
     methods (Sealed)
         % standard naming convention for the processing function
-        function [zone,bloc] = processData(self,bloc)
-            [z,b] = arrayfun(@(s)makeZone(s,bloc),self,'UniformOutput',0);
-            zone = [z{:}];
+        function [dispersion,bloc] = processData(self,bloc)
+            [d,b] = arrayfun(@(s)makeZone(s,bloc),self,'UniformOutput',0);
+            dispersion = [d{:}];
             bloc = [b{:}];
         end
     end
