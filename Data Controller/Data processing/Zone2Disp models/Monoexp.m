@@ -6,7 +6,7 @@ classdef Monoexp < Zone2Disp
         functionName@char = 'Monoexponential fit';      % character string, name of the model, as appearing in the figure legend
         labelY@char = 'R_1 (s^{-1})';                   % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution field (MHz)';          % string, labels the X-axis data in graphs
-        legendTag@cell = {'dispersion T1'};
+        legendTag@cell = {'T1'};
     end
     
     methods

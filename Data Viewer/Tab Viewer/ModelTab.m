@@ -30,15 +30,19 @@ classdef ModelTab < uix.Container & handle
             
             header = {'M','Parameter','isFixed?','MinBound','MaxBound','StartPoint'};
             type = {'char','char','logical','','',''};
-            editable = {false,false,true,true,true,true};
+            editable = {false,true,true,true,true,true};
             dummy_data = {'','',true,0,0,0};
+            warning off
             treetable = treeTable(this.container,header,dummy_data,...
                    'ColumnTypes',type,'ColumnEditable',editable); 
-               
+            warning on   
             % store handle to the data and remove the dummy row   
             this.jtable = treetable.getModel.getActualModel.getActualModel;
             javaMethodEDT('removeRow',this.jtable,0);   
-               
+            
+            % set the editJTable callback
+            set(handle(this.jtable,'CallbackProperties'), 'TableChangedCallback', {@(src, event) editModel(this, src,event)});
+            
             % add add/remove model pushbuttons    
             addbox = uix.HButtonBox( 'Parent', box,...
                 'Padding', 2,'ButtonSize',[100 25],'Spacing',20);
@@ -103,6 +107,62 @@ classdef ModelTab < uix.Container & handle
                this.ModelArray(indx) = [];
            end
        end %removeModel
+       
+       % Edit model according to the user input
+       function editModel(this, jObj, jEvent)
+           % Check the event type: -1 DELETE, 0 UPDATE or 1 INSERT
+           if isequal(jEvent.getType, 0)
+               % get the row/col of interest
+               row = get(jEvent,'FirstRow');
+               col = get(jEvent,'Column');
+               % get the parameter that changed, the model and the new data
+               parameter   = jObj.getValueAt(row, 1);
+               modelName = jObj.getValueAt(row, 0);
+               newData = jObj.getValueAt(row, col);
+               if ischar(newData)
+                   newData = str2double(newData);
+               end
+               % depends on the col, update the model
+               tf_model = strcmp({this.ModelArray.modelName}, modelName);
+               model = this.ModelArray(tf_model);
+               tf = strcmp(model.parameterName, parameter);
+               switch col
+                   % isFixed?
+                   case 2
+                       this.ModelArray(tf_model).isFixed(tf) = logical(newData);
+                   % min boundaries   
+                   case 3
+                       % check if it is lower than the start point
+                       if newData > model.startPoint(tf)
+                           javaMethodEDT('setValueAt',...
+                               this.jtable, model.minValue(tf), row, col);
+                           warndlg('The minBoundarie need to be lower than the startPoint')
+                       else
+                           this.ModelArray(tf_model).minValue(tf) = newData;
+                       end
+                   % max boundaries     
+                   case 4
+                      % check if it is higher than the start point
+                      if newData < model.startPoint(tf)
+                          javaMethodEDT('setValueAt',...
+                               this.jtable, model.maxValue(tf), row, col);
+                          warndlg('The maxBoundarie need to be higher than the startPoint')
+                      else
+                           this.ModelArray(tf_model).maxValue(tf) = newData;
+                       end    
+                   % start point    
+                   case 5
+                       % check if it is between the boundaries
+                       if model.minValue(tf) > newData || model.maxValue(tf) < newData
+                           javaMethodEDT('setValueAt',...
+                               this.jtable, model.startPoint(tf), row, col);
+                           warndlg('The startPoint need to be between the min and max boundaries')
+                       else
+                           this.ModelArray(tf_model).startPoint(tf) = newData;
+                       end
+               end
+           end
+       end % editJTable
     end
     
     methods (Static = true, Access = public)

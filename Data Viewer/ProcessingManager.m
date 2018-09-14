@@ -46,7 +46,7 @@ classdef ProcessingManager < handle
             
             % Add listener to the FileManager tree
             addlistener(this.FitLike.FileManager,...
-                'TreeUpdate',@(src, event) updateTree(this, src));
+                'TreeUpdate',@(src, event) updateTree(this, src, event));
         end %ProcessingManager
         
         % Destructor
@@ -78,32 +78,44 @@ classdef ProcessingManager < handle
         end
         
         % Update tree
-        function this = updateTree(this, src)
-            % define new parent container
-            hParent = this.gui.tree.UserData.Root;
-            % delete children
-            if ~isempty(hParent.Children)
-                delete(hParent.Children)
-            end
-            % get children
-            hChildren = src.gui.tree.Root.Children;
-            % get the tree from FileManager
-            copy(hChildren, hParent);
-            % delete all relaxObj: just select files
-            for k = 1:numel(hParent.Children)
-                hDataset = hParent.Children(k);
-                for j = 1:numel(hDataset.Children)
-                    hSequence = hDataset.Children(j);
-                    %%%----------------------------%%%
-                    if strcmp(hSequence.Name,'IRCPMG/S [DefaultFfcSequences.ssf]')
-                        hSequence.Checked = 1;
-                    end
-                    %%%----------------------------%%%
-                    for i = 1:numel(hSequence.Children)
-                        hFile = hSequence.Children(i);
-                        delete(hFile.Children)
-                    end
+        function this = updateTree(this, ~, event)
+            % get the tree
+            tree = this.gui.tree.UserData.Root;
+            % check the type of update: insert or delete
+            if strcmp(event.Action, 'Insert')
+                % check if it is a relaxObj (unwanted)
+                if strcmp(event.Data.Value, 'relaxObj')
+                    return
                 end
+                % search the parent node
+                parentNode = ProcessingManager.searchNode(tree, event.Parent);
+                if isempty(parentNode)
+                    copy(event.Data, tree);
+                else
+                    copy(event.Data, parentNode);
+                end
+            elseif strcmp(event.Action, 'Delete')
+                % search the node to delete
+                for k = 1:numel(event.Data)
+                    % check if relaxObj
+                    if strcmp(event.Data(k).Value, 'relaxObj')
+                        continue
+                    end
+                    % search the node
+                    node = ProcessingManager.searchNode(tree, event.Data(k));                    
+                    delete(node);
+                end
+            elseif strcmp(event.Action, 'ReOrder')
+                % check if relaxObj
+                if strcmp(event.Data.Value, 'relaxObj')
+                     return
+                end
+                % reorder children
+                this.FitLike.FileManager.stackNodes(tree, event.Data,...
+                    event.NewOrder, []);
+            elseif strcmp(event.Action, 'DragDrop')
+                h = 1;
+                warning('Not Done Yet!')
             end
         end %updateTree
         
@@ -208,5 +220,35 @@ classdef ProcessingManager < handle
             end
         end %switchProcessMode
     end  
+    
+    methods (Access = public, Static)
+        function treeNode = searchNode(root, node)
+            % check input
+            if isempty(root.Children)
+                treeNode = [];
+                return
+            end
+            % start by checking the depth of search (dataset, sequence,...)
+            children = root.Children;
+            if strcmp(children(1).Value, node.Value)
+                tf = strcmp({children.Parent.Children.Name}, node.Name);
+                treeNode = root.Children(tf);
+            else
+                % pathway
+                parent = node;
+                parentNode = [];
+                while ~strcmp(parent.Name, 'Root')
+                    parentNode = [parent parentNode];
+                    parent = parent.Parent;
+                end
+                % now loop over the level
+                treeNode = root;
+                for k = 1:numel(parentNode)
+                    tf = strcmp({treeNode.Children.Name}, parentNode(k).Name);
+                   	treeNode = treeNode.Children(tf);
+                end
+            end    
+        end
+    end
 end
 

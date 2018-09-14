@@ -35,7 +35,7 @@ classdef FitLike < handle
             open(this);
             loadPipeline(this.ProcessingManager);
             % runProcess
-            runProcess(this);
+            %runProcess(this);
 %             % expand
 %             expand(this.FileManager.gui.tree.Root.Children.Children(3));
 %             expand(this.FileManager.gui.tree.Root.Children.Children(3).Children);
@@ -453,7 +453,7 @@ classdef FitLike < handle
         function selectTab(this, src)
             % get the selected tab
             hTab = src.SelectedTab.Children;
-            resetTree(this.FileManager);
+            this.FileManager.resetTree(this.FileManager.gui.tree);
             if isa(hTab,'EmptyPlusTab')
                 % add new tab
                 addTab(this.DisplayManager);

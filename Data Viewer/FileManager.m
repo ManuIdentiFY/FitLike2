@@ -88,15 +88,15 @@ classdef FileManager < handle
             % loop over the input
             for k = 1:length(dataset)
                 % + dataset
-                hDataset = FileManager.checkNodeExistence(this.gui.tree.Root,...
+                hDataset = checkNodeExistence(this, this.gui.tree.Root,...
                     dataset{k}, this.DatasetIcon, 'dataset');
                 expand(hDataset);
                 % + sequence
-                hSequence = FileManager.checkNodeExistence(hDataset,...
+                hSequence = checkNodeExistence(this, hDataset,...
                     sequence{k}, this.SequenceIcon, 'sequence');
                 expand(hSequence);
                 % + filename
-                hFile = FileManager.checkNodeExistence(hSequence,...
+                hFile = checkNodeExistence(this, hSequence,...
                     filename{k}, this.FileIcon, 'file');
                 expand(hFile);
                 % + relaxobj
@@ -108,30 +108,59 @@ classdef FileManager < handle
                     case 'dispersion'
                         idx = 3;
                 end
-                FileManager.checkNodeExistence(hFile, displayName{k},...
+                checkNodeExistence(this, hFile, displayName{k},...
                     this.RelaxObjIcon{idx}, 'relaxObj');
             end
-            % notify 
-            notify(this, 'TreeUpdate')
         end %addData
         
         % Remove data from the tree. 
         function this = removeData(this)
+            % notify 
+            eventdata = TreeEventData('Action','Delete',...
+                                      'Data',this.gui.tree.CheckedNodes);
+            notify(this, 'TreeUpdate', eventdata);
             % just delete the selected nodes and their children
             delete(this.gui.tree.CheckedNodes);
-            % notify 
-            notify(this,'TreeUpdate')
         end %removeData       
-        
-        % Reset tree: uncheck all the nodes
-        function this = resetTree(this)
-            % check the tree state
-            if ~isempty(this.gui.tree.CheckedNodes)
-               % uncheck
-               [this.gui.tree.CheckedNodes.Checked] = deal(false);
+         
+        % Check node existence and create it if needed. 
+        % this function also take an icon and a type (dataset, sequence,...)
+        % that will be add to the new children.
+        function hChildren = checkNodeExistence(this, hParent, nodeName, icon, type)
+            % import tree package
+            import uiextras.jTree.*
+            % check if children
+            if isempty(hParent.Children)
+                hChildren = CheckboxTreeNode('Parent', hParent,...
+                                             'Name', nodeName,...
+                                             'Value', type);
+                setIcon(hChildren,icon);
+                % notify 
+                eventdata = TreeEventData('Action','Insert',...
+                                          'Parent',hParent,...
+                                          'Data',hChildren);
+                notify(this, 'TreeUpdate', eventdata);
+            else
+                % check if the wanted name corresponds to a children in the
+                % parent container
+                tf = strcmp(get(hParent.Children,'Name'),nodeName);
+                % if true, get the handle. If false, create new node
+                if all(tf == 0)
+                    hChildren = CheckboxTreeNode('Parent',hParent,...
+                                                 'Name',nodeName,...
+                                                 'Value',type);
+                    setIcon(hChildren,icon);
+                    % notify 
+                    eventdata = TreeEventData('Action','Insert',...
+                                          'Parent',hParent,...
+                                          'Data',hChildren);
+                notify(this, 'TreeUpdate', eventdata);
+                else
+                    hChildren = hParent.Children(tf);
+                end
             end
-        end %resetTree
-                
+        end %checkNodeExistence
+        
         % check or delete the nodes corresponding to fileID. fileID can be
         % partial.
         % mode = {'check','uncheck','delete'};
@@ -165,6 +194,11 @@ classdef FileManager < handle
                     case 'uncheck'
                         hNodes.Checked = 0;
                     case 'delete'
+                        % notify 
+                        eventdata = TreeEventData('Action','Delete',...
+                                      'Data', hNodes);
+                        notify(this, 'TreeUpdate', eventdata);
+                        % delete
                         delete(hNodes);                        
                 end
             end
@@ -190,6 +224,15 @@ classdef FileManager < handle
                 ancestorID = [hAncestor.Name,'@',ancestorID]; %#ok<AGROW>
             end
         end %getAncestorID
+        
+        % Reset tree: uncheck all the nodes
+        function tree = resetTree(tree)
+            % check the tree state
+            if ~isempty(tree.CheckedNodes)
+               % uncheck
+               [tree.CheckedNodes.Checked] = deal(false);
+            end
+        end %resetTree
         
         % Get the partial fileID of the node descendants:
         % Example: {@file1@relaxObj1, @file2@relaxObj1,...} for a given
@@ -395,9 +438,12 @@ classdef FileManager < handle
                     new_order(idxSource) = idxTarget;
                     % reorder children
                     FileManager.stackNodes(tree, hChildren, new_order, []);
+                    % notify
+                    eventdata = TreeEventData('Action','ReOrder',...
+                                      'Parent', hChildren,...
+                                      'NewOrder',new_order);
+                    notify(this,'TreeUpdate',eventdata)
                 end
-                % notify 
-                notify(this,'TreeUpdate')
             end
         end %DragNodeCallback
         
@@ -435,34 +481,6 @@ classdef FileManager < handle
             end
             tree.Visible = 'on';
         end %reparentNodes
-        
-        % Check node existence and create it if needed. 
-        % this function also take an icon and a type (dataset, sequence,...)
-        % that will be add to the new children.
-        function hChildren = checkNodeExistence(hParent, nodeName, icon, type)
-            % import tree package
-            import uiextras.jTree.*
-            % check if children
-            if isempty(hParent.Children)
-                hChildren = CheckboxTreeNode('Parent', hParent,...
-                                             'Name', nodeName,...
-                                             'Value', type);
-                setIcon(hChildren,icon);                         
-            else
-                % check if the wanted name corresponds to a children in the
-                % parent container
-                tf = strcmp(get(hParent.Children,'Name'),nodeName);
-                % if true, get the handle. If false, create new node
-                if all(tf == 0)
-                    hChildren = CheckboxTreeNode('Parent',hParent,...
-                                                 'Name',nodeName,...
-                                                 'Value',type);
-                    setIcon(hChildren,icon);  
-                else
-                    hChildren = hParent.Children(tf);
-                end
-            end
-        end %checkNodeExistence
     end   
 end
 

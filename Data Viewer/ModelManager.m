@@ -58,7 +58,7 @@ classdef ModelManager < handle
             
             % Add listener to the FileManager tree
             addlistener(this.FitLike.FileManager,...
-                'TreeUpdate',@(src, event) updateTree(this, src));
+                'TreeUpdate',@(src, event) updateTree(this, src, event));
         end %ModelManager
         
         % Destructor
@@ -90,17 +90,41 @@ classdef ModelManager < handle
         end
         
         % Update tree
-        function this = updateTree(this, src)
-            % define new parent container
-            hParent = this.gui.tree.Root;
-            % delete children
-            if ~isempty(hParent.Children)
-                delete(hParent.Children)
+        function this = updateTree(this, ~, event)
+            % get the tree
+            tree = this.gui.tree.Root;
+            % check the type of update: insert or delete
+            if strcmp(event.Action, 'Insert')
+                % search the parent node
+                parentNode = this.FitLike.ProcessingManager.searchNode(tree,...
+                                                            event.Parent);
+                if isempty(parentNode)
+                    copy(event.Data, tree);
+                else
+                    copy(event.Data, parentNode);
+                end
+                % update
+                updateFilePopup(this);
+                updateResultTable(this);
+            elseif strcmp(event.Action, 'Delete')
+                % search the node to delete
+                for k = 1:numel(event.Data)
+                    % search the node
+                    node = this.FitLike.ProcessingManager.searchNode(tree,...
+                                                           event.Data(k));                    
+                    delete(node);
+                end
+                % update
+                updateFilePopup(this);
+                updateResultTable(this);
+            elseif strcmp(event.Action,'ReOrder')
+                % reorder children
+                this.FitLike.FileManager.stackNodes(tree, event.Data,...
+                    event.NewOrder, []);
+            elseif strcmp(event.Action, 'DragDrop')
+                h = 1;
+                warning('Not Done Yet!')
             end
-            % get children
-            hChildren = src.gui.tree.Root.Children;
-            % get the tree from FileManager
-            copy(hChildren, hParent);
         end %updateTree
         
         % Select Model
@@ -182,7 +206,7 @@ classdef ModelManager < handle
         % Check file callback
         function this = updateResultTable(this)
             % get the selected file
-            if isempty(this.gui.FileSelectionPopup.String)
+            if isempty(this.gui.FileSelectionPopup.String{this.gui.FileSelectionPopup.Value})
                 return
             end
             % get the file selected

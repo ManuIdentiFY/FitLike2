@@ -116,6 +116,7 @@ classdef ProcessTab < uix.Container & handle
                 'CData', this.DeleteIcon, 'Callback',@(src, event) removeProcess(this, src));
             % reorganize object
             cellfun(@(x) uistack(x.Children(1),'down'), this.vbox, 'Uniform', 0);
+            drawnow;
        end %addLine
        
        % Add new process
