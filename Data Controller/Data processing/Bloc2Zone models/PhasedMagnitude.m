@@ -4,7 +4,7 @@ classdef PhasedMagnitude < Bloc2Zone
         functionName@char = 'Average of rephased signal';
         labelY@char = 'Average signal (A.U.)'; 
         labelX@char = 'Evolution time (s)';  
-        legendTag@cell = {'Average rephased'}; 
+        legendTag@cell = {'AbsRephased'}; 
     end
         
     methods
