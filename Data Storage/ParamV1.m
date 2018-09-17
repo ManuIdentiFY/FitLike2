@@ -46,6 +46,7 @@ classdef ParamV1 < ParamObj
                     blst = regexp(self.paramList.BLST,'[;:]','split'); %split the field BLST
                     Ti = eval(blst{1}); %time start vector
                     Te = eval(blst{2}); %time end vector   
+                    [Ti,Te] = checkOutputSz(Ti, Te);
                     if strcmp(blst{3},'LOG')
                        invtime = arrayfun(@(ti,te)logspace(log10(ti),log10(te),NBLK),Ti,Te,'UniformOutput',0); %create all the time vectors
                     else %'LIN'
@@ -54,16 +55,30 @@ classdef ParamV1 < ParamObj
                 case 'LOG'
                     Ti = eval(self.paramList.BINI);
                     Te = eval(self.paramList.BEND);
+                    [Ti,Te] = checkOutputSz(Ti, Te);
                     invtime = arrayfun(@(ti,te)logspace(log10(ti),log10(te),NBLK),Ti,Te,'UniformOutput',0); %create all the time vectors
                 case 'LIN'
                     Ti = eval(self.paramList.BINI);
                     Te = eval(self.paramList.BEND);
+                    [Ti,Te] = checkOutputSz(Ti, Te);
                     invtime = arrayfun(@(ti,te)linspace(ti,te,NBLK),Ti,Te,'UniformOutput',0); %create all the time vectors
                 otherwise
                     error('getZoneAxis:MissingParameters',['BGRD parameter'...
                         'seems absent from the parameter structure'])
             end %switch
             invtime = cell2mat(invtime')';
+                                   
+            function [Ti,Te] = checkOutputSz(Ti, Te)
+                % check if one of the input is not the same size as the
+                % other. Repeat element if needed
+                ni = numel(Ti);
+                ne = numel(Te);
+                if ni ~= ne && ni == 1
+                    Ti = repelem(Ti, ne);
+                elseif ni ~= ne && ne == 1
+                    Te = repelem(Te, ni);
+                end
+            end
         end
                 
     end
