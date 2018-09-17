@@ -98,8 +98,8 @@ jtable = treeTable(container,header,dummy_data,...
        'ColumnTypes',type,'ColumnEditable',editable);
 warning on
 % add the second column as grouped
-% javaMethodEDT('addGroupColumn',jtable.getModel.getActualModel,1);
-% javaMethodEDT('groupAndRefresh',jtable.getModel.getActualModel);   
+javaMethodEDT('addGroupColumn',jtable.getModel.getActualModel,1);
+javaMethodEDT('groupAndRefresh',jtable.getModel.getActualModel);   
 % store handle to the data and remove the dummy row   
 %jtable = jtable;
 javaMethodEDT('removeRow',jtable.getModel.getActualModel.getActualModel,0); 
