@@ -400,7 +400,7 @@ classdef DispersionTab < DisplayTab
                 
                 % make intersection between x from data and x from fit
                 x = hData.XData;
-                [~,idxx,~] = intersect(x, hFit(k).XData);
+                [~,~,idxx] = intersect(x, hFit(k).XData,'stable');
                                    
                 % calculate residuals
                 residual = hData.YData - hFit(k).YData(idxx); 

@@ -226,14 +226,18 @@ classdef ModelManager < handle
             end
             % add new results
             modelName = model.model.modelName;
-            parameter = strcat(model.subModel.parameterName);
-            bestValue = single([model.subModel.bestValue]);
-            error = single([model.subModel.errorBar]);
-            for k = 1:numel(parameter)
-                   row = {modelName, parameter{k}, bestValue(k), error(k)};
-                   % here we use the javaMethodEDT to handle EDT
-                   % see https://undocumentedmatlab.com/blog/matlab-and-the-event-dispatch-thread-edt
-                   javaMethodEDT('addRow',this.gui.jtable,row); 
+            for k = 1:numel(model.subModel)
+                % add by submodel
+                submodelName = model.subModel(k).modelName;
+                parameter = strcat(model.subModel(k).parameterName);
+                bestValue = single([model.subModel(k).bestValue]);
+                error = single([model.subModel(k).errorBar]);
+                for i = 1:numel(parameter)
+                       row = {modelName, submodelName, parameter{i}, bestValue(i), error(i)};
+                       % here we use the javaMethodEDT to handle EDT
+                       % see https://undocumentedmatlab.com/blog/matlab-and-the-event-dispatch-thread-edt
+                       javaMethodEDT('addRow',this.gui.jtable,row); 
+                end
             end
         end
         
