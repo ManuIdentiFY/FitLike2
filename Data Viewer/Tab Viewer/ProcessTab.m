@@ -192,7 +192,7 @@ classdef ProcessTab < uix.Container & handle
             % loop 
             for k = 1:numel(PROCESS_CLASS)
                 % get subclass
-                tb = getSubclasses(PROCESS_CLASS{k}, pwd);
+                tb = getSubclasses(PROCESS_CLASS{k}, which('FitLike.m'));
                 tb = tb(2:end,:); % remove superclass
                 % add input/output 
                 switch PROCESS_CLASS{k}

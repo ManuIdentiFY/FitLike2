@@ -56,7 +56,7 @@ if isempty(posParamSummary)
 end
 
 % now find the position of all the data zones and corresponding raw data
-posSeqName = regexp(txt,'NMRD SEQUENCE NAME:'); 
+posSeqName = regexp(txt,'SEQUENCE NAME:'); 
 posZone = regexp(txt,'ZONE');
 posData = regexp(txt,'DATA');
 
