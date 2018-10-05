@@ -189,10 +189,11 @@ classdef ProcessTab < uix.Container & handle
             % define subclass to list
             PROCESS_CLASS = {'Bloc2Zone','Zone2Disp'}; %name of the class to list
             process_tb = [];
+            fitlikeDir = fileparts(which('FitLike.m'));
             % loop 
             for k = 1:numel(PROCESS_CLASS)
                 % get subclass
-                tb = getSubclasses(PROCESS_CLASS{k}, which('FitLike.m'));
+                tb = getSubclasses(PROCESS_CLASS{k}, fitlikeDir);
                 tb = tb(2:end,:); % remove superclass
                 % add input/output 
                 switch PROCESS_CLASS{k}

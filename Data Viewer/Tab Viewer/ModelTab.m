@@ -170,8 +170,9 @@ classdef ModelTab < uix.Container & handle
         function [name, modelObj] = modeldlg()
             % define subclass to list
             MODEL_CLASS = 'DispersionModel'; %name of the class to list
+            fitlikeDir = fileparts(which('FitLike.m'));
             % get subclass
-            tb = getSubclasses(MODEL_CLASS, pwd);
+            tb = getSubclasses(MODEL_CLASS, fitlikeDir);
             tb = tb(2:end,:); % remove superclass
 
             % add displayName
