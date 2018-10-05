@@ -1,4 +1,4 @@
-classdef ParamObj < handle
+classdef ParamObj < handle & matlab.mixin.Heterogeneous
     
     properties
         paramList@struct;   % list of parameters
