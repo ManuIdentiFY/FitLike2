@@ -116,13 +116,16 @@ classdef DisplayManager < handle
         function [this, plotFlag, tf] = addPlot(this, hData)
             % get the selected tab 
             tab = this.gui.tab.SelectedTab;
+            tf = false(1,numel(hData));
             % check if it is an empty tab
             if isa(tab.Children, 'EmptyTab')
                 % check the class of the first hData
                 switch class(hData(1))
                     case 'Bloc'
+                        plotFlag = 0; % To improve
                         return % TO DO
                     case 'Zone'
+                        plotFlag = 0; % To improve
                         return % TO DO
                     case 'Dispersion'
                         replaceTab(this, tab, 'DispersionTab');
@@ -131,7 +134,6 @@ classdef DisplayManager < handle
             end
             % call addPlot method of this tab
             % NOTE: REMOVE LOOP
-            tf = false(1,numel(hData));
             for k = 1:numel(hData)
                 [~,tf(k)] = addPlot(tab.Children, hData(k));
             end
