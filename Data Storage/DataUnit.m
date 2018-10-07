@@ -218,9 +218,12 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     end % methods
     
     methods (Access = public, Sealed = true)
+        
         % respond to the events
         function self = delete(self, idx)
-            notify(self(idx),'FileDeletion');
+            for i = 1:length(idx)
+                notify(self(idx(i)),'FileDeletion');
+            end
             self(idx) = [];
         end
         

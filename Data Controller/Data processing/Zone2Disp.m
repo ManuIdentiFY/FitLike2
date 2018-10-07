@@ -28,8 +28,8 @@ classdef Zone2Disp < ProcessDataUnit
             cellx = squeeze(num2cell(zone.x,1));
             celly = squeeze(num2cell(zone.y,1));
             % make sure the data is sorted
-            [cellx,ord] = cellfun(@(c)sort(c),cellx,'UniformOutput',0);
-            celly = cellfun(@(c,o)c(o),celly,ord,'UniformOutput',0);
+            [cellx,ord] = cellfun(@(c) sort(c),cellx,'UniformOutput',0);
+            celly = cellfun(@(c,o) c(o),celly,ord,'UniformOutput',0);
             % cast to cell array for cellfun
             cellindex = num2cell(1:size(zone.y,2));
             if ~isequal(size(cellindex),size(cellx))

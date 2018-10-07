@@ -180,11 +180,11 @@ classdef ParamObj < handle & matlab.mixin.Heterogeneous
         
         % replace the field values with the new ones
         function new = replace(self)
-            for numobj = 1:length(self)
+            for numobj = 2:length(self)
                 f2 = fieldnames(self(numobj).paramList);
                 for ind = 1:length(f2)
-                    if isfield(self(1),f2{ind})
-                        self(1).(f2{ind}) = [];
+                    if isfield(self(1).paramList,f2{ind})
+                        self(1).paramList.(f2{ind}) = [];
                     end
                 end
             end

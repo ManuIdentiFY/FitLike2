@@ -1,4 +1,4 @@
-function [dataContent, parameter] = readsdfv2(filename,varargin)
+function [dataContent, parameter] = readsdfv2_2(filename,varargin)
 
 % [BLOC, PARAMETERS] = READSDFV2(FILENAME,VARARGIN) reads data from a
 % Stelar file .sdf version 2. Use FOPEN to open the file and obtain FID. It
@@ -45,110 +45,82 @@ fclose(fid);
 
 % formating the output structure
 dataContent = struct();
-parameter = []; % parameter array containing one element per dispersion dataset
 
-%% Sort the data
+%% analyse the data
 
 % the header 'PARAMETER SUMMARY' separated each new dispersion acquisition
-posParamSummary = regexp(txt,'PARAMETER SUMMARY')+length('PARAMETER SUMMARY');  % cannot use startWith for compatibility reasons with version older than 2017a
-if isempty(posParamSummary) 
-    return % exit if empty file
-end
+[posExpHeader, posExpStart] = regexp(txt,'SEQUENCE NAME:[^\n]*\n*\s\nPARAMETER SUMMARY\n*');
+posExpHeader = [posExpHeader length(txt)]; % add the end of the file for reference
 
-% now find the position of all the data zones and corresponding raw data
-posSeqName = regexp(txt,'SEQUENCE NAME:'); 
-posZone = regexp(txt,'ZONE');
-posData = regexp(txt,'DATA');
+% now find the position of all the data zones and corresponding raw data,
+% as well as empty lines
+[posSeqName,posSeqNameEnd] = regexp(txt,'SEQUENCE NAME:[^\n]*\n'); 
+[posZone, posParamStart] = regexp(txt,'ZONE \w*.\w*\n');
+[posData, posDataStart] = regexp(txt,'DATA *\n');
+posEmpty = regexp(txt,'\n *\n');
+posEmpty = [posEmpty, length(txt)];  % add the end of the file in case it ends without carriage returns
+posParamEnd = posData-1;
 
-% find the 'ZONE' labels that stop the 'PARAMETER SUMMARY sections
-posSeqEnd = arrayfun(@(posIni)min(posZone(posZone>posIni)-posIni),posParamSummary);
-posSeqEnd = posSeqEnd + posParamSummary;
-
-% store the general lists of parameters
-parameter = ParamV2;
-
-% collects the data for each dispersion acquisition
-posParamSummary(end+1) = length(txt);
-for acquisitionNumber = 1:length(posParamSummary)-1
-    % generate the new Parameter object from the new header
-    txtcell = textscan(txt(posParamSummary(acquisitionNumber)+1:posSeqEnd(acquisitionNumber)-3),'%s','delimiter','\n');
-    parameter(acquisitionNumber) = ParamV2(text2structure(txtcell{1}));
-    % make a list of all the parameter structures to be merged later. Usually
-    % contains BR and T1MAX, and in general contains the parameters that change
-    % at each iteration
-    posSubZone = posZone((posZone>=posParamSummary(acquisitionNumber)) & (posZone < posParamSummary(acquisitionNumber+1)));
-    posSubData = posData((posZone>=posParamSummary(acquisitionNumber)) & (posZone < posParamSummary(acquisitionNumber+1)));
-    % finding the sequence name is tricky since it is also located before
-    % the PARAMETER header 
-    nameInd = find((posSeqName>=posParamSummary(acquisitionNumber)-1) & (posSeqName < posParamSummary(acquisitionNumber+1)-1));
-    if isempty(nameInd) % ugly fix to make sure the last acquisition is taken into account correctly
-        nameInd = length(posSeqName);
-    end
-    posSubSeqName = posSeqName(min(nameInd)-1:max(nameInd)-1);  % careful: this line comes before the parameters summary
-    zoneParamList = arrayfun(@(start,stop)textscan(txt(start+1:stop-3),'%s','delimiter','\n'),posSubZone,posSubData,'UniformOutput',0);
-    paramZone = cellfun(@(t)ParamV2(text2structure(t{1})),zoneParamList,'UniformOutput',0);
-    paramZone = [paramZone{:}];
-
-    % rename some of the fields for compatibility
-    paramZone = changeFieldName(paramZone,'BR','BRLX');
-    paramZone = changeFieldName(paramZone,'T1MAX','T1MX');
-    % scaling the field and T1MX values to standard units
-    for indj = 1:length(paramZone)
-        paramZone(indj).paramList.BRLX = paramZone(indj).paramList.BRLX*1e6;
-        paramZone(indj).paramList.T1MX = paramZone(indj).paramList.T1MX/1e6;
-    end
-    
-    % some files are not formed correctly and do not have the sequence name.
-    % Fix this by imposing a name from the file name
-    if ~isempty(posSubSeqName)
-%         [~,seqName] = arrayfun(@(start,stop)fileparts(txt(start+20:stop-3)),posSubSeqName,[posParamSummary(acquisitionNumber) posSubZone(2:end)],'UniformOutput',false);
-        [~,seqName] = fileparts(txt(posSubSeqName(1)+20:posParamSummary(acquisitionNumber)-3));
-    else
-        seqName = filename;
-    end
-
-    % merge all the parameters for this acquisition of dispersion
-    parameter(acquisitionNumber) = merge([parameter(acquisitionNumber),paramZone]);
-    % Additional fields are needed that are not present in sdf v2
-    parameter(acquisitionNumber).paramList.FILE = filename;
-    parameter(acquisitionNumber).paramList.EXP = seqName;
-    
-    % now get the data for that acquisition
-    if isfield(parameter(acquisitionNumber).paramList,'BS')
-        bs = parameter(acquisitionNumber).paramList.BS;
-    else
-        bs = 1;
-    end
-    if isfield(parameter(acquisitionNumber).paramList,'NBLK')
-        nblk = parameter(acquisitionNumber).paramList.NBLK;
-    else
-        nblk = 1;
-    end
-    nLines = bs*nblk; % number of lines to read
+%% pair up the start and end of data zones and read all the data zones
+for i = 1:length(posData)
+    % find where the data zone ends
+    posDataEnd(i) = min(posEmpty(posEmpty>posData(i)) - posData(i)) + posData(i); 
     % get the name of the column variables (only need to do this on one
     % line, they are all the same for a given experiment)
-    colNameLine = textscan(txt(posSubData(1):posSubData(1)+1000),'%s',1,'delimiter','\n','HeaderLines',1);
-    colName = strsplit(colNameLine{1}{1},[char(9) char(9)])';
-    colName{strncmp(colName,'TIME',4)} = 'TIME';  % remove imcompatible characters for field names
+    colNameLine = textscan(txt(posDataStart(i) + (0:1000)),'%s',1,'delimiter','\n','HeaderLines',1);
+    colName{i} = strsplit(colNameLine{1}{1},[char(9) char(9)])';
+    colName{i}{strncmp(colName{i},'TIME',4)} = 'TIME';  % remove imcompatible characters for field names
     % make sure the field names are consistent with previous versions
-    colName = strrep(colName,'REAL','real');
-    colName = strrep(colName,'IMG','imag');
-    colName = strrep(colName,'TIME','time');
-    
-    % now read the data
-    indEnd = arrayfun(@(i)min([posSeqName(posSeqName>i) length(txt)]),posSubData); % indexes of the end of the data blocs
-    format = repmat('%f ',1,length(colName));
-    data = arrayfun(@(i,e)textscan(txt(i:e),format,nLines,'delimiter','\n ','HeaderLines',2),posSubData,indEnd,'UniformOutput',0);
-    
-    % finally, place the data into the corresponding fields of the dataContent structure
-    for nField = 1:length(colName)
-        if ~isfield(dataContent,colName{nField}) % initialise the fields
-            dataContent = setfield(dataContent,colName{nField},cell(1,acquisitionNumber)); %#ok<*SFLD>
+    colName{i} = strrep(colName{i},'REAL','real');
+    colName{i} = strrep(colName{i},'IMG','imag');
+    colName{i} = strrep(colName{i},'TIME','time');
+    % now read the data zone
+    format{i} = repmat('%f ',1,length(colName{i}));
+end
+%% now collect all the zone data and parameters efficiently
+dataList = arrayfun(@(i,f,e)textscan(txt(i:e),f{1},'delimiter','\n ','HeaderLines',2),posDataStart,format,posDataEnd,'UniformOutput',0);
+txtZone  = arrayfun(@(i,e)  textscan(txt(i:e),'%s','delimiter','\n'),posParamStart,posParamEnd,'UniformOutput',0);
+paramList = cellfun(@(t)   ParamV2(text2structure(t{1})), txtZone,'UniformOutput',0);
+paramList = [paramList{:}];
+
+%% now regroup the data and parameters for each experiements
+for acquisitionNumber = 1:length(posExpHeader)-1  % last element of posExpHeader is the end of the file
+    % get the sequence name
+    seqName{acquisitionNumber} = txt(posExpHeader(acquisitionNumber)+15:posExpStart(acquisitionNumber)-21);
+    % get the parameter header
+    posHeadEnd(acquisitionNumber) = min(posEmpty(posEmpty>posExpStart(acquisitionNumber)) - posExpStart(acquisitionNumber)) + posExpStart(acquisitionNumber); 
+    txtHead  = textscan(txt(posExpStart(acquisitionNumber):posHeadEnd(acquisitionNumber)),'%s','delimiter','\n');
+    paramHeader = ParamV2(text2structure(txtHead{1}));
+    % find the indexes corresponding to that experiment
+    expIndex{acquisitionNumber} = (posParamStart>posExpHeader(acquisitionNumber))&(posParamStart<posExpHeader(acquisitionNumber+1));
+    % regroup all the data and parameters included in that zone
+    newPar = merge(paramList(expIndex{acquisitionNumber}));
+    parameter(acquisitionNumber) = replace([paramHeader newPar]);
+    parameter(acquisitionNumber) = changeFieldName(parameter(acquisitionNumber),'BR','BRLX'); % rename some of the fields for compatibility
+    parameter(acquisitionNumber) = changeFieldName(parameter(acquisitionNumber),'T1MAX','T1MX');
+    % scaling the field and T1MX values to standard units
+    parameter(acquisitionNumber).paramList.BRLX = parameter(acquisitionNumber).paramList.BRLX*1e6;
+    parameter(acquisitionNumber).paramList.T1MX = parameter(acquisitionNumber).paramList.T1MX/1e6;
+    % Additional fields are needed that are not present in sdf v2
+    parameter(acquisitionNumber).paramList.FILE = seqName{acquisitionNumber};
+    [~,parameter(acquisitionNumber).paramList.EXP] = fileparts(seqName{acquisitionNumber});
+    % now gather the data
+    columns = colName(expIndex{acquisitionNumber});
+    columns = columns{1}; % all the column names should be the same for a given experiment
+    for nField = 1:length(columns)
+        if ~isfield(dataContent,columns{nField}) % initialise the fields
+            dataContent = setfield(dataContent,columns{nField},cell(1,acquisitionNumber)); %#ok<*SFLD>
         end
-        for indDisp = 1:length(data)
-            dataContent.(colName{nField}){acquisitionNumber}(:,:,indDisp) = reshape(data{indDisp}{nField},bs,nblk);
+        d = dataList(expIndex{acquisitionNumber});
+        for indDisp = 1:length(d)
+            dataContent.(columns{nField}){acquisitionNumber}(:,:,indDisp) = reshape(d{indDisp}{nField},parameter(acquisitionNumber).paramList.BS,parameter(acquisitionNumber).paramList.NBLK);
         end
     end
-    
 end
+
+%% check that all the data has been captured, otherwise put the remaining data into a separate experiment 
+
+% TO DO
+
+
     
