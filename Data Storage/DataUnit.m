@@ -233,6 +233,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             if nargin == 1
                 ind = 1:length(self);
             end
+            notify(self(ind), 'FileDeletion');
             unlink(self(ind));
             self(ind) = [];
         end        

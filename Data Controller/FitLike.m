@@ -268,7 +268,7 @@ classdef FitLike < handle
             fileID = FileManager.Checkbox2fileID(nodes); %#ok<PROP>
             % remove files in RelaxData 
             [~,idx,~] = intersect({this.RelaxData.fileID},fileID);
-            this.RelaxData = delete(this.RelaxData, idx);
+            this.RelaxData = remove(this.RelaxData, idx);
             % update FileManager
             removeData(this.FileManager);
         end %remove
@@ -538,7 +538,7 @@ classdef FitLike < handle
                         relaxObj = processData(relaxObj);
                     end                        
                     % replace the new relaxObj in the main array
-                    this.RelaxData = delete(this.RelaxData, indx);
+                    this.RelaxData = remove(this.RelaxData, indx);
                     this.RelaxData = [this.RelaxData, relaxObj];
                     % update FileManager
                     fileID2tree(this.FileManager, fileID(k), 'delete'); %delete old file
