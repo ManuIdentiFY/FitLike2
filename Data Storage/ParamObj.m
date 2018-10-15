@@ -6,20 +6,27 @@ classdef ParamObj < handle & matlab.mixin.Heterogeneous
     
     methods 
          
-        function self = ParamObj(paramStruct)
-            % varargin should be a parameter structure, which is copied
-            % into the paramlist field.
-            if nargin > 0
-                % if the input is an array of struct, then make an
-                % array of objects
-                if ~iscell(paramStruct)
-                    for i = 1:length(paramStruct)
-                        self(i).paramList = paramStruct;
-                    end
-                else
-                    [self(1:length(paramStruct)).paramList] = deal(paramStruct{:}); 
-                end
+        function self = ParamObj(paramStruct)           
+            % check input, must be non empty and have always field/val
+            % couple
+            if nargin == 0
+                % default value
+                return
             end
+            
+            % check if array of struct
+            if ~iscell(paramStruct)
+                self.paramList = paramStruct;
+            else
+                % initialise explicitely the array of object (required
+                % for heterogeneous array)
+                fh = str2func(class(self));
+                % for loop required to create unique handle.
+                for k = numel(paramStruct):-1:1
+                    self(1,k) = fh();
+                    self(k).paramList = paramStruct{k};
+                end
+            end   
         end
         
         % reshape the data in all fields according to the template provided
