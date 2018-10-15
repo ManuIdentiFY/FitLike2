@@ -16,7 +16,7 @@ classdef AverageAbs < Bloc2Zone
         % structure paramFun
         function [z,dz,paramFun] = process(self,x,y,bloc,index) %#ok<*INUSD,*INUSL>
             z = mean(abs(y));
-            dz = 0;
+            dz = std(abs(y));
             paramFun.test = index;
         end
     end
