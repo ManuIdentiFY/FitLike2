@@ -1,10 +1,10 @@
 classdef PeakAverageAbs < Bloc2Zone
     
     properties
-        functionName@char = 'FFT peak magnitude';     % character string, name of the model, as appearing in the figure legend
+        functionName@char = 'Average FFT peak magnitude';     % character string, name of the model, as appearing in the figure legend
         labelY@char = 'Average magnitude (A.U.)';       % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution time (s)';             % string, labels the X-axis data in graphs
-        legendTag@cell = {'PeakAbs'};         % tag appearing in the legend of data derived from this object
+        legendTag@cell = {'AbsFFT Average'};         % tag appearing in the legend of data derived from this object
     end
         
     methods
