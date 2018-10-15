@@ -592,6 +592,8 @@ classdef DispersionTab < DisplayTab
                 legend(this.axe,'show')
                 % check display names
                 checkDisplayName(this);
+                % reset interpreter
+                set(this.axe.Legend,'Interpreter','none')
             end
         end %setLegend
         
