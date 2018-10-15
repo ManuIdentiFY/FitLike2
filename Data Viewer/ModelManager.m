@@ -98,6 +98,11 @@ classdef ModelManager < handle
                 % search the parent node
                 parentNode = this.FitLike.ProcessingManager.searchNode(tree,...
                                                             event.Parent);
+                % unchecked if needed
+                if event.Data.Checked
+                    event.Data.Checked = 0;
+                end
+                % copy
                 if isempty(parentNode)
                     copy(event.Data, tree);
                 else
