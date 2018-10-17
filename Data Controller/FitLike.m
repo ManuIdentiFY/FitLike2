@@ -269,12 +269,11 @@ classdef FitLike < handle
         
         % Save function: allow to save all data in .mat dataset
         function save(this)
-            
-        end %export
-        
-        % Close function: see closeWindowPressed(this)
+            relaxData = this.RelaxData; %#ok<NASGU>
+            uisave('relaxData','data');
+            disp('File saved!')
+        end %save
 
-        
         %%% Edit Menu
         % Move function: allow to move files to another sequence, dataset
         function this = move(this)

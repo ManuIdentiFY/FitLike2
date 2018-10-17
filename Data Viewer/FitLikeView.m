@@ -28,7 +28,8 @@ classdef FitLikeView < handle
             % Export function
             
             % Save function
-            
+            set(this.gui.Save, 'callback',...
+                @(src, event) this.FitLike.save());
             % Close function
             set(this.gui.menu,  'closerequestfcn', ...
                 @(src,event) this.FitLike.closeWindowPressed());          
