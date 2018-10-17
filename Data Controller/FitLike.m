@@ -71,7 +71,7 @@ classdef FitLike < handle
 %             file = {'20170728_cochonsain2_corpscalleux2_ML.sdf',...
 %                     '20170728_cochonsain2_corpscalleux4_ML.sdf',...
 %                     '20170728_cochonsain2_corpscalleux2_QP_ML.sdf'};
-            indx = 1;
+%             indx = 1;
             %%%%---------------------%%%%
             % check output
             if isequal(file,0)
@@ -200,20 +200,19 @@ classdef FitLike < handle
                         % read the .mat file
                         obj = load(filename);
                         var = fieldnames(obj);
-                        % check if no doublons. If true, change filename?
-                        % remove files?
-                        % append them to the current data
                         % check duplicates
-                        bloc = [bloc obj.(var{1})]; %#ok<AGROW>
+                        new_bloc = obj.(var{1});
                         if ~isempty(this.RelaxData)
                             new_bloc = checkDuplicates(this, new_bloc);
                         end
+                        % append them to the current data
+                        bloc = [bloc new_bloc]; %#ok<AGROW>
                     end
             end
             % append data to RelaxData
             this.RelaxData = [this.RelaxData bloc];
             % update FileManager
-            addData(this.FileManager,repmat({'bloc'},[1,size(bloc)]),...
+            addData(this.FileManager, arrayfun(@class, bloc,'Uniform',0),...
                 {bloc.dataset}, {bloc.sequence},...
                 {bloc.filename}, {bloc.displayName});
                 %%-------------------------------------------------------%%
@@ -269,12 +268,11 @@ classdef FitLike < handle
         
         % Save function: allow to save all data in .mat dataset
         function save(this)
-            
-        end %export
-        
-        % Close function: see closeWindowPressed(this)
+            relaxData = this.RelaxData; %#ok<NASGU>
+            uisave('relaxData','data');
+            disp('File saved!')
+        end %save
 
-        
         %%% Edit Menu
         % Move function: allow to move files to another sequence, dataset
         function this = move(this)
