@@ -8,20 +8,8 @@ classdef ParamV1 < ParamObj
         % parameter can be a structure or a cell array of structure. If a
         % cell array of structure is detected then PARAMV1 creates an array
         % of ParamV1 object.
-        function self = ParamV1(parameter)
-            % check input
-            if nargin == 0
-                return
-            end
-            
-            % check if array of struct
-            if ~iscell(parameter)
-                % struct
-                self.paramList = parameter;                           
-            else
-                % array of struct            
-                [self(1:length(parameter)).paramList] = deal(parameter{:});                      
-            end   
+        function self = ParamV1(varargin)
+            self@ParamObj(varargin{:});
         end %ParamV1
             
         % GETZONEAXIS(SELF) generates the inversion time values based on

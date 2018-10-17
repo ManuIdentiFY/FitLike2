@@ -193,15 +193,28 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 
         % merging function, merges a list of the same data object type
         function mergedUnit = merge(selfList)
+            % check that object are homonegeous
             fh = str2func(class(selfList));
-            mergedUnit = fh();
-            mergedUnit.subUnitList = selfList;
+            if strcmp(fh, 'DataUnit')
+                mergedUnit = [];
+                return
+            else
+                % call constructor with the first merged filename (avoid
+                % returning null object)
+                mergedUnit = fh('filename',[selfList(1).filename,' (merged)'],...
+                                'sequence',selfList(1).sequence,'dataset',...
+                                selfList(1).dataset,'legendTag',...
+                                selfList(1).legendTag,'xLabel',...
+                                selfList(1).xLabel,'yLabel',...
+                                selfList(1).yLabel);
+                mergedUnit.subUnitList = selfList;
+            end
         end
 
         % reverse operation 
         function dataList = unMerge(self)
             dataList = self.subUnitList;
-            self.subUnitList = [];
+            remove(self.subUnitList);
         end
 
         % removal from the parent object list for clean deletion
@@ -220,12 +233,12 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     methods (Access = public, Sealed = true)
         
         % respond to the events
-        function self = delete(self, idx)
-            for i = 1:length(idx)
-                notify(self(idx(i)),'FileDeletion');
-            end
-            self(idx) = [];
-        end
+%         function self = delete(self, idx)
+%             for i = 1:length(idx)
+%                 notify(self(idx(i)),'FileDeletion');
+%             end
+%             self(idx) = [];
+%         end
         
         % other removal method to be used in arrays of objects (array =
         % remove(array,indexes);
@@ -233,6 +246,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             if nargin == 1
                 ind = 1:length(self);
             end
+            notify(self(ind), 'FileDeletion');
             unlink(self(ind));
             self(ind) = [];
         end        

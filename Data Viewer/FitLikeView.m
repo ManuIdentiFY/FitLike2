@@ -42,7 +42,8 @@ classdef FitLikeView < handle
             % Sort function
             
             % Merge function
-            
+            set(this.gui.Merge, 'callback', ...
+                @(src, event) this.FitLike.merge());
             % Mask function
             
             %% View Menu

@@ -3,10 +3,10 @@ classdef BiexponentialT1Abs < Zone2Disp
 %non-linear regression using iterative least-squares estimation and returned the
 %time constant of the equation y = f(x) with its error as well as the model used.
     properties
-        functionName@char = 'Biexponential fit';      % character string, name of the model, as appearing in the figure legend
+        functionName@char = 'Biexponential Abs fit';      % character string, name of the model, as appearing in the figure legend
         labelY@char = 'R_1 (s^{-1})';                   % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution field (MHz)';          % string, labels the X-axis data in graphs
-        legendTag@cell = {'dispersion Long T1','dispersion Short T1'};
+        legendTag@cell = {'Long T1','Short T1'};
     end
 
     methods
