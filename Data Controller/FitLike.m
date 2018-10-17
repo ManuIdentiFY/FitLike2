@@ -212,9 +212,7 @@ classdef FitLike < handle
             % append data to RelaxData
             this.RelaxData = [this.RelaxData bloc];
             % update FileManager
-            addData(this.FileManager, arrayfun(@class, bloc,'Uniform',0),...
-                {bloc.dataset}, {bloc.sequence},...
-                {bloc.filename}, {bloc.displayName});
+            add(this.FileManager.gui.tree, bloc, 0);
                 %%-------------------------------------------------------%%
                 % Check if duplicates are imported and let the user decides
                 % if we keep them and add '_bis' to their filename or just
@@ -252,13 +250,12 @@ classdef FitLike < handle
         % Remove funcion: allow to remove files, sequence, dataset
         function this = remove(this)
             % check the selected files in FileManager
-            nodes = this.FileManager.gui.tree.CheckedNodes;
-            fileID = FileManager.Checkbox2fileID(nodes); %#ok<PROP>
+            fileID = nodes2fileID(this.FileManager.gui.tree);
             % remove files in RelaxData 
             [~,idx,~] = intersect({this.RelaxData.fileID},fileID);
             this.RelaxData = remove(this.RelaxData, idx);
             % update FileManager
-            removeData(this.FileManager);
+            remove(this.FileManager.gui.tree);
         end %remove
         
         % Export function: allow to export data (dispersion, model)
@@ -292,7 +289,7 @@ classdef FitLike < handle
         % Merge function: allow to merge/unmerge files
         function this = merge(this)
             % get the selected files
-            fileID = this.FileManager.Checkbox2fileID(this.FileManager.gui.tree.CheckedNodes);
+            fileID = nodes2fileID(this.FileManager.gui.tree);
             [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
             % check if files are already merged or not
             if all(cellfun(@isempty,  {this.RelaxData(indx).subUnitList}) == 1)
@@ -308,10 +305,12 @@ classdef FitLike < handle
                 % merge files
                 mergedFile = merge(this.RelaxData(indx));
                 % update tree
-                fileID2tree(this.FileManager, {this.RelaxData(indx).fileID}, 'delete');
-                addData(this.FileManager, class(mergedFile),...
-                           mergedFile.dataset, mergedFile.sequence,...
-                           mergedFile.filename,mergedFile.displayName);      
+                fileID = [this.RelaxData(indx(1)).dataset,'@',...
+                          this.RelaxData(indx(1)).sequence,'@',...
+                          this.RelaxData(indx(1)).filename];
+                fileID2modify(this.FileManager.gui.tree,...
+                    {fileID}, {mergedFile.filename}, {[]}, 0);
+                fileID2delete(this.FileManager.gui.tree, {this.RelaxData(indx(2:end)).fileID});
                 % update model
                 remove(this.RelaxData, indx);
                 this.RelaxData = [this.RelaxData mergedFile];
@@ -320,10 +319,12 @@ classdef FitLike < handle
                 for k = 1:numel(indx)
                     relaxList = unMerge(this.RelaxData(indx(k)));
                     % update tree
-                    fileID2tree(this.FileManager, {this.RelaxData(indx(k)).fileID}, 'delete');
-                    addData(this.FileManager, repmat({class(relaxList)},1,numel(relaxList)),...
-                           {relaxList.dataset}, {relaxList.sequence},...
-                           {relaxList.filename},{relaxList.displayName});
+                    fileID = [this.RelaxData(indx(k)).dataset,'@',...
+                          this.RelaxData(indx(k)).sequence,'@',...
+                          this.RelaxData(indx(k)).filename];
+                    fileID2modify(this.FileManager.gui.tree,...
+                        {fileID}, {relaxList.filename}, {[]}, 0);
+                    add(this.FileManager.gui.tree, relaxList(2:end), 0);
                     % update model
                     remove(this.RelaxData, indx(k));
                     this.RelaxData = [this.RelaxData, relaxList];
@@ -405,13 +406,13 @@ classdef FitLike < handle
     %% --------------------- FileManager Callback ---------------------- %%  
     methods (Access = public)                
         % File selection callback
-        function selectFile(this, src, event)
+        function selectFile(this, ~, event)
             % check the current action: select or edit
             if strcmp(event.Action,'NodeChecked')
                 % avoid problems: enable 'off'
                 %src.Enable = 'off';
                 % get the fileID list of the checked object
-                fileID = FileManager.Checkbox2fileID(event.Nodes); %#ok<PROPLC>
+                fileID = nodes2fileID(this.FileManager.gui.tree, event.Nodes);
                 % get the corresponding index
                 [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
                 % check the state of the node
@@ -428,8 +429,8 @@ classdef FitLike < handle
                             'the graph type: \n\n%s.'], sprintf('%s \n',str{:})))
                         drawnow; pause(0.05);
                         % uncheck these nodes
-                        fileID2tree(this.FileManager,...
-                            {this.RelaxData(indx(tf)).fileID}, 'uncheck');
+                        fileID2check(this.FileManager.gui.tree,...
+                            {this.RelaxData(indx(tf)).fileID});
                     end
                 else
                     % add data from the current plot
@@ -442,7 +443,8 @@ classdef FitLike < handle
                 if ~strcmp(event.NewName,event.OldName)
                     PROP_LIST = {'dataset','sequence','filename','displayName'};
                     % get the path ID of the nodes and split it
-                    ancestorID = FileManager.getAncestorID(event.Nodes); %#ok<PROPLC>
+                    ancestorID = TreeManager.getAncestorID(event.Nodes);
+                    ancestorID = ancestorID{1}(1:end-numel(event.NewName));
                     ancestorID = strsplit([ancestorID event.OldName],'@');
                     % get the selection by looping over the properties
                     tf = true(size(this.RelaxData));
@@ -480,7 +482,7 @@ classdef FitLike < handle
         function selectTab(this, src)
             % get the selected tab
             hTab = src.SelectedTab.Children;
-            this.FileManager.resetTree(this.FileManager.gui.tree);
+            resetTree(this.FileManager.gui.tree);
             if isa(hTab,'EmptyPlusTab')
                 % add new tab
                 addTab(this.DisplayManager);
@@ -488,13 +490,12 @@ classdef FitLike < handle
                 % dumb
             elseif isa(hTab,'DispersionTab')
                 % get the fileID plotted and check them
-                fileID = getFileID(hTab);
-                fileID2tree(this.FileManager,fileID,'check');
+                fileID2check(this.FileManager.gui.tree, getFileID(hTab));
             end
         end %selectTab
         
         % Mask data
-        function setMask(this, src, event)
+        function setMask(~, ~, event)
             if strcmp(event.Action,'SetMask')
                 % get boundaries
                 xmin = event.XRange(1); xmax = event.XRange(2);
@@ -522,8 +523,8 @@ classdef FitLike < handle
         % Run process
         function this = runProcess(this)
             % check if data are selected
-            nodes = this.ProcessingManager.gui.tree.UserData.CheckedNodes;
-            fileID = FileManager.Checkbox2fileID(nodes); %#ok<PROP>
+            tree = this.ProcessingManager.gui.tree;
+            fileID = nodes2fileID(tree, tree.CheckedNodes);
             % according to the mode process, run it
             if isempty(fileID)
                 warndlg('You need to select file to run process!','Warning')
@@ -568,11 +569,31 @@ classdef FitLike < handle
                     this.RelaxData = remove(this.RelaxData, indx);
                     this.RelaxData = [this.RelaxData, relaxObj];
                     % update FileManager
-                    fileID2tree(this.FileManager, fileID(k), 'delete'); %delete old file
-                    addData(this.FileManager, repmat({class(relaxObj)},1,numel(relaxObj)),...
-                           {relaxObj.dataset}, {relaxObj.sequence},...
-                           {relaxObj.filename},{relaxObj.displayName});
-                    fileID2tree(this.FileManager, {relaxObj.fileID},'check');
+                    hParent = fileID2nodes(this.FileManager.gui.tree, fileID(k));
+                    hNodes = hParent.Children;
+                    n = numel(hNodes);
+                    m = numel(relaxObj);
+                    if n < m
+                        [hNodes.Name] = relaxObj(1:n).displayName;
+                        arrayfun(@(x) resetIcon(this.FileManager.gui.tree,...
+                            x, class(relaxObj)), hNodes,'Uniform', 0);
+                        add(this.FileManager.gui.tree, relaxObj(n+1:end), 1);
+                    elseif n > numel(relaxObj)
+                        [hNodes(1:m).Name] = relaxObj.displayName;
+                        arrayfun(@(x) resetIcon(this.FileManager.gui.tree,...
+                            x, class(relaxObj)), hNodes(1:m),'Uniform', 0);
+                        remove(this.FileManager.gui.tree, hNodes(m+1));
+                    else
+                        [hNodes.Name] = relaxObj.displayName;
+                        arrayfun(@(x) resetIcon(this.FileManager.gui.tree,...
+                            x, class(relaxObj)), hNodes,'Uniform', 0);                     
+                    end
+                    set(hParent.Children,'Checked',1);
+                    % notify
+                    eventdata = TreeEventData('Action','UpdateObj',...
+                                      'Data', relaxObj,...
+                                      'Parent',hParent);
+                    notify(this.FileManager.gui.tree,'TreeUpdate',eventdata)
                     % try to plot
                     [~, plotFlag, ~] = addPlot(this.DisplayManager, relaxObj);
                     % check if everything have been plotted 
@@ -585,8 +606,7 @@ classdef FitLike < handle
                             'the graph type: \n\n%s.'], sprintf('%s \n',str{:})))
                         drawnow; pause(0.05);
                         % uncheck these nodes
-                        fileID2tree(this.FileManager,...
-                            {relaxObj.fileID}, 'uncheck');
+                        fileID2check(this.FileManager.gui.tree,{relaxObj.fileID});
                     end
                 end %for
             else
@@ -604,8 +624,8 @@ classdef FitLike < handle
         % Run Fit
         function this = runFit(this)
             % check if data are selected
-            nodes = this.ModelManager.gui.tree.CheckedNodes;
-            fileID = FileManager.Checkbox2fileID(nodes); %#ok<PROP>
+            tree = this.ModelManager.gui.tree;
+            fileID = nodes2fileID(tree, tree.CheckedNodes);
             % according to the mode process, run it
             if isempty(fileID)
                 warndlg('You need to select file to run process!','Warning')

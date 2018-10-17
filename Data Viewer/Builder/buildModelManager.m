@@ -1,4 +1,4 @@
-function [fig, jtable] = buildModelManager()
+function [fig, jtable] = buildModelManager(FitLike)
 %
 % Builder for the ModelManager View
 %
@@ -60,7 +60,7 @@ uicontrol( 'Parent', buttonbox,...
 
 % File Panel
 % + Tree
-CheckboxTree('Parent', file_panel,...
+TreeManager(FitLike, 'Parent', file_panel,...
             'Editable',false, 'DndEnabled',false,...
             'Tag','tree','RootVisible',false); 
         

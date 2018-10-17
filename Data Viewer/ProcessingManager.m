@@ -16,8 +16,11 @@ classdef ProcessingManager < handle
             this.FitLike = FitLike;
                       
             % Make the figure
-            gui = buildProcessingManager();
+            gui = buildProcessingManager(FitLike);
             this.gui = guihandles(gui);     
+            
+            % Update handles
+            this.gui.tree = this.gui.tree.UserData;
             
             % Set the first tab and the '+' tab
             ProcessTab(uitab(this.gui.tab),'Pipeline1');
@@ -45,7 +48,7 @@ classdef ProcessingManager < handle
                 @(src, event) this.FitLike.runProcess());
             
             % Add listener to the FileManager tree
-            addlistener(this.FitLike.FileManager,...
+            addlistener(this.FitLike.FileManager.gui.tree,...
                 'TreeUpdate',@(src, event) updateTree(this, src, event));
         end %ProcessingManager
         
@@ -79,18 +82,18 @@ classdef ProcessingManager < handle
         
         % Update tree
         function this = updateTree(this, ~, event)
-            % get the tree
-            tree = this.gui.tree.UserData.Root;
+            % get the root
+            root = this.gui.tree.Root;
             % check the type of update: insert or delete
-            if strcmp(event.Action, 'Insert')
+            if strcmp(event.Action, 'Add')
                 % check if it is a relaxObj (unwanted)
-                if strcmp(event.Data.Value, 'relaxObj')
+                if contains(event.Data.Value, 'relaxObj')
                     return
                 end
-                % search the parent node
-                parentNode = ProcessingManager.searchNode(tree, event.Parent);
+                % add the nodes
+                parentNode = TreeManager.searchNode(root, event.Parent);
                 if isempty(parentNode)
-                    copy(event.Data, tree);
+                    copy(event.Data, root);
                 else
                     copy(event.Data, parentNode);
                 end
@@ -98,23 +101,39 @@ classdef ProcessingManager < handle
                 % search the node to delete
                 for k = 1:numel(event.Data)
                     % check if relaxObj
-                    if strcmp(event.Data(k).Value, 'relaxObj')
+                    if contains(event.Data(k).Value, 'relaxObj')
                         continue
                     end
                     % search the node
-                    node = ProcessingManager.searchNode(tree, event.Data(k));                    
+                    node = TreeManager.searchNode(root, event.Data(k));                    
                     delete(node);
                 end
             elseif strcmp(event.Action, 'ReOrder')
                 % check if relaxObj
-                if strcmp(event.Data.Value, 'relaxObj')
+                if contains(event.Data(1).Value, 'relaxObj')
                      return
                 end
                 % reorder children
-                this.FitLike.FileManager.stackNodes(tree, event.Data,...
-                    event.NewOrder, []);
+                node = TreeManager.searchNode(root, event.Data(1));  
+                TreeManager.stackNodes(node.Parent.Children, event.NewOrder, []);
             elseif strcmp(event.Action, 'DragDrop')
-                warning('Not Done Yet!')
+                % check if relaxObj
+                if contains(event.Data(1).Value, 'relaxObj')
+                     return
+                end
+                % get old parent node
+                oldParent = TreeManager.searchNode(root, event.OldParent);  
+                % get new parent node
+                newParent = TreeManager.searchNode(root, event.Parent);
+                % deparent the corresponding node
+                tf = strcmp(get(oldParent.Children,'Name'), event.Data.Name);
+                hNode = oldParent(tf).Children;
+                hNode.Parent = [];
+                TreeManager.stackNodes(newParent.Children, event.NewOrder, hNode); 
+                % delete old parent if no more children
+                if isempty(oldParent.Children)
+                    delete(oldParent)
+                end
             end
         end %updateTree
         
@@ -219,35 +238,5 @@ classdef ProcessingManager < handle
             end
         end %switchProcessMode
     end  
-    
-    methods (Access = public, Static)
-        function treeNode = searchNode(root, node)
-            % check input
-            if isempty(root.Children)
-                treeNode = [];
-                return
-            end
-            % start by checking the depth of search (dataset, sequence,...)
-            children = root.Children;
-            if strcmp(children(1).Value, node.Value)
-                tf = strcmp({children.Parent.Children.Name}, node.Name);
-                treeNode = root.Children(tf);
-            else
-                % pathway
-                parent = node;
-                parentNode = [];
-                while ~strcmp(parent.Name, 'Root')
-                    parentNode = [parent parentNode];
-                    parent = parent.Parent;
-                end
-                % now loop over the level
-                treeNode = root;
-                for k = 1:numel(parentNode)
-                    tf = strcmp({treeNode.Children.Name}, parentNode(k).Name);
-                   	treeNode = treeNode.Children(tf);
-                end
-            end    
-        end
-    end
 end
 

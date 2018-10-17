@@ -16,7 +16,7 @@ classdef ModelManager < handle
             this.FitLike = FitLike;
                       
             % Make the figure
-            [gui, jtable] = buildModelManager();
+            [gui, jtable] = buildModelManager(FitLike);
             this.gui = guihandles(gui);     
             
             % Update handle
@@ -57,7 +57,7 @@ classdef ModelManager < handle
                 @(src, event) updateFilePopup(this));
             
             % Add listener to the FileManager tree
-            addlistener(this.FitLike.FileManager,...
+            addlistener(this.FitLike.FileManager.gui.tree,...
                 'TreeUpdate',@(src, event) updateTree(this, src, event));
         end %ModelManager
         
@@ -92,19 +92,18 @@ classdef ModelManager < handle
         % Update tree
         function this = updateTree(this, ~, event)
             % get the tree
-            tree = this.gui.tree.Root;
+            root = this.gui.tree.Root;
             % check the type of update: insert or delete
-            if strcmp(event.Action, 'Insert')
+            if strcmp(event.Action, 'Add')
                 % search the parent node
-                parentNode = this.FitLike.ProcessingManager.searchNode(tree,...
-                                                            event.Parent);
+                parentNode = TreeManager.searchNode(root, event.Parent);
                 % unchecked if needed
                 if event.Data.Checked
                     event.Data.Checked = 0;
                 end
                 % copy
                 if isempty(parentNode)
-                    copy(event.Data, tree);
+                    copy(event.Data, root);
                 else
                     copy(event.Data, parentNode);
                 end
@@ -115,8 +114,7 @@ classdef ModelManager < handle
                 % search the node to delete
                 for k = 1:numel(event.Data)
                     % search the node
-                    node = this.FitLike.ProcessingManager.searchNode(tree,...
-                                                           event.Data(k));                    
+                    node = TreeManager.searchNode(root, event.Data(k));                    
                     delete(node);
                 end
                 % update
@@ -124,11 +122,45 @@ classdef ModelManager < handle
                 updateResultTable(this);
             elseif strcmp(event.Action,'ReOrder')
                 % reorder children
-                this.FitLike.FileManager.stackNodes(tree, event.Data,...
-                    event.NewOrder, []);
+                node = TreeManager.searchNode(root, event.Data(1));  
+                TreeManager.stackNodes(node.Parent.Children, event.NewOrder, []);
             elseif strcmp(event.Action, 'DragDrop')
-                h = 1;
-                warning('Not Done Yet!')
+                % get old parent node
+                oldParent = TreeManager.searchNode(root, event.OldParent);  
+                % get new parent node
+                newParent = TreeManager.searchNode(root, event.Parent);
+                % deparent the corresponding node
+                tf = strcmp(get(oldParent.Children,'Name'), event.Data.Name);
+                hNode = oldParent(tf).Children;
+                hNode.Parent = [];
+                TreeManager.stackNodes(newParent.Children, event.NewOrder, hNode); 
+                % delete old parent if no more children
+                if isempty(oldParent.Children)
+                    delete(oldParent)
+                end
+            elseif strcmp(event.Action, 'UpdateObj')                
+                % get data
+                hNodes = TreeManager.searchNode(root, event.Parent);
+                hNodes = hNodes.Children;
+                relaxObj = event.Data;
+                n = numel(hNodes);
+                m = numel(event.Data);
+                % update relaxObj
+                if n < m
+                    [hNodes.Name] = relaxObj(1:n).displayName;
+                    arrayfun(@(x) resetIcon(this.gui.tree,...
+                        x, class(relaxObj)), hNodes,'Uniform', 0);
+                    add(this.gui.tree, relaxObj(n+1:end), 1);
+                elseif n > numel(relaxObj)
+                    [hNodes(1:m).Name] = relaxObj.displayName;
+                    arrayfun(@(x) resetIcon(this.gui.tree,...
+                        x, class(relaxObj)), hNodes(1:m),'Uniform', 0);
+                    remove(this.gui.tree, hNodes(m+1));
+                else
+                    [hNodes.Name] = relaxObj.displayName;
+                    arrayfun(@(x) resetIcon(this.gui.tree,...
+                        x, class(relaxObj)), hNodes,'Uniform', 0);                     
+                end
             end
         end %updateTree
         
@@ -249,15 +281,18 @@ classdef ModelManager < handle
         % File checked in tree callback
         function this = updateFilePopup(this)
             % get the selected fileID;
-            fileID = this.FitLike.FileManager.Checkbox2fileID(this.gui.tree.CheckedNodes);
+            fileID = nodes2fileID(this.gui.tree);
             % get the corresponding data
             if ~isempty(fileID)
                 [~,~,idx] = intersect(fileID, {this.FitLike.RelaxData.fileID});
                 % update file popup
                 this.gui.FileSelectionPopup.String = {this.FitLike.RelaxData(idx).filename};
                 this.gui.FileSelectionPopup.UserData = {this.FitLike.RelaxData(idx).fileID};
-                drawnow;
-            end           
+            else
+                % reset filepopup
+                this.gui.FileSelectionPopup.String = 'Select a file:';
+            end
+            drawnow;
         end %updateFilePopup
     end      
 end

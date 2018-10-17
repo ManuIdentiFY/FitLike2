@@ -1,8 +1,10 @@
 classdef TreeEventData < event.EventData
    properties
       Action
-      Parent
       Data
+      Parent
+      NewOrder
+      OldParent
    end
    
    methods
