@@ -18,28 +18,34 @@ classdef DispersionLsqCurveFit < Disp2Exp
             fhlog = makeLogFunction(self);
             
             % prepare the fit parameter structure
+            fitpar.fixed = self.model.isFixed;
             fitpar.fh = self.model.modelHandle;
             fitpar.var = self.model.variableName;
             fitpar.low = self.model.minValue;
             fitpar.high = self.model.maxValue;
             fitpar.start = self.model.startPoint;
-            fitpar.fixed = self.model.isFixed;
             opts = optimset('lsqcurvefit');
 %             opts.Robust = 'on'; 
             opts.MaxFunEvals = 1e4;
-            opts.TypicalX = self.model.startPoint;
+            opts.TypicalX = self.model.startPoint(~fitpar.fixed);
             opts.Display = 'off';
             
-            % perform the fit
+            % deal with fixed coefficients
             x = dispersion.x(dispersion.mask);
             y = dispersion.y(dispersion.mask);
+            fhnonfixed = self.setFixedParameter(fhlog,fitpar.fixed,self.model.startPoint);
+            coeff = fitpar.start;
+            jacobian = zeros(length(y),length(self.model.startPoint));
+            
+            % perform the fit
             try
-                [coeff,resnorm,residuals,exitflag,output,lambda,jacobian] = lsqcurvefit(fhlog,...
-                                                                                        self.model.startPoint,...
-                                                                                        x,log10(y),...
-                                                                                        self.model.minValue,...
-                                                                                        self.model.maxValue,...
-                                                                                        opts);
+                [coeff(~fitpar.fixed),resnorm,residuals,exitflag,output,lambda,jacobian(:,~fitpar.fixed)] = ...
+                                                                           lsqcurvefit(fhnonfixed ,...
+                                                                           self.model.startPoint(~fitpar.fixed),...
+                                                                           x,log10(y),...
+                                                                           self.model.minValue(~fitpar.fixed),...
+                                                                           self.model.maxValue(~fitpar.fixed),...
+                                                                           opts);
             catch ME
                 disp(ME)
                 coeff = self.model.startPoint;

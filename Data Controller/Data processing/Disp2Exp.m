@@ -169,6 +169,7 @@ classdef Disp2Exp < ProcessDataUnit
             fhlog = eval(['@(' inputList ') log10(fhandle(' inputList '))']); % str2func won't work here...
 %             fhlog = str2func(['@(' inputList ') log10(fh(' inputList '))']);
         end
+        
 %         
 %         % function that applies a list of processing objects for one
 %         % dispersion object 'disp'
@@ -273,6 +274,29 @@ classdef Disp2Exp < ProcessDataUnit
             
         end
     end
+    
+    methods (Static)
+    
+        % set the fixed parameters for a given 
+        function fhfixed = setFixedParameter(fh,isFixed,startPoint)
+            paramlist = '';
+            n = 0;
+            for i = 1:length(isFixed)
+                if ~isFixed(i)
+                    n = n+1;
+                    paramlist = [paramlist 'c(' num2str(n) ')'];
+                else
+                    paramlist = [paramlist num2str(startPoint(i))];
+                end
+                if i ~=length(isFixed)
+                    paramlist = [paramlist ','];
+                end
+            end
+            fhfixed = eval(['@(c,x) fh([' paramlist '],x)']);
+        end
+        
+    end
+    
     
     methods (Sealed)
         
