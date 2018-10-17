@@ -14,7 +14,11 @@ classdef MonoexpAbs < Zone2Disp
         % data. Multi-component algorithms can store several results along
         % a single dimension (z and dz are column arrays).
         function [z,dz,paramFun] = process(self,x,y,zone,index) %#ok<*INUSD,*INUSL>
-            T1MX = zone.parameter.paramList.T1MX(index);
+            if length(zone.parameter.paramList.T1MX)>1
+                T1MX = zone.parameter.paramList.T1MX(index);
+            else
+                T1MX = zone.parameter.paramList.T1MX;
+            end
             
             % Exponential fit
             fitModel = @(c, x)sqrt(((c(1)-c(2))*exp(-x*c(3))+c(2)).^2 + ...

@@ -1,4 +1,4 @@
-function [dataContent, parameter] = readsdfv2_2(filename,varargin)
+function [dataContent, parameter] = readsdfv2(filename,varargin)
 
 % [BLOC, PARAMETERS] = READSDFV2(FILENAME,VARARGIN) reads data from a
 % Stelar file .sdf version 2. Use FOPEN to open the file and obtain FID. It
@@ -94,9 +94,13 @@ for acquisitionNumber = 1:length(posExpHeader)-1  % last element of posExpHeader
     % find the indexes corresponding to that experiment
     expIndex{acquisitionNumber} = (posParamStart>posExpHeader(acquisitionNumber))&(posParamStart<posExpHeader(acquisitionNumber+1));
     % regroup all the data and parameters included in that zone
-    newPar = merge(paramList(expIndex{acquisitionNumber}));
-    parameter(acquisitionNumber) = replace([paramHeader newPar]);
-    parameter(acquisitionNumber) = changeFieldName(parameter(acquisitionNumber),'BR','BRLX'); % rename some of the fields for compatibility
+    if length(paramList)>1 && sum(expIndex{acquisitionNumber})>1
+        newPar = merge(paramList(expIndex{acquisitionNumber}));
+        parameter(acquisitionNumber) = replace([paramHeader newPar]);
+    else
+        parameter(acquisitionNumber) = paramHeader;
+    end
+    parameter(acquisitionNumber).paramList.BRLX = parameter(acquisitionNumber).paramList.BR; % rename some of the fields for compatibility
     parameter(acquisitionNumber) = changeFieldName(parameter(acquisitionNumber),'T1MAX','T1MX');
     % scaling the field and T1MX values to standard units
     parameter(acquisitionNumber).paramList.BRLX = parameter(acquisitionNumber).paramList.BRLX*1e6;
@@ -108,12 +112,20 @@ for acquisitionNumber = 1:length(posExpHeader)-1  % last element of posExpHeader
     columns = colName(expIndex{acquisitionNumber});
     columns = columns{1}; % all the column names should be the same for a given experiment
     for nField = 1:length(columns)
-        if ~isfield(dataContent,columns{nField}) % initialise the fields
+        if ~isfield(dataContent,columns{nField}) % initialise the fields if needs be
             dataContent = setfield(dataContent,columns{nField},cell(1,acquisitionNumber)); %#ok<*SFLD>
         end
-        d = dataList(expIndex{acquisitionNumber});
+        d = dataList(expIndex{acquisitionNumber});  % get the data for this particular group
+        % the data may be arranged in a way that differs depending on the
+        % acquisition strategy. If using the profile wizard, the zones are
+        % saved independantly, but when using the loop tab the format is
+        % different. Here we try to unify everything.
+        % detecting the use of profile wizard:
+%         if 
+        BlocSize = parameter(acquisitionNumber).paramList.BS;
+        ZoneSize = parameter(acquisitionNumber).paramList.NBLK;
         for indDisp = 1:length(d)
-            dataContent.(columns{nField}){acquisitionNumber}(:,:,indDisp) = reshape(d{indDisp}{nField},parameter(acquisitionNumber).paramList.BS,parameter(acquisitionNumber).paramList.NBLK);
+            dataContent.(columns{nField}){acquisitionNumber}(:,:,indDisp) = reshape(d{indDisp}{nField},BlocSize,ZoneSize);
         end
     end
 end

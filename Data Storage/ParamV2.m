@@ -40,6 +40,19 @@ classdef ParamV2 < ParamObj
             x = reshape(x,size(x,1),size(x,2));
         end
         
+        % find the parameters that have been used to select multiple values
+        % for looped experimentation, when not using the profile wizard.
+        function [parName,parValue] = findExtendedParameter(self)
+            parName = {};
+            parValue = {};
+            parList = fieldnames(self.paramList);
+            for i=1:length(parList)
+                if isequal(self.paramList.(parList{i})(1),'[')
+                    parName = [parName parList{i}];
+                    parValue = [parValue self.paramList.(parList{i})];
+                end
+            end
+        end
     end
     
 end
