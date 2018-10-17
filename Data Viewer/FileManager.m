@@ -113,14 +113,26 @@ classdef FileManager < handle
             end
         end %addData
         
-        % Remove data from the tree. 
-        function this = removeData(this)
-            % notify 
+        % Remove data from the tree 
+        function this = removeData(this, varargin)
+            % check input
+            if nargin < 2
+                hNodes = this.gui.tree.CheckedNodes;
+            else
+                % check if multiple children or not
+                hNodes = varargin{1};
+                for k = 1:numel(hNodes)
+                    while numel(hNodes(k).Parent.Children) < 2
+                        hNodes(k) = hNodes(k).Parent;
+                    end
+                end
+            end
             eventdata = TreeEventData('Action','Delete',...
-                                      'Data',this.gui.tree.CheckedNodes);
+                                      'Data',hNodes);
+            % notify 
             notify(this, 'TreeUpdate', eventdata);
             % just delete the selected nodes and their children
-            delete(this.gui.tree.CheckedNodes);
+            delete(hNodes);
         end %removeData       
          
         % Check node existence and create it if needed. 
@@ -194,12 +206,7 @@ classdef FileManager < handle
                     case 'uncheck'
                         hNodes.Checked = 0;
                     case 'delete'
-                        % notify 
-                        eventdata = TreeEventData('Action','Delete',...
-                                      'Data', hNodes);
-                        notify(this, 'TreeUpdate', eventdata);
-                        % delete
-                        delete(hNodes);                        
+                        removeData(this, hNodes);                       
                 end
             end
         end %fileID2tree
