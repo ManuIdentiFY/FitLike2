@@ -71,7 +71,7 @@ classdef FitLike < handle
 %             file = {'20170728_cochonsain2_corpscalleux2_ML.sdf',...
 %                     '20170728_cochonsain2_corpscalleux4_ML.sdf',...
 %                     '20170728_cochonsain2_corpscalleux2_QP_ML.sdf'};
-            indx = 1;
+%             indx = 1;
             %%%%---------------------%%%%
             % check output
             if isequal(file,0)
@@ -200,14 +200,12 @@ classdef FitLike < handle
                         % read the .mat file
                         obj = load(filename);
                         var = fieldnames(obj);
-                        % check if no doublons. If true, change filename?
-                        % remove files?
-                        % append them to the current data
                         % check duplicates
-                        bloc = [bloc obj.(var{1})]; %#ok<AGROW>
                         if ~isempty(this.RelaxData)
-                            new_bloc = checkDuplicates(this, new_bloc);
+                            new_bloc = checkDuplicates(this, obj.(var{1}));
                         end
+                        % append them to the current data
+                        bloc = [bloc new_bloc]; %#ok<AGROW>
                     end
             end
             % append data to RelaxData
