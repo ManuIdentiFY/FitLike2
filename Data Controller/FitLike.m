@@ -201,8 +201,9 @@ classdef FitLike < handle
                         obj = load(filename);
                         var = fieldnames(obj);
                         % check duplicates
+                        new_bloc = obj.(var{1});
                         if ~isempty(this.RelaxData)
-                            new_bloc = checkDuplicates(this, obj.(var{1}));
+                            new_bloc = checkDuplicates(this, new_bloc);
                         end
                         % append them to the current data
                         bloc = [bloc new_bloc]; %#ok<AGROW>
@@ -211,7 +212,7 @@ classdef FitLike < handle
             % append data to RelaxData
             this.RelaxData = [this.RelaxData bloc];
             % update FileManager
-            addData(this.FileManager,repmat({'bloc'},[1,size(bloc)]),...
+            addData(this.FileManager, arrayfun(@class, bloc,'Uniform',0),...
                 {bloc.dataset}, {bloc.sequence},...
                 {bloc.filename}, {bloc.displayName});
                 %%-------------------------------------------------------%%
