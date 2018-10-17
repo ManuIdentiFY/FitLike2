@@ -32,21 +32,10 @@ classdef FitLike < handle
             this.ModelManager.gui.fig.Visible = 'on';
             %%%-----------%%%
             % call open
-            open(this);
-            loadPipeline(this.ProcessingManager);
-            % runProcess
-            %runProcess(this);
-%             % expand
-%             expand(this.FileManager.gui.tree.Root.Children.Children(3));
-%             expand(this.FileManager.gui.tree.Root.Children.Children(3).Children);
-%             % select IRCPMG files
-%             tf = strcmp({this.RelaxData.sequence}, 'IRCPMG/S [DefaultFfcSequences.ssf]');
-%             fileID2tree(this.FileManager, {this.RelaxData(tf).fileID}, 'check');
-%             % fire callback
-%             event.Nodes = this.FileManager.gui.tree.Root.Children.Children(3);
-%             event.Action = 'NodeChecked';
-%             selectFile(this, this.FileManager.gui.tree, event);
-            %%%-----------%%%
+%             open(this);
+%             loadPipeline(this.ProcessingManager);
+%             this.ProcessingManager.gui.tree.UserData.Root.Children.Children(3).Checked = 1;
+%             runProcess(this);
         end %FitLike
         
         % Destructor             
@@ -78,11 +67,11 @@ classdef FitLike < handle
                                      'Select One or More Files', ...
                                      'MultiSelect', 'on');
             
-%             path = 'C:/Users/Manu/Desktop/FFC-NMR DATA/PIGS/SAIN/2/';
+%             path = 'C:/Users/Manu/Desktop/FFC-NMR/FFC-NMR DATA/PIGS/SAIN/2/';
 %             file = {'20170728_cochonsain2_corpscalleux2_ML.sdf',...
 %                     '20170728_cochonsain2_corpscalleux4_ML.sdf',...
 %                     '20170728_cochonsain2_corpscalleux2_QP_ML.sdf'};
-%             indx = 1;
+            indx = 1;
             %%%%---------------------%%%%
             % check output
             if isequal(file,0)
@@ -304,7 +293,47 @@ classdef FitLike < handle
         
         % Merge function: allow to merge/unmerge files
         function this = merge(this)
-            
+            % get the selected files
+            fileID = this.FileManager.Checkbox2fileID(this.FileManager.gui.tree.CheckedNodes);
+            [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
+            % check if files are already merged or not
+            if all(cellfun(@isempty,  {this.RelaxData(indx).subUnitList}) == 1)
+                % check if their dataset/sequence are the same
+                if ~all(strcmp({this.RelaxData(indx).dataset},...
+                               this.RelaxData(indx(1)).dataset) == 1) ||... 
+                   ~all(strcmp({this.RelaxData(indx).sequence},...
+                               this.RelaxData(indx(1)).sequence) == 1)
+                    % ask user
+                    warning('Not done yet!')
+                    return                      
+                end
+                % merge files
+                mergedFile = merge(this.RelaxData(indx));
+                % update tree
+                fileID2tree(this.FileManager, {this.RelaxData(indx).fileID}, 'delete');
+                addData(this.FileManager, class(mergedFile),...
+                           mergedFile.dataset, mergedFile.sequence,...
+                           mergedFile.filename,mergedFile.displayName);      
+                % update model
+                remove(this.RelaxData, indx);
+                this.RelaxData = [this.RelaxData mergedFile];
+            elseif all(cellfun(@isempty,  {this.RelaxData(indx).subUnitList}) == 0)
+                % unmerged files
+                for k = 1:numel(indx)
+                    relaxList = unMerge(this.RelaxData(indx(k)));
+                    % update tree
+                    fileID2tree(this.FileManager, {this.RelaxData(indx(k)).fileID}, 'delete');
+                    addData(this.FileManager, repmat({class(relaxList)},1,numel(relaxList)),...
+                           {relaxList.dataset}, {relaxList.sequence},...
+                           {relaxList.filename},{relaxList.displayName});
+                    % update model
+                    remove(this.RelaxData, indx(k));
+                    this.RelaxData = [this.RelaxData, relaxList];
+                end
+            else
+               warning('Not done yet!') 
+               return
+            end
         end %merge
         
         % Mask function: allow to mask data in DisplayManager
