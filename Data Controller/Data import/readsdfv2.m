@@ -106,7 +106,9 @@ for acquisitionNumber = 1:length(posExpHeader)-1  % last element of posExpHeader
     parameter(acquisitionNumber).paramList.BRLX = parameter(acquisitionNumber).paramList.BRLX*1e6;
     parameter(acquisitionNumber).paramList.T1MX = parameter(acquisitionNumber).paramList.T1MX/1e6;
     % Additional fields are needed that are not present in sdf v2
-    parameter(acquisitionNumber).paramList.FILE = seqName{acquisitionNumber};
+    [path,name] = fileparts(filename);
+    ind = strfind(path,filesep);
+    parameter(acquisitionNumber).paramList.FILE = fullfile(path(ind(end)+1:end),name);
     [~,parameter(acquisitionNumber).paramList.EXP] = fileparts(seqName{acquisitionNumber});
     % now gather the data
     columns = colName(expIndex{acquisitionNumber});
