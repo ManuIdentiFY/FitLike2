@@ -114,7 +114,6 @@ classdef ProcessingManager < handle
                 this.FitLike.FileManager.stackNodes(tree, event.Data,...
                     event.NewOrder, []);
             elseif strcmp(event.Action, 'DragDrop')
-                h = 1;
                 warning('Not Done Yet!')
             end
         end %updateTree

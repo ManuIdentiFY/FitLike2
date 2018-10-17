@@ -27,7 +27,7 @@ classdef MonoexpAbs < Zone2Disp
             opts.MaxFunEvals = 1e8;
             opts.MaxIter = 3e4;
             
-            startPoint = [y(1),-y(end),1/T1MX,y(1)/10]; 
+            startPoint = [y(1), -y(end), 1/T1MX, y(1)/10]; 
 %             if isfield(zone.parameter.paramList,'coeff')
 %                 if ~isempty(zone.parameter.paramList.coeff)
 %                     startPoint = zone.parameter.paramList.coeff(index,:);
