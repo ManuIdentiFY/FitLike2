@@ -452,33 +452,42 @@ classdef FitLike < handle
                                 warndlg('You can not modify the label of the filename.')
                                 drawnow;
                                 event.Nodes.Name = event.OldName;
+                                return
                             elseif numel(idx) > 1 ||...
                                     any(contains(event.NewName,'@')) ||...
                                     numel(strfind(event.NewName,'[')) > 1
                                 warndlg('You can not use ''@'' in any name and ''['' or '']'' for the filename.')
                                 drawnow;
                                 event.Nodes.Name = event.OldName;
+                                return
                             end
                         end
                     elseif any(contains(event.NewName,'@'))
                         warndlg('You can not use @ in the sequence or dataset name.')
                         drawnow;
                         event.Nodes.Name = event.OldName;
-                    else
-                        PROP_LIST = {'dataset','sequence','filename','displayName'};
-                        % get the path ID of the nodes and split it
-                        ancestorID = TreeManager.getAncestorID(event.Nodes);
-                        ancestorID = strsplit(ancestorID{1},'@');
-                        ancestorID = [ancestorID(1:end-1), event.OldName];
-                        % get the selection by looping over the properties
-                        tf = true(size(this.RelaxData));
-                        for k = 1:numel(ancestorID)
-                            tf = tf & strcmp({this.RelaxData.(PROP_LIST{k})},...
-                                ancestorID{k});
-                        end
-                        % now update the data
-                        [this.RelaxData(tf).(PROP_LIST{k})] = deal(event.NewName);
+                        return
                     end
+                    
+                    PROP_LIST = {'dataset','sequence','filename','displayName'};
+                    % get the path ID of the nodes and split it
+                    ancestorID = TreeManager.getAncestorID(event.Nodes);
+                    ancestorID = strsplit(ancestorID{1},'@');
+                    ancestorID = [ancestorID(1:end-1), event.OldName];
+                    % get the selection by looping over the properties
+                    tf = true(size(this.RelaxData));
+                    for k = 1:numel(ancestorID)
+                        tf = tf & strcmp({this.RelaxData.(PROP_LIST{k})},...
+                            ancestorID{k});
+                    end
+                    % now update the data
+                    [this.RelaxData(tf).(PROP_LIST{k})] = deal(event.NewName);
+                    % notify
+                    eventdata = TreeEventData('Action','Update',...
+                                  'Parent',event.Nodes.Parent,...
+                                  'OldName',event.OldName,...
+                                  'NewName',event.NewName);
+                    notify(this.FileManager.gui.tree, 'TreeUpdate', eventdata);
                 end
             end
         end %selectFile
@@ -521,18 +530,37 @@ classdef FitLike < handle
                         hNodes = [hNodes{:}];
                     end
                 end
+                PROP_LIST = {'dataset','sequence','filename','displayName'};
                 % update name
                 for k = 1:numel(hNodes)
                     name = hNodes(k).Name;
                     % remove previous label
                     idx = strfind(name,']');
                     if ~isempty(idx)
-                        name = name(idx+1:end);
+                        new_name = name(idx+1:end);
+                    else
+                        new_name = name;
                     end
                     % replace it
-                    hNodes(k).Name = ['[',answer{1},'] ',name];
+                    new_name = ['[',answer{1},'] ',new_name]; %#ok<AGROW>
+                    hNodes(k).Name = new_name;
+                    % update model
+                    ancestorID = TreeManager.getAncestorID(hNodes(k));
+                    ancestorID = strsplit(ancestorID{1},'@');
+                    % get the selection by looping over the properties
+                    tf = true(size(this.RelaxData));
+                    for i = 1:numel(ancestorID)
+                        tf = tf & strcmp({this.RelaxData.(PROP_LIST{i})},...
+                            ancestorID{i});
+                    end
+                    % now update the data
+                    [this.RelaxData(tf).label] = deal(answer{1});
                     % notify
-                    
+                    eventdata = TreeEventData('Action','Update',...
+                                      'Parent',hNodes(k).Parent,...
+                                      'OldName',name,...
+                                      'NewName',new_name);
+                    notify(this.FileManager.gui.tree, 'TreeUpdate', eventdata);
                 end
             end
         end %addLabel

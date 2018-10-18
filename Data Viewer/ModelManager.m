@@ -161,6 +161,12 @@ classdef ModelManager < handle
                     arrayfun(@(x) resetIcon(this.gui.tree,...
                         x, class(relaxObj)), hNodes,'Uniform', 0);                     
                 end
+            elseif strcmp(event.Action, 'Update')
+                % search the parent nodes
+                hParent = TreeManager.searchNode(root, event.Parent); 
+                % find the modified nodes
+                tf = strcmp(get(hParent.Children,'Name'),event.OldName);
+                hParent.Children(tf).Name = event.NewName;
             end
         end %updateTree
         

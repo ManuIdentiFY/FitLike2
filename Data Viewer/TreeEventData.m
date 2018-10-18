@@ -5,6 +5,8 @@ classdef TreeEventData < event.EventData
       Parent
       NewOrder
       OldParent
+      OldName
+      NewName
    end
    
    methods

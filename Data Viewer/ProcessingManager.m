@@ -84,12 +84,14 @@ classdef ProcessingManager < handle
         function this = updateTree(this, ~, event)
             % get the root
             root = this.gui.tree.Root;
-            % check the type of update: insert or delete
-            if strcmp(event.Action, 'Add')
-                % check if it is a relaxObj (unwanted)
-                if contains(event.Data.Value, 'relaxObj')
+            % check if it is a relaxObj (unwanted)
+            if isa(event.Data, 'uiextras.jTree.CheckboxTreeNode')
+                if contains(event.Data(1).Value, 'relaxObj')
                     return
                 end
+            end
+            % check the type of update: insert or delete
+            if strcmp(event.Action, 'Add')
                 % add the nodes
                 parentNode = TreeManager.searchNode(root, event.Parent);
                 if isempty(parentNode)
@@ -100,27 +102,15 @@ classdef ProcessingManager < handle
             elseif strcmp(event.Action, 'Delete')
                 % search the node to delete
                 for k = 1:numel(event.Data)
-                    % check if relaxObj
-                    if contains(event.Data(k).Value, 'relaxObj')
-                        continue
-                    end
                     % search the node
                     node = TreeManager.searchNode(root, event.Data(k));                    
                     delete(node);
                 end
             elseif strcmp(event.Action, 'ReOrder')
-                % check if relaxObj
-                if contains(event.Data(1).Value, 'relaxObj')
-                     return
-                end
                 % reorder children
                 node = TreeManager.searchNode(root, event.Data(1));  
                 TreeManager.stackNodes(node.Parent.Children, event.NewOrder, []);
             elseif strcmp(event.Action, 'DragDrop')
-                % check if relaxObj
-                if contains(event.Data(1).Value, 'relaxObj')
-                     return
-                end
                 % get old parent node
                 oldParent = TreeManager.searchNode(root, event.OldParent);  
                 % get new parent node
@@ -134,6 +124,12 @@ classdef ProcessingManager < handle
                 if isempty(oldParent.Children)
                     delete(oldParent)
                 end
+            elseif strcmp(event.Action, 'Update')
+                % search the parent nodes
+                hParent = TreeManager.searchNode(root, event.Parent); 
+                % find the modified nodes
+                tf = strcmp(get(hParent.Children,'Name'),event.OldName);
+                hParent.Children(tf).Name = event.NewName;
             end
         end %updateTree
         
