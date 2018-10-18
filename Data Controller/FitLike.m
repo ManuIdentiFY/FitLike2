@@ -441,11 +441,27 @@ classdef FitLike < handle
             elseif strcmp(event.Action,'NodeEdited')
                 % check if the node has been edited
                 if ~strcmp(event.NewName, event.OldName)
-                    % check if the NewName is correct
-                    if any(contains(event.NewName,{'@'})) ||...
-                            (strcmp(event.Nodes.Value, 'file') &&...
-                            any(contains(event.NewName, {'[',']'})))
-                        warndlg('You can not use ''@'' in any name and ''['' or '']'' for the filename.')
+                    % check if file
+                    if strcmp(event.Nodes.Value, 'file')
+                        % check if label
+                        idx = strfind(event.OldName,']');
+                        if ~isempty(idx)
+                            label = [event.OldName(1:idx(1)),' '];
+                            % check if the label exists in the new name
+                            if ~contains(event.NewName, label)
+                                warndlg('You can not modify the label of the filename.')
+                                drawnow;
+                                event.Nodes.Name = event.OldName;
+                            elseif numel(idx) > 1 ||...
+                                    any(contains(event.NewName,'@')) ||...
+                                    numel(strfind(event.NewName,'[')) > 1
+                                warndlg('You can not use ''@'' in any name and ''['' or '']'' for the filename.')
+                                drawnow;
+                                event.Nodes.Name = event.OldName;
+                            end
+                        end
+                    elseif any(contains(event.NewName,'@'))
+                        warndlg('You can not use @ in the sequence or dataset name.')
                         drawnow;
                         event.Nodes.Name = event.OldName;
                     else
