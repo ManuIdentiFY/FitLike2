@@ -440,26 +440,34 @@ classdef FitLike < handle
                 %src.Enable = 'on';  
             elseif strcmp(event.Action,'NodeEdited')
                 % check if the node has been edited
-                if ~strcmp(event.NewName,event.OldName)
-                    PROP_LIST = {'dataset','sequence','filename','displayName'};
-                    % get the path ID of the nodes and split it
-                    ancestorID = TreeManager.getAncestorID(event.Nodes);
-                    ancestorID = ancestorID{1}(1:end-numel(event.NewName));
-                    ancestorID = strsplit([ancestorID event.OldName],'@');
-                    % get the selection by looping over the properties
-                    tf = true(size(this.RelaxData));
-                    for k = 1:numel(ancestorID)
-                        tf = tf & strcmp({this.RelaxData.(PROP_LIST{k})},...
-                            ancestorID{k});
+                if ~strcmp(event.NewName, event.OldName)
+                    % check if the NewName is correct
+                    if any(contains(event.NewName,{'@'})) ||...
+                            (strcmp(event.Nodes.Value, 'file') &&...
+                            any(contains(event.NewName, {'[',']'})))
+                        warndlg('You can not use ''@'' in any name and ''['' or '']'' for the filename.')
+                        drawnow;
+                        event.Nodes.Name = event.OldName;
+                    else
+                        PROP_LIST = {'dataset','sequence','filename','displayName'};
+                        % get the path ID of the nodes and split it
+                        ancestorID = TreeManager.getAncestorID(event.Nodes);
+                        ancestorID = strsplit(ancestorID{1},'@');
+                        ancestorID = [ancestorID(1:end-1), event.OldName];
+                        % get the selection by looping over the properties
+                        tf = true(size(this.RelaxData));
+                        for k = 1:numel(ancestorID)
+                            tf = tf & strcmp({this.RelaxData.(PROP_LIST{k})},...
+                                ancestorID{k});
+                        end
+                        % now update the data
+                        [this.RelaxData(tf).(PROP_LIST{k})] = deal(event.NewName);
                     end
-                    % now update the data
-                    [this.RelaxData(tf).(PROP_LIST{k})] = deal(event.NewName);
                 end
             end
         end %selectFile
         
         % Callback to update data when using DragDrop method
-        % NOTE: UPDATE CHECK VALUE IF NEEDED!
         function editDragDropFile(this, oldFileID, newFileID)
             PROP_LIST = {'dataset','sequence','filename','displayName'};
             % get the corresponding object
@@ -475,6 +483,9 @@ classdef FitLike < handle
                 [this.RelaxData(tf).(PROP_LIST{k})] = deal(newFileID{k});
             end
         end %editDragDropFile
+        
+        % Callback right-click: add label
+        
     end   
     %% -------------------- DisplayManager Callback -------------------- %% 
     methods (Access = public)
