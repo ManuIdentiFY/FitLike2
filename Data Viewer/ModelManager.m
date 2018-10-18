@@ -243,7 +243,9 @@ classdef ModelManager < handle
         % Check file callback
         function this = updateResultTable(this)
             % get the selected file
-            if isempty(this.gui.FileSelectionPopup.String{this.gui.FileSelectionPopup.Value})
+            if ischar(this.gui.FileSelectionPopup.String)
+                return               
+            elseif isempty(this.gui.FileSelectionPopup.String{this.gui.FileSelectionPopup.Value})
                 return
             end
             % get the file selected
