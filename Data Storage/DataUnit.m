@@ -33,7 +33,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     % file properties
     properties (Access = public)
         legendTag@char = '';
-        label@char = '0';        % label of the file ('control','tumour',...)
+        label@char = '';        % label of the file ('control','tumour',...)
     end
     
     % file properties
