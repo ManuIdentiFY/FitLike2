@@ -138,35 +138,17 @@ classdef ModelManager < handle
                 if isempty(oldParent.Children)
                     delete(oldParent)
                 end
-            elseif strcmp(event.Action, 'UpdateObj')                
-                % get data
-                hNodes = TreeManager.searchNode(root, event.Parent);
-                hNodes = hNodes.Children;
-                relaxObj = event.Data;
-                n = numel(hNodes);
-                m = numel(event.Data);
-                % update relaxObj
-                if n < m
-                    [hNodes.Name] = relaxObj(1:n).displayName;
-                    arrayfun(@(x) resetIcon(this.gui.tree,...
-                        x, class(relaxObj)), hNodes,'Uniform', 0);
-                    add(this.gui.tree, relaxObj(n+1:end), 1);
-                elseif n > numel(relaxObj)
-                    [hNodes(1:m).Name] = relaxObj.displayName;
-                    arrayfun(@(x) resetIcon(this.gui.tree,...
-                        x, class(relaxObj)), hNodes(1:m),'Uniform', 0);
-                    remove(this.gui.tree, hNodes(m+1));
-                else
-                    [hNodes.Name] = relaxObj.displayName;
-                    arrayfun(@(x) resetIcon(this.gui.tree,...
-                        x, class(relaxObj)), hNodes,'Uniform', 0);                     
-                end
-            elseif strcmp(event.Action, 'Update')
+            elseif strcmp(event.Action, 'UpdateName')
                 % search the parent nodes
                 hParent = TreeManager.searchNode(root, event.Parent); 
                 % find the modified nodes
                 tf = strcmp(get(hParent.Children,'Name'),event.OldName);
                 hParent.Children(tf).Name = event.NewName;
+            elseif strcmp(event.Action, 'UpdateIcon')
+                % search the node
+                hNode = TreeManager.searchNode(root, event.Parent); 
+                % reset icon
+                setIcon(hNode, event.Data);
             end
         end %updateTree
         

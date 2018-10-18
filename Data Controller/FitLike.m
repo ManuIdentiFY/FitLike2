@@ -322,8 +322,14 @@ classdef FitLike < handle
                     fileID = [this.RelaxData(indx(k)).dataset,'@',...
                           this.RelaxData(indx(k)).sequence,'@',...
                           this.RelaxData(indx(k)).filename];
+                    % check if label
+                    if ~isempty(relaxList(1).label)
+                        name = ['[',relaxList(1).label,'] ',relaxList(1).filename];
+                    else
+                        name = relaxList(1).filename;
+                    end
                     fileID2modify(this.FileManager.gui.tree,...
-                        {fileID}, {relaxList.filename}, {[]}, 0);
+                        {fileID}, {name}, {[]}, 0);
                     add(this.FileManager.gui.tree, relaxList(2:end), 0);
                     % update model
                     remove(this.RelaxData, indx(k));
@@ -441,6 +447,8 @@ classdef FitLike < handle
             elseif strcmp(event.Action,'NodeEdited')
                 % check if the node has been edited
                 if ~strcmp(event.NewName, event.OldName)
+                    oldName = event.OldName;
+                    newName = event.NewName;
                     % check if file
                     if strcmp(event.Nodes.Value, 'file')
                         % check if label
@@ -461,6 +469,8 @@ classdef FitLike < handle
                                 event.Nodes.Name = event.OldName;
                                 return
                             end
+                           oldName = strtrim(oldName(idx+1:end));
+                           newName = strtrim(newName(idx+1:end));
                         end
                     elseif any(contains(event.NewName,'@'))
                         warndlg('You can not use @ in the sequence or dataset name.')
@@ -468,12 +478,12 @@ classdef FitLike < handle
                         event.Nodes.Name = event.OldName;
                         return
                     end
-                    
+
                     PROP_LIST = {'dataset','sequence','filename','displayName'};
                     % get the path ID of the nodes and split it
                     ancestorID = TreeManager.getAncestorID(event.Nodes);
-                    ancestorID = strsplit(ancestorID{1},'@');
-                    ancestorID = [ancestorID(1:end-1), event.OldName];
+                    ancestorID = strtrim(strsplit(ancestorID{1},'@'));
+                    ancestorID = [ancestorID(1:end-1), oldName];
                     % get the selection by looping over the properties
                     tf = true(size(this.RelaxData));
                     for k = 1:numel(ancestorID)
@@ -481,9 +491,9 @@ classdef FitLike < handle
                             ancestorID{k});
                     end
                     % now update the data
-                    [this.RelaxData(tf).(PROP_LIST{k})] = deal(event.NewName);
+                    [this.RelaxData(tf).(PROP_LIST{k})] = deal(strtrim(newName));
                     % notify
-                    eventdata = TreeEventData('Action','Update',...
+                    eventdata = TreeEventData('Action','UpdateName',...
                                   'Parent',event.Nodes.Parent,...
                                   'OldName',event.OldName,...
                                   'NewName',event.NewName);
@@ -520,7 +530,7 @@ classdef FitLike < handle
             elseif contains(answer{1},{'@','[',']'})
                 warndlg('The following character are not allowed: @, [, ].')
                 return
-            else
+            else 
                 % get the selected file nodes and update their name
                 hNodes = this.FileManager.gui.tree.SelectedNodes;
                 % if sequence, dataset update all the children
@@ -537,16 +547,17 @@ classdef FitLike < handle
                     % remove previous label
                     idx = strfind(name,']');
                     if ~isempty(idx)
-                        new_name = name(idx+1:end);
+                        new_name = strtrim(name(idx+1:end));
                     else
-                        new_name = name;
+                        new_name = strtrim(name);
                     end
-                    % replace it
-                    new_name = ['[',answer{1},'] ',new_name]; %#ok<AGROW>
-                    hNodes(k).Name = new_name;
                     % update model
                     ancestorID = TreeManager.getAncestorID(hNodes(k));
-                    ancestorID = strsplit(ancestorID{1},'@');
+                    ancestorID = strtrim(strsplit(ancestorID{1},'@'));
+                    ancestorID{end} = new_name;
+                    % replace it
+                    new_name = ['[',strtrim(answer{1}),'] ',new_name]; %#ok<AGROW>
+                    hNodes(k).Name = new_name;
                     % get the selection by looping over the properties
                     tf = true(size(this.RelaxData));
                     for i = 1:numel(ancestorID)
@@ -554,9 +565,9 @@ classdef FitLike < handle
                             ancestorID{i});
                     end
                     % now update the data
-                    [this.RelaxData(tf).label] = deal(answer{1});
+                    [this.RelaxData(tf).label] = deal(strtrim(answer{1}));
                     % notify
-                    eventdata = TreeEventData('Action','Update',...
+                    eventdata = TreeEventData('Action','UpdateName',...
                                       'Parent',hNodes(k).Parent,...
                                       'OldName',name,...
                                       'NewName',new_name);
@@ -663,26 +674,17 @@ classdef FitLike < handle
                     n = numel(hNodes);
                     m = numel(relaxObj);
                     if n < m
-                        [hNodes.Name] = relaxObj(1:n).displayName;
-                        arrayfun(@(x) resetIcon(this.FileManager.gui.tree,...
-                            x, class(relaxObj)), hNodes,'Uniform', 0);
+                        nodes2modify(this.FileManager.gui.tree, hNodes,...
+                            {relaxObj(1:n).displayName}, repmat({class(relaxObj)},1,n), 1); 
                         add(this.FileManager.gui.tree, relaxObj(n+1:end), 1);
                     elseif n > numel(relaxObj)
-                        [hNodes(1:m).Name] = relaxObj.displayName;
-                        arrayfun(@(x) resetIcon(this.FileManager.gui.tree,...
-                            x, class(relaxObj)), hNodes(1:m),'Uniform', 0);
+                        nodes2modify(this.FileManager.gui.tree, hNodes,...
+                            {relaxObj.displayName}, repmat({class(relaxObj)},1,m), 1); 
                         remove(this.FileManager.gui.tree, hNodes(m+1));
                     else
-                        [hNodes.Name] = relaxObj.displayName;
-                        arrayfun(@(x) resetIcon(this.FileManager.gui.tree,...
-                            x, class(relaxObj)), hNodes,'Uniform', 0);                     
+                        nodes2modify(this.FileManager.gui.tree, hNodes,...
+                            {relaxObj.displayName}, repmat({class(relaxObj)},1,n), 1);                     
                     end
-                    set(hParent.Children,'Checked',1);
-                    % notify
-                    eventdata = TreeEventData('Action','UpdateObj',...
-                                      'Data', relaxObj,...
-                                      'Parent',hParent);
-                    notify(this.FileManager.gui.tree,'TreeUpdate',eventdata)
                     % try to plot
                     [~, plotFlag, ~] = addPlot(this.DisplayManager, relaxObj);
                     % check if everything have been plotted 

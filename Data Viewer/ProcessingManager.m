@@ -124,11 +124,11 @@ classdef ProcessingManager < handle
                 if isempty(oldParent.Children)
                     delete(oldParent)
                 end
-            elseif strcmp(event.Action, 'Update')
+            elseif strcmp(event.Action, 'UpdateName')
                 % search the parent nodes
                 hParent = TreeManager.searchNode(root, event.Parent); 
                 % find the modified nodes
-                tf = strcmp(get(hParent.Children,'Name'),event.OldName);
+                tf = strcmp(get(hParent.Children,'Name'), event.OldName);
                 hParent.Children(tf).Name = event.NewName;
             end
         end %updateTree

@@ -11,6 +11,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
         RelaxObjIcon = {fullfile(matlabroot,'toolbox','matlab','icons','HDF_object02.gif'),...
                         fullfile(matlabroot,'toolbox','matlab','icons','HDF_object01.gif'),...
                         fullfile(matlabroot,'toolbox','matlab','icons','unknownicon.gif')};
+        Name
     end
     
     events
@@ -55,15 +56,21 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 addUIMenu(this, hSequence);
                 expand(hSequence);
                 % + filename
+                % check if label
+                if ~isempty(DataUnit(k).label)
+                    name = ['[',DataUnit(k).label,'] ',DataUnit(k).filename];
+                else
+                    name = DataUnit(k).filename;
+                end
                 hFile = checkNodeExistence(this, hSequence,...
-                    DataUnit(k).filename, this.FileIcon, 'file');
+                    name, this.FileIcon, 'file');
                 addUIMenu(this, hFile);
                 expand(hFile);
                 % + relaxobj
                 [type,~,idx] = intersect({'bloc','zone','dispersion'},...
                                             lower(class(DataUnit(k))));
                 hObj = checkNodeExistence(this, hFile, DataUnit(k).displayName,...
-                    this.RelaxObjIcon{idx}, ['relaxObj:', type]);
+                    this.RelaxObjIcon{idx}, ['relaxObj:', type{1}]);
                 % check flag
                 if checkFlag
                     hObj.Checked = 1;
@@ -146,6 +153,32 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
            fileID = TreeManager.getDescendantID(hNodes, ancestorID);
         end
         
+        function this = nodes2modify(this, hNodes, name, type, checkFlag)
+            % loop over the files
+            for k = 1:numel(hNodes)
+                % update name
+               if ~strcmp(hNodes(k).Name, name{k}) && ~isempty(name{k})
+                   % notify
+                   eventdata = TreeEventData('Action','UpdateName',...
+                              'Parent',hNodes(k).Parent,...
+                              'OldName',hNodes(k).Name,...
+                              'NewName',name{k});
+                   notify(this, 'TreeUpdate', eventdata);
+                   % update name
+                   hNodes(k).Name = name{k};
+               end
+               % update icon if relaxObj
+               if contains(hNodes(k).Value, 'relaxObj') && ~isempty(type{k})
+                   if ~contains(hNodes(k).Value, type{k})
+                        resetIcon(this, hNodes(k), type{k});
+                   end
+               end
+               % update check
+               if checkFlag
+                   hNodes(k).Checked = 1;
+               end
+            end
+        end
         % Return the nodes corresponding to the fileID list. fileID can be
         % partial (dataset@sequence, dataset@sequence@file,...).
         function hNodes = fileID2nodes(this, fileID)
@@ -167,7 +200,8 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             for iFile = size(str,2):-1:1
                 hNodes(iFile) = hRoot;
                 for iLevel = 1:size(str,1)
-                    tf = strcmp(str{iLevel, iFile},{hNodes(iFile).Children.Name});
+                    tf = strcmp(str{iLevel, iFile},...
+                        TreeManager.getName(hNodes(iFile).Children));
                     hNodes(iFile) = hNodes(iFile).Children(tf);
                 end
             end
@@ -196,23 +230,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             else
                 % get the nodes and modify them
                 hNodes = fileID2nodes(this, fileID);
-                % loop over the files
-                for k = 1:numel(hNodes)
-                    % update name
-                   if ~strcmp(hNodes(k).Name, name{k}) && ~isempty(name{k})
-                       hNodes(k).Name = name{k};
-                   end
-                   % update icon if relaxObj
-                   if contains(hNodes(k).Value, 'relaxObj') && ~isempty(type{k})
-                       if ~contains(hNodes(k).Value, type{k})
-                            resetIcon(this, hNodes(k), type{k});
-                       end
-                   end
-                   % update check
-                   if checkFlag
-                       hNodes(k).Checked = 1;
-                   end
-                end
+                nodes2modify(this, hNodes, name, type, checkFlag);
             end 
          end %fileID2modify
         
@@ -348,8 +366,13 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                               
         % Set icon according to an input type
         function this = resetIcon(this, hNodes, type)
-            [~,~,idx] = intersect({'bloc','zone','dispersion'},lower(type));
+            [~,idx,~] = intersect({'bloc','zone','dispersion'},lower(type));
             setIcon(hNodes, this.RelaxObjIcon{idx});
+            % notify
+            eventdata = TreeEventData('Action','UpdateIcon',...
+                              'Data', this.RelaxObjIcon{idx},...
+                              'Parent',hNodes);
+            notify(this,'TreeUpdate',eventdata)
         end %resetIcon
                
         % Reset tree: uncheck all the nodes
@@ -439,14 +462,15 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 return
             end
             % check if an ancestor if available
-            ancestorID = {nodes.Name};
+            ancestorID = TreeManager.getName(nodes);
             %loop over the input
             for k = 1:numel(nodes)
                 hAncestor = nodes(k);
                 % loop until we reach the root    
-                while ~strcmp(hAncestor.Parent.Name,'Root')
+                while ~strcmp(TreeManager.getName(hAncestor.Parent),'Root')
                     hAncestor = hAncestor.Parent;
-                    ancestorID{k} = [hAncestor.Name,'@',ancestorID{k}];
+                    currentID = TreeManager.getName(hAncestor);
+                    ancestorID{k} = [currentID{1},'@',ancestorID{k}];
                 end
             end
         end %getAncestorID
@@ -459,7 +483,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 return
             end
             if nargin < 2
-                fileID = {nodes.Name};
+                fileID = TreeManager.getName(nodes);
             else
                 fileID = varargin{1};
             end
@@ -475,8 +499,9 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                     return
                 else
                     for k = 1:numel(indx)
-                        names = arrayfun(@(x) x.Name,...
+                        names = arrayfun(@(x) TreeManager.getName(x),...
                             hNodes(indx(k)).Children, 'Uniform', 0);
+                        names = [names{:}];
                         fileID{indx(k)} = strcat(repmat(strcat(fileID(indx(k)),'@'),...
                             1,numel(names)), names);
                     end 
@@ -487,6 +512,36 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 end
             end
         end %getDescendantID
+        
+        % Get the name of the node. If file, remove the label to fit with
+        % the data
+        function [name, label] = getName(nodes)
+            % check input
+            if isempty(nodes)
+                name = [];
+                label = [];
+            else
+                % loop over the nodes
+                for k = numel(nodes):-1:1
+                    % check if file
+                    if strcmp(nodes(k).Value,'file')
+                        % check if label
+                        idx = strfind(nodes(k).Name,']');
+                        if ~isempty(idx)
+                            name{k} = strtrim(nodes(k).Name(idx+1:end));
+                            label{k} = strtrim(nodes(k).Name(2:idx-1));
+                        else
+                            name{k} = nodes(k).Name;
+                            label{k} = [];
+                        end
+                    else
+                        name{k} = nodes(k).Name;
+                        label{k} = [];
+                    end
+                end
+            end
+            h = 1;
+        end
     end   
 end
 
