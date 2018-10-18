@@ -485,7 +485,41 @@ classdef FitLike < handle
         end %editDragDropFile
         
         % Callback right-click: add label
-        
+        function addLabel(this, ~, ~)
+            % ask user
+            answer = inputdlg({'Enter a label (avoid @, [, ]):'},...
+                'Label input',[1 40],{'0'});
+            % check output and set it
+            if isempty(answer)
+                return
+            elseif contains(answer{1},{'@','[',']'})
+                warndlg('The following character are not allowed: @, [, ].')
+                return
+            else
+                % get the selected file nodes and update their name
+                hNodes = this.FileManager.gui.tree.SelectedNodes;
+                % if sequence, dataset update all the children
+                while ~strcmp(hNodes(1).Value, 'file')
+                    hNodes = get(hNodes, 'Children');
+                    if iscell(hNodes)
+                        hNodes = [hNodes{:}];
+                    end
+                end
+                % update name
+                for k = 1:numel(hNodes)
+                    name = hNodes(k).Name;
+                    % remove previous label
+                    idx = strfind(name,']');
+                    if ~isempty(idx)
+                        name = name(idx+1:end);
+                    end
+                    % replace it
+                    hNodes(k).Name = ['[',answer{1},'] ',name];
+                    % notify
+                    
+                end
+            end
+        end %addLabel
     end   
     %% -------------------- DisplayManager Callback -------------------- %% 
     methods (Access = public)

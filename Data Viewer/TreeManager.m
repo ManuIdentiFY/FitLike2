@@ -47,20 +47,23 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 % + dataset
                 hDataset = checkNodeExistence(this, this.Root,...
                     DataUnit(k).dataset, this.DatasetIcon, 'dataset');
+                addUIMenu(this, hDataset);
                 expand(hDataset);
                 % + sequence
                 hSequence = checkNodeExistence(this, hDataset,...
                     DataUnit(k).sequence, this.SequenceIcon, 'sequence');
+                addUIMenu(this, hSequence);
                 expand(hSequence);
                 % + filename
                 hFile = checkNodeExistence(this, hSequence,...
                     DataUnit(k).filename, this.FileIcon, 'file');
+                addUIMenu(this, hFile);
                 expand(hFile);
                 % + relaxobj
-                [~,~,idx] = intersect({'bloc','zone','dispersion'},...
+                [type,~,idx] = intersect({'bloc','zone','dispersion'},...
                                             lower(class(DataUnit(k))));
                 hObj = checkNodeExistence(this, hFile, DataUnit(k).displayName,...
-                    this.RelaxObjIcon{idx}, ['relaxObj:',type]);
+                    this.RelaxObjIcon{idx}, ['relaxObj:', type]);
                 % check flag
                 if checkFlag
                     hObj.Checked = 1;
@@ -226,13 +229,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 [hNodes.Checked] = state{:};
             end            
         end %fileID2check
-        
-        % Set icon according to an input type
-        function this = resetIcon(this, hNodes, type)
-            [~,~,idx] = intersect({'bloc','zone','dispersion'},lower(type));
-            setIcon(hNodes, this.RelaxObjIcon{idx});
-        end %resetIcon
-        
+
         % this function determines if the dragged target is valid or not
         % and drop the object.
         % *User can drag dataset, sequence and file
@@ -348,6 +345,12 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 end
             end
         end %DragNodeCallback                
+                              
+        % Set icon according to an input type
+        function this = resetIcon(this, hNodes, type)
+            [~,~,idx] = intersect({'bloc','zone','dispersion'},lower(type));
+            setIcon(hNodes, this.RelaxObjIcon{idx});
+        end %resetIcon
                
         % Reset tree: uncheck all the nodes
         function this = resetTree(this)
@@ -357,6 +360,17 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                [this.CheckedNodes.Checked] = deal(false);
             end
         end %resetTree
+        
+        % Add UIContextMenu to the node
+        function this = addUIMenu(this, hNode)
+            % check if existing menu
+            if isempty(hNode.UIContextMenu)
+                c = uicontextmenu(ancestor(this,'figure'));
+                uimenu(c,'Label','Add Label...',...
+                    'Callback',@(s,e)this.FitLike.addLabel(s, e));
+                hNode.UIContextMenu = c;
+            end
+        end
     end
     methods (Static)
         % This function allow to reorder nodes. A new node can also be
