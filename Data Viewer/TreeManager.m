@@ -57,15 +57,8 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                     DataUnit(k).filename, this.FileIcon, 'file');
                 expand(hFile);
                 % + relaxobj
-                type = lower(class(DataUnit(k)));
-                switch type % case-insensitive
-                    case 'bloc'
-                        idx = 1;
-                    case 'zone'
-                        idx = 2;
-                    case 'dispersion'
-                        idx = 3;
-                end
+                [~,~,idx] = intersect({'bloc','zone','dispersion'},...
+                                            lower(class(DataUnit(k))));
                 hObj = checkNodeExistence(this, hFile, DataUnit(k).displayName,...
                     this.RelaxObjIcon{idx}, ['relaxObj:',type]);
                 % check flag
@@ -236,15 +229,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
         
         % Set icon according to an input type
         function this = resetIcon(this, hNodes, type)
-            % check type and set icon
-            switch lower(type) % case-insensitive
-                case 'bloc'
-                    idx = 1;
-                case 'zone'
-                    idx = 2;
-                case 'dispersion'
-                    idx = 3;
-            end
+            [~,~,idx] = intersect({'bloc','zone','dispersion'},lower(type));
             setIcon(hNodes, this.RelaxObjIcon{idx});
         end %resetIcon
         
