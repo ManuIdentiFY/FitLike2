@@ -11,9 +11,9 @@ classdef EmptyTab < DisplayTab
     
     methods
         % Constructor
-        function this = EmptyTab(tab)
+        function this = EmptyTab(FitLike, tab)
             % call the superclass constructor
-            this = this@DisplayTab(tab);
+            this = this@DisplayTab(FitLike, tab);
             % set the name of the subtab 
             this.Parent.Title = 'Untitled';
             % set the axis visibility to "off"

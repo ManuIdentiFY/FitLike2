@@ -339,13 +339,7 @@ classdef FitLike < handle
                warning('Not done yet!') 
                return
             end
-        end %merge
-        
-        % Mask function: allow to mask data in DisplayManager
-        function this = mask(this)
-            
-        end %mask
-        
+        end %merge       
         
         %%% View Menu
         % Axis function: allow to set the axis scaling

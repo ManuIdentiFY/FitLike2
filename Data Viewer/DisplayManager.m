@@ -22,7 +22,8 @@ classdef DisplayManager < handle
             this.FitLike = FitLike;
                       
             % Build GUI        
-            gui = buildDisplayManager(this.ToggleToolList, this.PushToolList);
+            gui = buildDisplayManager(this.FitLike,...
+                this.ToggleToolList, this.PushToolList);
             this.gui = guihandles(gui);
             
             %%-------------------------CALLBACK--------------------------%%
@@ -58,7 +59,7 @@ classdef DisplayManager < handle
         % Add tab to DisplayManager
         function this = addTab(this)
             % add an empty tab: Just to try different gui objects
-            EmptyTab(uitab(this.gui.tab));
+            EmptyTab(this.FitLike, uitab(this.gui.tab));
             % push this new tab to the position just before '+' tab
             uistack(this.gui.tab.Children(end),'up');
             % set the selection to this tab

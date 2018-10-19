@@ -1,4 +1,4 @@
-function fig = buildDisplayManager(toggletool_list, pushtool_list)
+function fig = buildDisplayManager(FitLike, toggletool_list, pushtool_list)
 %
 % Builder for the DisplayManager View
 %
@@ -27,7 +27,7 @@ delete(findall(fig,'Type','uitogglesplittool'));
 tab = uitabgroup(fig,'Position',[0 0 1 1],'Tag','tab');
 
 % Add an empty tab and one with the mention "+"
-EmptyTab(uitab(tab));
-EmptyPlusTab(uitab(tab));  
+EmptyTab(FitLike, uitab(tab));
+EmptyPlusTab(FitLike, uitab(tab));  
 end
 

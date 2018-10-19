@@ -4,13 +4,12 @@ classdef DispersionTab < DisplayTab
     %
     % SEE ALSO DISPLAYTAB, DISPLAYMANAGER, DISPERSION
     
-    % M.Petit Note: Plotting data requires lot of time, especially because
+    % Note: Plotting data requires lot of time, especially because
     % we need to dynamically update the legend (50% maybe) and the axis
     % (10%). Could be improved.
     
     % Data: Dispersion
     properties (Access = public)
-        FitLike % Presenter
         hDispersion = [] % handle array to Dispersion data (see class Dispersion)
     end
     
@@ -19,7 +18,7 @@ classdef DispersionTab < DisplayTab
         % Dispersion data settings
         DataLineStyle = 'none';
         DataMarkerStyle = {'o','^','s','>','*','p'}; % 6 plots from the same file at the same time
-        DataMarkerSize = 2;
+        DataMarkerSize = 4;
         % Dispersion data masked settings
         DataMaskedMarkerStyle = '+';
         % Dispersion fit settings
@@ -43,14 +42,11 @@ classdef DispersionTab < DisplayTab
         % Constructor
         function this = DispersionTab(FitLike, tab)
             % call the superclass constructor and set the Presenter
-            this = this@DisplayTab(tab);
-            this.FitLike = FitLike;
+            this = this@DisplayTab(FitLike, tab);
             % set the name of the subtab and init accumColor
             this.Parent.Title = 'Dispersion';
-            % change the main axis into a subplot to plot residuals. 
-            new_axe = copyobj(this.axe, this.axe.Parent);
-            delete(this.axe);
-            this.axe = subplot(3,2,1:6, new_axe);
+            % change the main axis into a subplot (residuals plot)
+            this.axe = subplot(3,2,1:6, this.axe);
             this.axe.Position = this.mainAxisPosition; %reset Position
             
             % add display options under the axis
@@ -268,7 +264,6 @@ classdef DispersionTab < DisplayTab
                             'MarkerFaceColor','auto',...
                             'Tag',hData(k).fileID); 
                     drawnow;
-                    pause(0.001)
                 end
             else
                 % loop over the data
@@ -510,8 +505,7 @@ classdef DispersionTab < DisplayTab
                     end
                     drawnow;
                end
-               
-               
+                              
                % reset mask
                hMask = findobj(hPlot,'Type','Scatter');
                if ~isempty(hMask)
@@ -539,7 +533,6 @@ classdef DispersionTab < DisplayTab
                elseif this.optsButton.FitCheckButton.Value
                    plotFit(this, src(k));
                end
-               % TO DO
                
                % reset residuals
                if ~isempty(this.axeResScatter)
@@ -560,7 +553,7 @@ classdef DispersionTab < DisplayTab
             if residualFlag
                 makeResidualHistogram(this);
             end
-            % reset legend ?
+            % reset legend
             sortChildren(this);
         end %resetData
     end
@@ -766,6 +759,7 @@ classdef DispersionTab < DisplayTab
             yrange = [pos(2) pos(2)+pos(4)];
             % call the presenter to update database
             eventdata = struct('Data',this.hDispersion,...
+                               'Dim',[],...
                                'Action', 'SetMask',...
                                'XRange',xrange,'YRange',yrange);
             setMask(this.FitLike, this, eventdata);
@@ -781,6 +775,7 @@ classdef DispersionTab < DisplayTab
             
             % call the presenter with the axis limit
             eventdata = struct('Data',this.hDispersion,...
+                               'Dim',[],...
                                'Action', 'ResetMask');
             setMask(this.FitLike, this, eventdata);
         end % resetMaskData

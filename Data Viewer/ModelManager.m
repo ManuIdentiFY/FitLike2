@@ -24,8 +24,8 @@ classdef ModelManager < handle
             this.gui.jtable = jtable.getModel.getActualModel.getActualModel;
             
             % Set the first tab and the '+' tab
-            ModelTab(uitab(this.gui.tab),'Model1');
-            EmptyPlusTab(uitab(this.gui.tab));
+            ModelTab(FitLike, uitab(this.gui.tab),'Model1');
+            EmptyPlusTab(FitLike, uitab(this.gui.tab));
             
             % Set the UI ContextMenu
             setUIMenu(this);            
@@ -165,7 +165,7 @@ classdef ModelManager < handle
             % count tab
             nTab = numel(this.gui.tab.Children);
             % add new tab
-            ModelTab(uitab(this.gui.tab),['Model',num2str(nTab)]);
+            ModelTab(this.FitLike, uitab(this.gui.tab),['Model',num2str(nTab)]);
             % push this tab
             uistack(this.gui.tab.Children(end),'up');
             % set the selection to this tab

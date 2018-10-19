@@ -7,21 +7,22 @@ classdef DisplayTab < uix.Container & handle
     
     % list of the components
     properties (Access = public)
-        grid % handle to grid
+        FitLike % Presenter
         box % handle to box
         axe % handle to the axis
     end
         
     methods (Access = public)
         % Constructor
-        function this = DisplayTab(tab)
+        function this = DisplayTab(FitLike, tab)
             % Call superclass constructor
             this@uix.Container();
+            this.FitLike = FitLike;
             % Create the container in the parent tab
-            this.grid = uix.Grid('Parent',this,'Spacing', 5); 
-            this.box = uix.VBox( 'Parent', this.grid, 'Padding', 5);
+            grid = uix.Grid('Parent',this,'Spacing', 5); 
+            this.box = uix.VBox( 'Parent', grid, 'Padding', 5);
             % Create an axis for the tab
-            this.axe = axes( 'Parent', uicontainer('Parent',this.box), ...
+            this.axe = axes('Parent',uicontainer('Parent',this.box),...
                         'FontSize',8,...
                         'ActivePositionProperty', 'outerposition',...
                         'Position',[0.09 0.09 0.86 0.86],...

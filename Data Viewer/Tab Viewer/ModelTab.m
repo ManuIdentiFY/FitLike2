@@ -4,6 +4,7 @@ classdef ModelTab < uix.Container & handle
     %
     
     properties (Access = public)
+        FitLike % Presenter
         jtable % treetable 
         container % container for treetable
         TabTitle % tab title        
@@ -12,9 +13,10 @@ classdef ModelTab < uix.Container & handle
     
     methods
         % Constructor
-        function this = ModelTab(tab, TabTitle)
+        function this = ModelTab(FitLike, tab, TabTitle)
             % Call superclass constructor
             this@uix.Container();
+            this.FitLike = FitLike;
             % set Title
             this.TabTitle = TabTitle;
             % Create the grid in the parent tab
