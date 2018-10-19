@@ -13,9 +13,9 @@ classdef PowerLawThreeSegments < DispersionModel
                         '(((d_l*f_trans1^(v_1-v_2))*f_trans2^(v_2-v_3))*f^v_3)*(f>f_trans2)'];
         variableName  = {'f'};
         parameterName = {'d_l',  'v_1',  'v_2',   'v_3',    'f_trans1',   'f_trans2'};
-        minValue      = [0,       -2,     -2,       -2,        2e-3,        4e-1];    
-        maxValue      = [Inf,      0,      0,        0,         0.7,          10];  
-        startPoint    = [18,   -0.14,  -0.28,    -0.51,         0.1,           2]; 
+        minValue      = [0,       -2,     -2,       -2,         2e3,         4e5];    
+        maxValue      = [Inf,      0,      0,        0,         7e5,        10e6];  
+        startPoint    = [18,   -0.14,  -0.28,    -0.51,         1e5,         2e6]; 
         isFixed       = [0         0       0         0            0            0];   
     end
 
