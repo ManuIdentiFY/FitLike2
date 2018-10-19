@@ -431,6 +431,9 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             if isempty(root.Children)
                 treeNode = [];
                 return
+            elseif node == root
+                treeNode = root;
+                return
             end
             % start by checking the depth of search (dataset, sequence,...)
             children = root.Children;
