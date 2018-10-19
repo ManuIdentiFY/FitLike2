@@ -75,7 +75,7 @@ classdef ProcessTab < uix.Container & handle
 
             % set width
             this.hbox.Widths = [-1.8 -0.8 -0.8 -2 -0.7]; 
-            
+            drawnow;
             % get the icons
             icons = load('icon.mat');
             this.ArrowIconUp = icons.arrow_up;

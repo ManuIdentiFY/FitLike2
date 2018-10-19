@@ -41,6 +41,7 @@ classdef DisplayManager < handle
                 
             % reset tab
             setUIMenu(this);
+            drawnow;
         end %DisplayManager
         
         % Destructor

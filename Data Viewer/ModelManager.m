@@ -28,7 +28,8 @@ classdef ModelManager < handle
             EmptyPlusTab(FitLike, uitab(this.gui.tab));
             
             % Set the UI ContextMenu
-            setUIMenu(this);            
+            setUIMenu(this);
+            drawnow;
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
             set(this.gui.fig,  'closerequestfcn', ...

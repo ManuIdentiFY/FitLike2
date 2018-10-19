@@ -29,6 +29,7 @@ classdef DisplayTab < uix.Container & handle
                         'NextPlot','Add');
             % set the Parent 
             this.Parent = tab;
+            drawnow;
         end %DisplayTab
     end
     

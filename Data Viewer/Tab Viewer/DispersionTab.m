@@ -89,6 +89,7 @@ classdef DispersionTab < DisplayTab
             %%% ------------------------------------------------------- %%%            
             % set heights                  
             this.box.Heights = [-8 -1];
+            drawnow;
         end
     end
     

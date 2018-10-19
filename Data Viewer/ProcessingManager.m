@@ -28,6 +28,7 @@ classdef ProcessingManager < handle
             
             % Set the UI ContextMenu
             setUIMenu(this);
+            drawnow;
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
             set(this.gui.fig,  'closerequestfcn', ...
@@ -202,9 +203,9 @@ classdef ProcessingManager < handle
                     return
                 end
                 % set data
-                this.gui.tab.SelectedTab.Children.ProcessArray = pipeline.processArray;
-                setPipelineFromTable(this.gui.tab.SelectedTab.Children,...
-                                             pipeline.pipelineTable);
+                tab = this.gui.tab.SelectedTab.Children;
+                tab.ProcessArray = pipeline.processArray;
+                setPipelineFromTable(tab, pipeline.pipelineTable);
             end
         end %loadPipeline
         
