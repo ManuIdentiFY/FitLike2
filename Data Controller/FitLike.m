@@ -123,12 +123,17 @@ classdef FitLike < handle
                     for i = 1:length(file)
                         filename = [path file{i}];
                         % check version and select the correct reader
-                        ver = checkversion(filename);
-                        if isequal(ver,1)
-                            [data, parameter] = readsdfv1(filename);
-                        else
-                            [data, parameter] = readsdfv2(filename);
-                        end
+                        try
+                            ver = checkversion(filename);
+                            if isequal(ver,1)
+                                [data, parameter] = readsdfv1(filename);
+                            else
+                                [data, parameter] = readsdfv2(filename);
+                            end
+                        catch ME
+                            disp(['Error while importing file ' filename '. File not loaded.']) % simple error handling for file import
+                            continue
+                        end   
                         % get the data
                         y = cellfun(@(x,y) complex(x,y), data.real, data.imag,...
                             'UniformOutput',0);
@@ -140,7 +145,7 @@ classdef FitLike < handle
                             'yLabel',repmat({'Signal'},1,length(name)),...
                             'parameter',num2cell(parameter),...
                             'filename',name,'sequence',sequence,...
-                            'dataset',repmat(dataset,1,length(name)));
+                            'dataset',repmat(dataset,1,length(name)));                         
                         % check duplicates
                         if ~isempty(this.RelaxData)
                             new_bloc = checkDuplicates(this, new_bloc);
