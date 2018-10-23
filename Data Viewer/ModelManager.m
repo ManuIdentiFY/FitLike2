@@ -98,16 +98,7 @@ classdef ModelManager < handle
             if strcmp(event.Action, 'Add')
                 % search the parent node
                 parentNode = TreeManager.searchNode(root, event.Parent);
-                % unchecked if needed
-                if event.Data.Checked
-                    event.Data.Checked = 0;
-                end
-                % copy
-                if isempty(parentNode)
-                    copy(event.Data, root);
-                else
-                    copy(event.Data, parentNode);
-                end
+                copy(event.Data, parentNode);
                 % update
                 updateFilePopup(this);
                 updateResultTable(this);

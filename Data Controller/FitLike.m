@@ -88,10 +88,10 @@ classdef FitLike < handle
                     % enter dataset
                     if isempty(this.RelaxData)
                         %%%-------------%%%
-%                         dataset = inputdlg({'Enter a dataset name:'},...
-%                             'Create dataset',[1 70],{'myDataset'});
+                        dataset = inputdlg({'Enter a dataset name:'},...
+                            'Create dataset',[1 70],{'myDataset'});
                         
-                        dataset = 'myDataset';
+                        %dataset = 'myDataset';
                         %%%-------------%%%
                     else
                         % ask user in which dataset we need to put files
