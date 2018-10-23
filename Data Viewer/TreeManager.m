@@ -38,10 +38,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             tf = arrayfun(@(x) all(strcmp(superclasses(x),'DataUnit') == 0), DataUnit);
             if ~ all(tf == 0)
                 error('FileManager:addData','Input type is not correct')
-            end
-            
-            % import tree package
-            import uiextras.jTree.*      
+            end   
             
             % loop over the input
             for k = 1:length(DataUnit)
@@ -92,14 +89,18 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             end
             % loop recursively to find ancestor if alone child
             for k = 1:numel(hNodes)
-                while numel(hNodes(k).Parent.Children) < 2
-                    hNodes(k) = hNodes(k).Parent;
+                while ~isempty(hNodes(k).Parent)
+                    if numel(hNodes(k).Parent.Children) < 2
+                        hNodes(k) = hNodes(k).Parent;
+                    else
+                        break
+                    end
                 end
+                % notify
+                eventdata = TreeEventData('Action','Delete',...
+                                          'Data',hNodes(k));
+                notify(this, 'TreeUpdate', eventdata);
             end
-            % notify
-            eventdata = TreeEventData('Action','Delete',...
-                                      'Data',hNodes);
-            notify(this, 'TreeUpdate', eventdata);
             % just delete the selected nodes and their children
             delete(hNodes);
         end %removeData 
@@ -108,8 +109,6 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
         % this function also take an icon and a type (dataset, sequence,...)
         % that will be add to the new children.
         function hChildren = checkNodeExistence(this, hParent, nodeName, icon, type)
-            % import tree package
-            import uiextras.jTree.*
             % check if children
             if ~isempty(hParent.Children)
                 % check if the wanted name corresponds to a children in the
@@ -121,7 +120,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 end
             end
             % add checkbox               
-            hChildren = CheckboxTreeNode('Parent', hParent,...
+            hChildren = uiextras.jTree.CheckboxTreeNode('Parent', hParent,...
                                          'Name', nodeName,...
                                          'Value', type);
             setIcon(hChildren,icon);
@@ -428,17 +427,17 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
         % Search a specific node inside another tree
         function treeNode = searchNode(root, node)
             % check input
-            if isempty(root.Children)
-                treeNode = [];
-                return
-            elseif node == root
+           if strcmp(node.Name,'Root')
                 treeNode = root;
+                return
+           elseif isempty(root.Children)
+                treeNode = [];
                 return
             end
             % start by checking the depth of search (dataset, sequence,...)
             children = root.Children;
             if strcmp(children(1).Value, node.Value)
-                tf = strcmp({children.Parent.Children.Name}, node.Name);
+                tf = strcmp({children.Name}, node.Name);
                 treeNode = root.Children(tf);
             else
                 % pathway

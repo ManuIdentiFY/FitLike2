@@ -86,8 +86,8 @@ classdef ProcessingManager < handle
             % get the root
             root = this.gui.tree.Root;
             % check if it is a relaxObj (unwanted)
-            if isa(event.Data, 'uiextras.jTree.CheckboxTreeNode')
-                if contains(event.Data(1).Value, 'relaxObj')
+            if ~isempty(event.Data.Value)
+                if contains(event.Data.Value, 'relaxObj')
                     return
                 end
             end
@@ -95,11 +95,7 @@ classdef ProcessingManager < handle
             if strcmp(event.Action, 'Add')
                 % add the nodes
                 parentNode = TreeManager.searchNode(root, event.Parent);
-                if isempty(parentNode)
-                    copy(event.Data, root);
-                else
-                    copy(event.Data, parentNode);
-                end
+                copy(event.Data, parentNode);
             elseif strcmp(event.Action, 'Delete')
                 % search the node to delete
                 for k = 1:numel(event.Data)
