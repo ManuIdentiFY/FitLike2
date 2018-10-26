@@ -132,6 +132,7 @@ classdef FitLike < handle
                             end
                         catch ME
                             disp(['Error while importing file ' filename '. File not loaded.']) % simple error handling for file import
+                            disp(ME.message)
                             continue
                         end   
                         % get the data
