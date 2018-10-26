@@ -22,20 +22,7 @@ classdef EmptyTab < DisplayTab
     end
     
     % Create concrete class by adding dummy methods
-    methods (Access = public)
-        % Add new data to the current axis: addPlot()
-        function this = addPlot(this)
-            return
-        end %addPlot()
-        % Remove data from the current axis: removePlot()
-        function this = removePlot(this)
-            return
-        end %removePlot()
-        % Set the legend: setLegend()
-        function this = update(this)
-            return
-        end %update()
-        
+    methods (Access = public)      
         function moveMouse(this)
             return
         end

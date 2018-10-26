@@ -115,7 +115,7 @@ classdef DisplayManager < handle
         end
 
         % call the tab plot method
-        function [this, plotFlag, tf] = addPlot(this, hData)
+        function [this, plotFlag, tf] = addPlot(this, hData, varargin)
             % get the selected tab 
             tab = this.gui.tab.SelectedTab;
             tf = false(1,numel(hData));
@@ -127,7 +127,7 @@ classdef DisplayManager < handle
                         plotFlag = 0; % To improve
                         return % TO DO
                     case 'Zone'
-                        plotFlag = 0; % To improve
+                        replaceTab(this, tab, 'ZoneTab');
                         return % TO DO
                     case 'Dispersion'
                         replaceTab(this, tab, 'DispersionTab');
@@ -135,9 +135,8 @@ classdef DisplayManager < handle
                 tab = this.gui.tab.SelectedTab;
             end
             % call addPlot method of this tab
-            % NOTE: REMOVE LOOP
             for k = 1:numel(hData)
-                [~,tf(k)] = addPlot(tab.Children, hData(k));
+                [~,tf(k)] = addData(tab.Children, hData(k), varargin);
             end
             % check if everything have been plotted or not and send a call
             % to the presenter if not
@@ -153,7 +152,7 @@ classdef DisplayManager < handle
             % get the selected tab 
             tab = this.gui.tab.SelectedTab;
             for k = 1:numel(hData)
-                removePlot(tab.Children, hData(k));
+                removeData(tab.Children, hData(k));
             end
         end
         
