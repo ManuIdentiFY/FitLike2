@@ -77,13 +77,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             
             % check if array of struct
             if ~iscell(varargin{2})
+                % add listener to update fileID
+                addlistener(obj,{'dataset','sequence','filename','displayName'},...
+                      'PostSet',@(src, event) generateID(obj));
                 % struct
                 for ind = 1:2:nargin
                     obj.(varargin{ind}) = varargin{ind+1};                         
                 end 
-                % add listener to update fileID
-                addlistener(obj,{'dataset','sequence','filename','displayName'},...
-                      'PostSet',@(src, event) generateID(obj));
                 % parent explicitely the object if needed
                 if ~isempty(obj.parent)
                     link(obj.parent, obj);
@@ -102,13 +102,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                     for k = n:-1:1
                         % initialisation required to create unique handle!
                         obj(1,k) = fh();
+                        % add listener to update fileID
+                        addlistener(obj(k),{'dataset','sequence','filename','displayName'},...
+                            'PostSet',@(src, event) generateID(obj(k)));
                         % fill arguments
                         for ind = 1:2:nargin 
                             [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
                         end
-                        % add listener to update fileID
-                        addlistener(obj(k),{'dataset','sequence','filename','displayName'},...
-                            'PostSet',@(src, event) generateID(obj(k)));
                         % parent explicitely the object if needed
                         if ~isempty(obj(k).parent)
                             link(obj(k).parent, obj(k));
@@ -203,7 +203,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 % returning null object)
                 mergedUnit = fh('filename',[selfList(1).filename,' (merged)'],...
                                 'sequence',selfList(1).sequence,'dataset',...
-                                selfList(1).dataset,'legendTag',...
+                                selfList(1).dataset, 'displayName',...
+                                selfList(1).displayName,'legendTag',...
                                 selfList(1).legendTag,'xLabel',...
                                 selfList(1).xLabel,'yLabel',...
                                 selfList(1).yLabel);
@@ -292,6 +293,10 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         function obj = setDisplayName(obj)
             % loop if multiple file
             for k = 1:numel(obj)
+                % check if existing displayName
+                if ~isempty(obj(k).displayName)
+                    continue
+                end
                 % init
                 if isempty(obj(k).legendTag)
                     obj(k).displayName = class(obj(k));

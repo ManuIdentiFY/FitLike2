@@ -19,16 +19,7 @@ classdef Dispersion < DataUnit
         end %Dispersion
     end
     
-    methods       
-       
-        % Average several Dispersion object data (X, Y) and create a new
-        % Dispersion object
-        % TODO: This should be a disp2disp object 
-        function self = average(self)
-            
-        end %average
-        
-        
+    methods            
         % assign a processing function to the data object (over rides the
         % metaclass function to add initial parameter estimation when
         % loading the processing object)
@@ -46,27 +37,76 @@ classdef Dispersion < DataUnit
             
         end %export
         
-        % plotting function - needs to be improved
-        function loglog(obj,varargin)
-            clf
-            for ind = 1:length(obj)
-                [x,ord] = sort(obj(ind).x);
-                y = obj(ind).y(ord);
-                loglog(x,y,varargin{:})
-                hold on
-                if isempty(obj(ind).processingMethod)
-                    continue
-                end
-                for indfit = 1:length(obj(ind).processingMethod)
-                    if isempty(obj(ind).processingMethod(indfit).model.bestValue)
-                        continue
-                    else
-                        loglog(x,evaluate(obj(ind).processingMethod(indfit).model,x),varargin{:})
-                    end
-                end
+        % plot dispersion data
+        % varargin: color, style, marker, markersize
+        function h = plotData(obj, axe, color, style, mrk, mrksize)
+            % plot
+            h = errorbar(axe,...
+                    obj.x(obj.mask),...
+                    obj.y(obj.mask),...
+                    [],...
+                    'DisplayName', obj.filename,...
+                    'Color',color,...
+                    'LineStyle',style,...
+                    'Marker',mrk,...
+                    'MarkerSize',mrksize,...
+                    'MarkerFaceColor','auto',...
+                    'Tag',obj.fileID); 
+        end %plotData
+        
+        % Add error to an existing errorbar. If multiple, should be in the
+        % same order.
+        function h = addError(obj, h)
+             set(h,...
+                 'YNegativeDelta',-obj.dy(obj.mask),...
+                 'YPositiveDelta',obj.dy(obj.mask));
+        end %addError
+        
+        % Plot Masked data
+        % varargin: color, marker, markersize
+        function h = plotMaskedData(obj, axe, color, mrk, mrksize)
+            % check if data to plot
+            if ~isempty(obj.y(~obj.mask))
+                % plot
+                h = scatter(axe,...
+                    obj.x(~obj.mask),...
+                    obj.y(~obj.mask),...
+                    'MarkerEdgeColor', color,...
+                    'Marker', mrk,...
+                    'SizeData',mrksize,...
+                    'MarkerFaceColor','auto',...
+                    'Tag',obj.fileID);
+                % remove this plot from legend
+                set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
             end
-            hold off
         end
-    end
-    
+        
+        % Plot Fit
+        % varargin: color, style, marker
+        function plotFit(obj, axe, color, style, mrk)
+                % check if possible to plot fit
+                if ~isempty(obj.processingMethod)
+                    % get x-values and increase its  number
+                    x = sort(obj.x(obj.mask));
+                    x_add = diff(x/2); % get the interval between x pts
+                    x_fit = sort([x; x(1:end-1)+x_add]); %add it
+
+                    % get y-values
+                    y_fit = evaluate(obj.processingMethod, x_fit);
+
+                    % change the displayed name and add the rsquare
+                    fitName = sprintf('%s: %s (R^2 = %.3f)',...
+                        obj.processingMethod.model.modelName, obj.filename,...
+                        obj.processingMethod.model.gof.rsquare);
+
+                    % plot
+                    plot(axe, x_fit, y_fit,...
+                        'DisplayName', fitName,...
+                        'Color', color,...
+                        'LineStyle', style,...
+                        'Marker', mrk,...
+                        'Tag',obj.fileID); 
+                end
+        end 
+    end    
 end

@@ -8,11 +8,6 @@ classdef DispersionTab < DisplayTab
     % we need to dynamically update the legend (50% maybe) and the axis
     % (10%). Could be improved.
     
-    % Data: Dispersion
-    properties (Access = public)
-        hDispersion = [] % handle array to Dispersion data (see class Dispersion)
-    end
-    
     % Display properties
     properties (Access = public)
         % Dispersion data settings
@@ -22,20 +17,22 @@ classdef DispersionTab < DisplayTab
         % Dispersion data masked settings
         DataMaskedMarkerStyle = '+';
         % Dispersion fit settings
-        FitLineStyle = {'-','--',':','-.'}; % 4 models from the same plot at the same time
+        FitLineStyle = '-';
         FitMarkerStyle = 'none';
         % Dispersion colors
         Color = get(groot,'defaultAxesColorOrder');
-        % Display structure
-        PlotSpec = [];
+    end
+    
+    % Axis properties
+    properties (Access = public, SetObservable)
+        AxePosition = [0.09 0.09 0.86 0.86]; %position of the main axis
     end
     
     % Axis and Control properties
     properties (Access = public)
         optsButton % all the display/data options uicontrol
-        axeResScatter = [] % axis for the scatter plot (residuals)
-        axeResHist = [] % axis for the histogram (residuals)
-        mainAxisPosition = [0.09 0.09 0.86 0.86]; %position of the main axis
+        axeres = [] % axis for the scatter plot (residuals)
+        axehist = [] % axis for the histogram (residuals)
     end
     
     methods (Access = public)
@@ -45,9 +42,10 @@ classdef DispersionTab < DisplayTab
             this = this@DisplayTab(FitLike, tab);
             % set the name of the subtab and init accumColor
             this.Parent.Title = 'Dispersion';
+            this.inputType = 'Dispersion';
             % change the main axis into a subplot (residuals plot)
             this.axe = subplot(3,2,1:6, this.axe);
-            this.axe.Position = this.mainAxisPosition; %reset Position
+            this.axe.Position = this.AxePosition; %reset Position
             
             % add display options under the axis
             this.optsButton = buildDisplayOptions(this.box);
@@ -58,22 +56,17 @@ classdef DispersionTab < DisplayTab
             %%% ----------------------- CALLBACK ---------------------- %%%
             % checkbox callback
             set(this.optsButton.DataCheckButton,'Callback',...
-                @(src, event) update(this, src));
-            
+                @(src, event) showData(this));           
             set(this.optsButton.ErrorCheckButton,'Callback',...
-                @(src, event) update(this, src));
-            
+                @(src, event) showError(this));            
             set(this.optsButton.FitCheckButton,'Callback',...
-                @(src, event) update(this, src));
-            
+                @(src, event) showFit(this));            
             set(this.optsButton.MaskCheckButton,'Callback',...
-                @(src, event) update(this, src));
-            
+                @(src, event) showMask(this));            
             set(this.optsButton.ResidualCheckButton,'Callback',...
-                @(src, event) update(this, src));  
-            
+                @(src, event) showResidual(this));              
             set(this.optsButton.LegendCheckButton,'Callback',...
-                @(src, event) setLegend(this)); 
+                @(src, event) showLegend(this)); 
                        
             % X/Y axis callback
             set(this.optsButton.XAxisPopup,'Callback',...
@@ -93,397 +86,68 @@ classdef DispersionTab < DisplayTab
         end
     end
     
-    % Abstract methods
     methods (Access = public)        
-        % Add new data to the tab using handle. hData must be a Dispersion
-        % object. 
-        function [this, tf] = addPlot(this, hData)
-            % check input handle object if Dispersion and no duplicates
-            if ~isa(hData,'Dispersion')
-                tf = 1;
-                return
-            elseif ~all((this.hDispersion == hData) == 0)
-                tf = 0;
-                return
-            else
-                tf = 0;
-            end
+        % Add plot. 
+        function this = addPlot(this, hData) 
+            % get index
+            n = numel(this.hData);
+            
+            % add listener 
+            addlistener(hData,'FileHasChanged',@(src, event) updateID(this, src)); 
+            addlistener(hData,'DataHasChanged',@(src, event) updateData(this, src));
             
             % + set plot specification
-            setPlotSpec(this, hData);
-            
-            % append data
-            this.hDispersion = [this.hDispersion hData];                        
-            % add listener 
-            addlistener(hData,'FileDeletion',@(src, event) removePlot(this, src));
-            addlistener(hData,'FileHasChanged',@(src, event) updateID(this, src)); 
-            addlistener(hData,'DataHasChanged',@(src, event) resetData(this, src));
+            getPlotSpec(this, hData);
             
             % + data
-            plotData(this, hData);
+            if this.optsButton.DataCheckButton.Value
+                h = plotData(hData, this.axe,...
+                    this.PlotSpec(n+1).Color, this.DataLineStyle,...
+                    this.PlotSpec(n+1).DataMarker, this.DataMarkerSize);
+                set(h, 'ButtonDownFcn' ,@(src, event) selectZone(this.FitLike, src, event));
+                % check if error
+                if this.optsButton.ErrorCheckButton.Value
+                    addError(hData, h);
+                end
+                % check if masked data
+                if this.optsButton.MaskCheckButton.Value
+                    plotMaskedData(hData, this.axe, this.PlotSpec(n+1).Color,...
+                        this.DataMaskedMarkerStyle, this.DataMarkerSize);
+                end
+            end
 
             % + fit
-            plotFit(this, hData);
+            if this.optsButton.FitCheckButton.Value
+                plotFit(hData, this.axe, this.PlotSpec(n+1).Color,...
+                    this.FitLineStyle, this.FitMarkerStyle);
+            end
             
             % + residuals
-            plotResidual(this);
-
-            % update graph
-            sortChildren(this);
-            setLegend(this);
+            if this.optsButton.DataCheckButton.Value &&...
+                    this.optsButton.FitCheckButton.Value &&...
+                    this.optsButton.ResidualCheckButton.Value
+                plotResidual(this);
+            end
+            
+            showLegend(this);
+            drawnow;
         end %addPlot
         
-        % Remove data from the tab:
-        %   *Delete children in main axis
-        %   *Delete children in residual axis
-        %   *Delete data handle
-        function this = removePlot(this, hData)
-            % get data handle
-            tf = strcmp(hData.fileID, {this.hDispersion.fileID});
-            % check if possible
-            if all(tf == 0)
-                return
+        % Remove plot.
+        function this = deletePlot(this, hData)
+            % get all plot corresponding to the hData and delete them
+            hAxe = findobj(this, 'Type', 'axes');
+            % loop
+            for k = 1:numel(hAxe)
+                hPlot = findobj(hAxe(k).Children, 'Tag', hData.fileID);
+                delete(hPlot)
             end
-            % remove them
-            this.hDispersion = this.hDispersion(~tf);
-            this.PlotSpec = this.PlotSpec(~tf);
-
-            % get the line handle(s) in main axis and delete them
-            tf = strcmp(hData.fileID, get(this.axe.Children,'Tag'));
-            delete(this.axe.Children(tf));               
+            showLegend(this);
             drawnow;
-            
-            % delete associated residual if needed
-            removeResidual(this, hData.fileID);
-
-            % clear axis if no more data
-            if isempty(this.axe.Children)
-                legend(this.axe,'off');
-                % clear pointer - prevent memory leaks
-                this.hDispersion = [];
-            else
-                checkDisplayName(this);
-            end
-        end %removePlot
-                
-        % Update the current axis visualisation settings
-        function this = update(this, src)
-            % depending on the source, update axis
-            switch src.Tag
-                case 'DataCheckButton'
-                    if src.Value
-                        % reset data
-                        plotData(this, this.hDispersion);
-                        sortChildren(this);
-                    else
-                        % delete data
-                        delete(findobj(this.axe.Children,'Type','ErrorBar'));
-                        delete(findobj(this.axe.Children,'Type','Scatter'));
-                    end
-                    
-                case 'ErrorCheckButton'
-                    if src.Value
-                        % get all the errorbar
-                        hPlot = findobj(this.axe.Children,'Type','Errorbar');
-                        fileID = {this.hDispersion.fileID};
-                        % loop to add error
-                        for k = 1:numel(hPlot)
-                            tf = strcmp(hPlot(k).Tag, fileID);
-                            set(hPlot(k),...
-                                'YNegativeDelta',-this.hDispersion(tf).dy(this.hDispersion(tf).mask),...
-                            'YPositiveDelta',this.hDispersion(tf).dy(this.hDispersion(tf).mask));
-                        end
-                    else
-                        % just replace the error by an empty array
-                        set(findobj(this.axe.Children,'Type','ErrorBar'),...
-                            'YNegativeDelta',[],'YPositiveDelta',[]);
-                    end
-                    
-                case 'FitCheckButton'
-                    if src.Value
-                        % reset fit
-                        plotFit(this, this.hDispersion);  
-                        sortChildren(this);
-                    else
-                        % delete fit
-                        delete(findobj(this.axe.Children,'Type','Line'));
-                    end
-                    
-                case 'MaskCheckButton'
-                    if src.Value
-                        % reset masked data
-                        plotMaskedData(this, this.hDispersion);
-                    else
-                        % delete data
-                        delete(findobj(this.axe.Children,'Type','Scatter'));
-                    end
-                    
-                case 'ResidualCheckButton'
-                    if src.Value
-                        plotResidual(this);
-                    else
-                        % delete the residual axis
-                        delete(this.axeResScatter)
-                        delete(this.axeResHist)
-                        % clear - prevent memory leaks
-                        this.axeResScatter = [];
-                        this.axeResHist = [];
-                        % reset the main axis
-                        subplot(3,2,1:6, this.axe);
-                        this.axe.Position = [0.09 0.09 0.86 0.86];
-                    end
-            end %switch  
-            setLegend(this);
-        end %update    
-    end
-    
-    % Plot methods: data, mask, fit, residual
-    methods (Access = public)
-        % Add dispersion data to the main axis. 
-        function this = plotData(this, hData) 
-            % check if we need to plot something
-            if ~this.optsButton.DataCheckButton.Value
-                return
-            end
-            
-            % check if we plot error or not
-            if ~this.optsButton.ErrorCheckButton.Value
-                % loop over the data
-                for k = 1:length(hData)
-                    % find the index of the dispersion object
-                    tf = this.hDispersion == hData(k);
-                    % plot
-                    errorbar(this.axe,...
-                            hData(k).x(hData(k).mask),...
-                            hData(k).y(hData(k).mask),...
-                            [],...
-                            'DisplayName', hData(k).filename,...
-                            'Color',this.PlotSpec(tf).Color,...
-                            'LineStyle',this.DataLineStyle,...
-                            'Marker',this.PlotSpec(tf).DataMarker,...
-                            'MarkerSize',this.DataMarkerSize,...
-                            'MarkerFaceColor','auto',...
-                            'Tag',hData(k).fileID); 
-                    drawnow;
-                end
-            else
-                % loop over the data
-                for k = 1:length(hData)
-                    % find the index of the dispersion object
-                    tf = this.hDispersion == hData(k);
-                    % plot
-                    errorbar(this.axe,...
-                            hData(k).x(hData(k).mask),...
-                            hData(k).y(hData(k).mask),...
-                            hData(k).dy(hData(k).mask),...
-                            'DisplayName', hData(k).filename,...
-                            'Color',this.PlotSpec(tf).Color,...
-                            'LineStyle',this.DataLineStyle,...
-                            'Marker',this.PlotSpec(tf).DataMarker,...
-                            'MarkerSize',this.DataMarkerSize,...
-                            'MarkerFaceColor','auto',...
-                            'Tag',hData(k).fileID);
-                     drawnow;
-                end
-            end
-            
-            % + plot masked data
-            plotMaskedData(this, hData);
-        end %plotData  
-        
-        % Add masked data
-        function this = plotMaskedData(this, hData) 
-            % check if we need to plot something
-            if ~this.optsButton.MaskCheckButton.Value
-                return
-            end
-            
-            % plot
-            for k = 1:length(hData)
-                % check if data to plot
-                if isempty(hData(k).y(~hData(k).mask))
-                    continue
-                end
-                % find the index of the dispersion object
-                tf = this.hDispersion == hData(k);
-                % plot
-                h = scatter(this.axe,...
-                    hData(k).x(~hData(k).mask),...
-                    hData(k).y(~hData(k).mask),...
-                    'MarkerEdgeColor',this.PlotSpec(tf).Color,...
-                    'Marker',this.DataMaskedMarkerStyle,...
-                    'SizeData',this.DataMarkerSize,...
-                    'MarkerFaceColor','auto',...
-                    'Tag',hData(k).fileID);
-                % remove this plot from legend
-                set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-                drawnow;
-            end
-        end %plotMaskedData
-        
-        % Add fit
-        function this = plotFit(this, hData) 
-            % check if we need to plot something
-            if ~this.optsButton.FitCheckButton.Value
-                return
-            end
-            
-            % loop over the files
-            for k = 1:length(hData)
-                % find the index of the dispersion object
-                tf = this.hDispersion == hData(k);
-                % check if possible to plot fit
-                if isempty(hData(k).processingMethod)
-                    continue
-                end
-                % get x-values
-                x = hData(k).x(hData(k).mask);
-                % calculate yfit values and increase the  number of 
-                % point to obtain better visualisation. Ensure you dont 
-                % repeat point by geting the middle point each time
-                x_add = diff(x/2); % get the interval between x pts
-                x_fit = sort([x; x(1:end-1)+x_add]); %add it
-                
-                % get y-values
-                y_fit = evaluate(hData(k).processingMethod,x_fit);
-
-                % change the displayed name and add the rsquare
-                fitName = sprintf('%s: %s (R^2 = %.3f)',...
-                    hData(k).processingMethod.model.modelName, hData(k).filename,...
-                    hData(k).processingMethod.model.gof.rsquare);
-
-                % plot
-                plot(this.axe, x_fit, y_fit,...
-                    'DisplayName', fitName,...
-                    'Color',this.PlotSpec(tf).Color,...
-                    'LineStyle',this.PlotSpec(tf).FitStyle,...
-                    'Marker',this.FitMarkerStyle,...
-                    'Tag',hData(k).fileID); 
-                drawnow;
-            end
-        end %plotFit
-        
-        % Add residual data
-        function this = plotResidual(this)
-            % check if we need to plot something
-            if ~this.optsButton.ResidualCheckButton.Value 
-                return
-            end
-            
-            % get the handle to the plot(s)
-            hFit = findobj(this.axe.Children, 'Type', 'Line');
-            % get fileID
-            hfileID = {hFit.Tag};
-            
-            % check if residual axis exists
-            if isempty(this.axeResScatter)
-                % move the main axis
-                subplot(3,2,1:4, this.axe);
-                % create the axis
-                this.axeResScatter = subplot(3,2,5);
-                this.axeResHist = subplot(3,2,6);
-                % axis settings
-                this.axeResScatter.NextPlot = 'add';              
-            end
-            
-            % loop over the plot
-            for k = 1:length(hfileID)
-                % check if possible to plot residual
-                hData = findobj(this.axe.Children,'Type','ErrorBar','Tag',hfileID{k});
-                if isempty(hData)
-                    continue
-                end
-                
-                % make intersection between x from data and x from fit
-                x = hData.XData;
-                [~,~,idxx] = intersect(x, hFit(k).XData,'stable');
-                                   
-                % calculate residuals
-                residual = hData.YData - hFit(k).YData(idxx); 
-                % plot and set color, marker identical to data
-                % use fileID from data but add the model specification
-                % as userdata field
-                h = plot(this.axeResScatter, x, residual,...
-                    'LineStyle','none',...
-                    'Color',hData.Color,...
-                    'Marker',hData.Marker,...
-                    'MarkerFaceColor',hData.Color,...
-                    'MarkerSize',2,...
-                    'Tag',hData.Tag);
-                % addlistener to update dynamically the graph
-                addlistener(hData,'Tag','PostSet',@(~,~)set(h,'Tag',hData.Tag)); 
-                drawnow;
-            end %loop plot
-            % set axis
-            this.axeResScatter.XScale = this.axe.XScale;
-            this.axeResScatter.XLim = this.axe.XLim;
-            this.axeResScatter.FontSize = this.axe.FontSize;
-            grid(this.axeResScatter,'on');
-            box(this.axeResScatter,'on');
-            title(this.axeResScatter,'Residuals');
-            % update the histogram
-            makeResidualHistogram(this);
-        end %plotResidual  
-        
-        % Remove residual data.
-        function this = removeResidual(this, fileID)
-            % check if we need to remove something
-            if ~this.optsButton.ResidualCheckButton.Value 
-                return
-            end
-            
-            % check input
-            if isempty(fileID) 
-                tf = true(1);
-            else
-                tf = strcmp(fileID, get(this.axeResScatter.Children,'Tag'));
-            end
-            
-            % delete them
-            delete(this.axeResScatter.Children(tf));             
-            drawnow;
-            % check if no more children and clear axis
-            if isempty(this.axeResScatter.Children)
-                cla(this.axeResHist)
-                this.axeResHist.Title = []; %reset title
-            else
-                % update histogram
-                makeResidualHistogram(this);
-            end
-        end %removeResidual
-        
-        % Add an histogram of the residuals
-        function this = makeResidualHistogram(this)
-            % get all the residuals 
-            residual = get(this.axeResScatter.Children,'YData');
-            if iscell(residual)
-               residual = [residual{:}]; %append residuals
-            end
-            % make an histogram
-            histogram(this.axeResHist,residual)
-            % add legend to see if gaussian
-            [gauss, pval] = chi2gof(residual,'cdf',@normcdf); 
-            if gauss
-               if pval < 0.001
-                   txt = 'Gaussian profile (p<0.001)';
-               else
-                   txt = sprintf('Gaussian profile (p=%.3f)',pval);
-               end
-            else
-               txt = sprintf('Non-Gaussian profile (p=%.3f)',pval);
-            end
-            % legend settings         
-            title(this.axeResHist,txt);
-            this.axeResHist.FontSize = this.axeResScatter.FontSize;
-            % axis settings
-            this.axeResHist.XLabel.String = this.axeResScatter.YLabel.String; 
-            drawnow;
-        end %makeResidualHistogram
-        
+        end %deletePlot    
+                        
         % Reset data
-        function this = resetData(this, src)
-            % flag for residuals
-            residualFlag = 0;
+        function this = updateData(this, src)
             % loop over the file and reset data
             for k = 1:numel(src)
                % find plot
@@ -504,7 +168,6 @@ classdef DispersionTab < DisplayTab
                     if isempty(hData.YData)
                        delete(hData); 
                     end
-                    drawnow;
                end
                               
                % reset mask
@@ -516,47 +179,275 @@ classdef DispersionTab < DisplayTab
                     if isempty(hMask.YData)
                        delete(hMask); 
                     end
-                    drawnow;
                elseif this.optsButton.MaskCheckButton.Value
-                   plotMaskedData(this, src(k));
+                   tf = strcmp({this.hData.fileID}, src(k).fileID);
+                   plotMaskedData(src(k), this.axe, this.PlotSpec(tf).Color,...
+                        this.DataMaskedMarkerStyle, this.DataMarkerSize);
                end
                
                % reset fit
                hFit = findobj(hPlot,'Type','Line');
-               if ~isempty(hFit) && ~isempty(src.processingMethod)
-                    hFit.XData = src(k).x(src(k).mask);
+               if ~isempty(hFit) && ~isempty(src(k).processingMethod)
+                    hFit.XData = sort(src(k).x(src(k).mask));
                     hFit.YData = evaluate(src.processingMethod, hFit.XData);
                     % clear if needed
                     if isempty(hFit.YData)
                        delete(hFit); 
                     end
-                    drawnow;
                elseif this.optsButton.FitCheckButton.Value
-                   plotFit(this, src(k));
+                   tf = strcmp({this.hData.fileID}, src(k).fileID);
+                   plotFit(src(k), this.axe, this.PlotSpec(tf).Color,...
+                    this.FitLineStyle, this.FitMarkerStyle);
                end
                
                % reset residuals
-               if ~isempty(this.axeResScatter)
-                    hResidual = findobj(this.axeResScatter.Children,'Tag',src(k).fileID);
+               if ~isempty(this.axeres)
+                    hResidual = findobj(this.axeres.Children, 'Tag', src(k).fileID);
                     if ~isempty(hResidual)
                        hResidual.XData = hData.XData;
-                       hResidual.YData = hFit.YData - hData.YData;
-                       residualFlag = 1;   
+                       hResidual.YData = hFit.YData - hData.YData; 
                        % clear if needed
                        if isempty(hResidual.YData)
                             delete(hResidual); 
                        end
                     end
-                    drawnow;
                end
             end
-            % reset residual histogram if needed
-            if residualFlag
-                makeResidualHistogram(this);
+            drawnow;
+        end %updateData
+                        
+        % Update fileID of the plot
+        function this = updateID(this, hData)
+            % find which field has changed
+            fileID = split(hData.fileID,'@');
+            tf_prop = strcmp(fileID,...
+                {hData.dataset, hData.sequence, hData.filename, hData.displayName}');
+            % get the corresponding plot
+            hPlot = findobj(this.axe.Children, 'Tag', hData.fileID);
+            % update their fileID
+            if ~isempty(hPlot)
+                % get the current fileID
+                new_fileID = strcat(hData.dataset,'@',hData.sequence,'@',...
+                    hData.filename,'@',hData.displayName);
+                % update all the fileID
+                [hPlot.Tag] = deal(new_fileID);
+                
+                % if filename or legendTag, update legend ?
+                if tf_prop(3) == 0
+                    [hPlot.DisplayName] = deal(hData.filename);
+                    checkDisplayName(this);
+                elseif tf_prop(4) == 0
+                    checkDisplayName(this);
+                end
+            end 
+        end %updateID
+    end
+    
+    % Respond to the display options callback
+    methods 
+        function this = showData(this)
+            % check input
+            if this.optsButton.DataCheckButton.Value
+                for k = 1:numel(this.hData)
+                    h = plotData(this.hData(k), this.axe,...
+                        this.PlotSpec(k).Color, this.DataLineStyle,...
+                        this.PlotSpec(k).DataMarker, this.DataMarkerSize);
+                    set(h, 'ButtonDownFcn' ,...
+                        @(src, event) selectZone(this.FitLike, src, event));
+                end
+                showError(this)
+                showMask(this)
+            else
+                delete(findobj(this.axe.Children,'Type','ErrorBar'));
+                delete(findobj(this.axe.Children,'Type','Scatter'));
             end
-            % reset legend
-            sortChildren(this);
-        end %resetData
+            showLegend(this)
+            drawnow;
+        end %showData
+        
+        function this = showError(this)
+            % check input
+            if this.optsButton.ErrorCheckButton.Value
+                for k = 1:numel(this.hData)
+                    h = findobj(this.axe.Children,'Type','ErrorBar','Tag',this.hData(k).fileID);
+                    addError(this.hData(k), h);
+                end
+            else
+                set(findobj(this.axe.Children,'Type','ErrorBar'),...
+                    'YNegativeDelta',[],'YPositiveDelta',[]);
+            end
+             drawnow;
+        end %showError
+        
+        function this = showFit(this)
+            % check input
+            if this.optsButton.FitCheckButton.Value
+                for k = 1:numel(this.hData)
+                    plotFit(this.hData(k), this.axe, this.PlotSpec(k).Color,...
+                        this.FitLineStyle, this.FitMarkerStyle);
+                end
+            else
+                delete(findobj(this.axe.Children,'Type','Line'));
+            end
+            showLegend(this)
+            drawnow;
+        end %showFit
+        
+        function this = showMask(this)
+            % check input
+            if this.optsButton.MaskCheckButton.Value
+                for k = 1:numel(this.hData)
+                    plotMaskedData(this.hData(k), this.axe,...
+                        this.PlotSpec(k).Color, this.DataMaskedMarkerStyle,...
+                        this.DataMarkerSize);
+                end
+            else
+                delete(findobj(this.axe.Children,'Type','Scatter'));
+            end
+            drawnow;
+        end %showMask
+        
+        function this = showResidual(this)
+            % check input
+            if this.optsButton.ResidualCheckButton.Value
+                plotResidual(this);
+            else
+                % delete the residual axis
+                delete(this.axeres); this.axeres = [];
+                delete(this.axehist); this.axehist = [];
+                % reset the main axis
+                subplot(3,2,1:6, this.axe);
+                this.axe.Position = this.AxePosition;
+            end   
+            drawnow;
+        end %showResidual
+        
+        function this = showLegend(this)
+           if this.optsButton.LegendCheckButton.Value
+               % check if children
+               if isempty(this.axe.Children)
+                   legend(this.axe, 'off');
+               else                  
+                   legend(this.axe, 'show');
+                   set(this.axe.Legend,'Interpreter','none');
+                   sortChildren(this);
+                   % check display names
+                   checkDisplayName(this);
+               end
+           else
+               legend(this.axe, 'off')
+           end
+        end %showLegend
+    end
+    
+    % Plot methods: residuals
+    methods (Access = public)               
+        % Add residual data
+        function this = plotResidual(this)
+            % get the handle to the plot(s)
+            hFit = findobj(this.axe.Children, 'Type', 'Line');
+            % check if fit
+            if isempty(hFit)
+                return
+            else
+                hfileID = {hFit.Tag};
+            end
+            
+            % check if residual axis exists
+            if isempty(this.axeres)
+                createResidualAxis(this);            
+            end
+            
+            % loop over the plot
+            for k = 1:length(hfileID)
+                % check if possible to plot residual
+                hData = findobj(this.axe.Children,'Type','ErrorBar','Tag',hfileID{k});
+                if isempty(hData)
+                    continue
+                end
+                
+                % make intersection between x from data and x from fit
+                x = hData.XData;
+                [~,~,idxx] = intersect(x, hFit(k).XData,'stable');
+                                   
+                % calculate residuals
+                residual = hData.YData - hFit(k).YData(idxx); 
+                % plot and set color, marker identical to data
+                % use fileID from data but add the model specification
+                % as userdata field
+                h = plot(this.axeres, x, residual,...
+                    'LineStyle','none',...
+                    'Color',hData.Color,...
+                    'Marker',hData.Marker,...
+                    'MarkerFaceColor',hData.Color,...
+                    'MarkerSize',2,...
+                    'Tag',hData.Tag);
+                % addlistener to update dynamically the graph
+                addlistener(hData,'Tag','PostSet',@(~,~)set(h,'Tag',hData.Tag)); 
+            end %loop plot
+        end %plotResidual  
+        
+        % Create residual axis
+        function this = createResidualAxis(this)
+            % move the main axis
+            subplot(3,2,1:4, this.axe);
+            % create the axis
+            this.axeres = subplot(3,2,5);
+            this.axehist = subplot(3,2,6);
+            % axis settings
+            this.axeres.NextPlot = 'add'; 
+            grid(this.axeres, 'on'); box(this.axeres, 'on');
+            title(this.axeres, 'Residuals');
+            % link some prop to the main axis
+            addlistener(this.axe, 'XScale', 'PostSet',...
+                @(~,~) set(this.axeres,'XScale',this.axe.XScale));
+            addlistener(this.axe, 'XLim', 'PostSet',...
+                @(~,~) set(this.axeres,'XLim',this.axe.XLim));
+            addlistener(this.axe, get(this.axe.XLabel, 'String'), 'PostSet',...
+                @(~,~) set(get(this.axehist.XLabel, 'String'), get(this.axe.XLabel, 'String')));
+            addlistener(this.axe, get(this.axe.YLabel, 'String'), 'PostSet',...
+                @(~,~) set(get(this.axehist.YLabel, 'String'), get(this.axe.YLabel, 'String')));
+            addlistener(this.axe, 'FontSize', 'PostSet',...
+                @(~,~) set(this.axeres,'FontSize',this.axe.FontSize-2)); 
+            % update dynamically histogram
+            addlistener(this.axeres, 'Children', 'PostSet',...
+                @(~,~) makeResidualHistogram(this));
+            addlistener(this.axeres, 'FontSize', 'PostSet',...
+                @(~,~) set(this.axehist,'FontSize',this.axeres.FontSize)); 
+            addlistener(this.axeres, get(this.axeres.YLabel, 'String'), 'PostSet',...
+                @(~,~) set(get(this.axehist.XLabel, 'String'), get(this.axeres.YLabel, 'String')));
+        end %createResidualAxis
+        
+        % Add an histogram of the residuals
+        function this = makeResidualHistogram(this)
+            % check if residuals
+            if isempty(this.axeres.Children)
+                cla(this.axehist)
+                title(this.axehist,'')
+            else
+                % get all the residuals 
+                residual = get(this.axeres.Children,'YData');
+                if iscell(residual)
+                   residual = [residual{:}]; %append residuals
+                end
+                % make an histogram
+                histogram(this.axehist,residual)
+                % add legend to see if gaussian
+                [gauss, pval] = chi2gof(residual,'cdf',@normcdf); 
+                if gauss
+                   if pval < 0.001
+                       txt = 'Gaussian profile (p<0.001)';
+                   else
+                       txt = sprintf('Gaussian profile (p=%.3f)',pval);
+                   end
+                else
+                   txt = sprintf('Non-Gaussian profile (p=%.3f)',pval);
+                end
+                % legend settings         
+                title(this.axehist, txt);
+                drawnow;
+            end
+        end %makeResidualHistogram
     end
     
     % Other function
@@ -575,21 +466,6 @@ classdef DispersionTab < DisplayTab
                 this.axe.Children = this.axe.Children(flipud(idx));
             end
         end %sortChildren
-        
-        % reset the legend if needed.
-        function this = setLegend(this)                
-            % check if we have children
-            if isempty(this.axe.Children) || ~this.optsButton.LegendCheckButton.Value
-                legend(this.axe,'off');
-                return
-            else
-                legend(this.axe,'show')
-                % check display names
-                checkDisplayName(this);
-                % reset interpreter
-                set(this.axe.Legend,'Interpreter','none')
-            end
-        end %setLegend
         
         % This function check the legend and check for duplicates. If
         % duplicates are found, the displayName property is added to the
@@ -647,18 +523,17 @@ classdef DispersionTab < DisplayTab
         % Style defined in properties.
         % All these properties are stored in a structure.
         % NOTE: LINESTYLE IS NOT IMPLEMENTED YET
-        function this = setPlotSpec(this, hData)
+        function this = getPlotSpec(this, hData)
             % set properties
-            if isempty(this.hDispersion)
+            if isempty(this.hData)
                 this.PlotSpec(1).Color = this.Color(1,:);
                 this.PlotSpec(1).DataMarker = this.DataMarkerStyle{1};
-                this.PlotSpec(1).FitStyle = this.FitLineStyle{1};
             else
                 n = numel(this.PlotSpec);
                 % set specification: look if same file is plot
-                plotID = strcat({this.hDispersion.dataset},...
-                                 {this.hDispersion.sequence},...
-                                 {this.hDispersion.filename});
+                plotID = strcat({this.hData.dataset},...
+                                 {this.hData.sequence},...
+                                 {this.hData.filename});
                 tf_plot = strcmp(plotID, strcat(hData.dataset,...
                                         hData.sequence, hData.filename));
                 if all(tf_plot == 0)
@@ -671,39 +546,29 @@ classdef DispersionTab < DisplayTab
                     this.PlotSpec(n+1).Color = this.Color(idx,:);
                     % set the first marker
                     this.PlotSpec(n+1).DataMarker = this.DataMarkerStyle{1};
-                    % set the first line style
-                    this.PlotSpec(n+1).FitStyle = this.FitLineStyle{1};
                 else
                     % set the same color as file found
                     color = {this.PlotSpec(tf_plot).Color};
                     this.PlotSpec(n+1).Color = color{1}; %if multiple 
                     % set the next marker
                     this.PlotSpec(n+1).DataMarker = this.DataMarkerStyle{sum(tf_plot)+1};
-                    % set the next line style
-                    this.PlotSpec(n+1).FitStyle = this.FitLineStyle{sum(tf_plot)+1};
                 end
             end
         end % setPlotSpec  
         
-        % update fileID if user change something
-        function this = updateID(this, src)
-            % find which field has changed
-            tf_prop = strcmp(split(src.fileID,'@'),...
-                {src.dataset, src.sequence, src.filename, src.displayName}');
-            newFileID = strcat(src.dataset,'@',src.sequence,'@',src.filename,'@',src.displayName);
-            % get the corresponding plot
-            tf_plot = strcmp({this.axe.Children.Tag},src.fileID);
-            % update their ID
-            [this.axe.Children(tf_plot).Tag] = deal(newFileID);
-            % if filename or displayname has changed, update legend
-            if tf_prop(3) == 0
-                [this.axe.Children(tf_plot).DisplayName] = deal(src.filename);
-                checkDisplayName(this);
-            elseif tf_prop(4) == 0
-                checkDisplayName(this);
+        % Get fileID 
+        function fileID = getFileID(this)
+            % check if possible 
+            if isempty(this.hData)
+                fileID = [];
+            else
+                fileID = {this.hData.fileID};
             end
-        end %updateID
-        
+        end % getFileID
+    end
+    
+    % Data Options methods
+    methods
         % Display the mouse position
         function moveMouse(this)
             % get the current position
@@ -736,7 +601,7 @@ classdef DispersionTab < DisplayTab
         % Mask data
         function maskData(this)
             % check if data are displayed
-            if ~this.optsButton.DataCheckButton.Value || isempty(this.hDispersion)
+            if ~this.optsButton.DataCheckButton.Value || isempty(this.hData)
                 warning('Show or import data to mask them!')
                 return
             end
@@ -759,8 +624,7 @@ classdef DispersionTab < DisplayTab
             xrange = [pos(1) pos(1)+pos(3)];
             yrange = [pos(2) pos(2)+pos(4)];
             % call the presenter to update database
-            eventdata = struct('Data',this.hDispersion,...
-                               'Dim',[],...
+            eventdata = struct('Data',this.hData,...
                                'Action', 'SetMask',...
                                'XRange',xrange,'YRange',yrange);
             setMask(this.FitLike, this, eventdata);
@@ -769,27 +633,16 @@ classdef DispersionTab < DisplayTab
         % Reset mask data
         function resetMaskData(this)
             % check if data are displayed
-            if ~this.optsButton.DataCheckButton.Value || isempty(this.hDispersion)
+            if ~this.optsButton.DataCheckButton.Value || isempty(this.hData)
                 warning('Show or import data to reset mask!')
                 return
             end
             
             % call the presenter with the axis limit
-            eventdata = struct('Data',this.hDispersion,...
-                               'Dim',[],...
+            eventdata = struct('Data',this.hData,...
                                'Action', 'ResetMask');
             setMask(this.FitLike, this, eventdata);
         end % resetMaskData
-        
-        % Get fileID 
-        function fileID = getFileID(this)
-            % check if possible 
-            if isempty(this.hDispersion)
-                fileID = [];
-            else
-                fileID = {this.hDispersion.fileID};
-            end
-        end % getFileID
-    end  
+    end
 end
 

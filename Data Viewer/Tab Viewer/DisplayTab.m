@@ -1,15 +1,26 @@
 classdef DisplayTab < uix.Container & handle
     
     %
-    % Abtract class that define the containers for the DisplayManager of
+    % class that define the containers for the DisplayManager of
     % FitLike. Container can then be customised in subclasses.
     %
+    
+    % data
+    properties 
+        inputType = [] % input type
+        hData % handle data
+        PlotSpec % structure containing the display specifications
+    end
     
     % list of the components
     properties (Access = public)
         FitLike % Presenter
         box % handle to box
         axe % handle to the axis
+    end
+    
+    events
+        LegendHasChanged
     end
         
     methods (Access = public)
@@ -33,7 +44,48 @@ classdef DisplayTab < uix.Container & handle
         end %DisplayTab
     end
     
-    methods (Access = public)        
+    % Add/remove data from the tab
+    methods (Access = public)  
+        % Add data using handle.
+        function [this, tf] = addData(this, hData, varargin)
+            % check input
+            tf = 0;
+            if ~isa(hData, this.inputType)
+                tf = 1;
+            % duplicate
+            elseif all((this.hData == hData) == 0)
+                % notify
+                addPlot(this, hData, varargin);
+                % append data
+                this.hData = [this.hData hData];
+                % add listener
+                addlistener(hData, 'FileDeletion', @(src, event) removeData(this, src));
+            end
+        end %addPlot
+        
+        % Remove handle
+        function this = removeData(this, hData)
+            % check if possible
+            if isempty(this.hData)
+                return
+            else
+                tf = strcmp({this.hData.fileID}, hData.fileID);   
+                if ~all(tf == 0)
+                    % notify
+                    deletePlot(this, hData);
+                    % remove handle
+                    this.hData = this.hData(~tf);
+                    this.PlotSpec = this.PlotSpec(~tf);
+                end
+            end
+        end %removePlot        
+    end
+    
+    methods 
+
+    end
+    
+    methods
         % mask(): create a draggable rectangle in the current axis and
         % return the x-y selection
         function [xrange, yrange] = mask(this)
@@ -67,15 +119,6 @@ classdef DisplayTab < uix.Container & handle
             % copy the axe information into this new fig
             copyobj(this.axe, new_fig);
         end %createFig
-    end
-    
-    methods (Abstract)
-        % Add new data to the current axis
-        addPlot(this, varargin)
-        % Remove data from the current axis
-        removePlot(this, varargin)
-        % Set the legend in the current axis
-        update(this, varargin)
-    end    
+    end   
 end
 
