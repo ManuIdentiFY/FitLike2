@@ -60,19 +60,11 @@ classdef FitLike < handle
         % Open function: allow to open new files or dataset (.sdf, .sef, .mat)
         function this = open(this)
             % open interface to select files
-            %%%%---------------------%%%%
             [file, path, indx] = uigetfile({'*.sdf','Stelar Raw Files (*.sdf)';...
                                      '*.sef','Stelar Processed Files (*.sef)';...
                                      '*.mat','FitLike Dataset (*.mat)'},...
                                      'Select One or More Files', ...
-                                     'MultiSelect', 'on');
-            
-%             path = 'C:/Users/Manu/Desktop/FFC-NMR/FFC-NMR DATA/PIGS/SAIN/2/';
-%             file = {'20170728_cochonsain2_corpscalleux2_ML.sdf',...
-%                     '20170728_cochonsain2_corpscalleux4_ML.sdf',...
-%                     '20170728_cochonsain2_corpscalleux2_QP_ML.sdf'};
-%             indx = 1;
-            %%%%---------------------%%%%
+                                     'MultiSelect', 'on');           
             % check output
             if isequal(file,0)
                 % user canceled
@@ -317,8 +309,10 @@ classdef FitLike < handle
                     {fileID}, {mergedFile.filename}, {[]}, 0);
                 fileID2delete(this.FileManager.gui.tree, {this.RelaxData(indx(2:end)).fileID});
                 % update model
-                remove(this.RelaxData, indx);
+                this.RelaxData = remove(this.RelaxData, indx);
                 this.RelaxData = [this.RelaxData mergedFile];
+                selectFile(this, [], struct('Action','NodeChecked',...
+                    'Nodes',this.FileManager.gui.tree.CheckedNodes));
             elseif all(cellfun(@isempty,  {this.RelaxData(indx).subUnitList}) == 0)
                 % unmerged files
                 for k = 1:numel(indx)
@@ -337,8 +331,10 @@ classdef FitLike < handle
                         {fileID}, {name}, {[]}, 0);
                     add(this.FileManager.gui.tree, relaxList(2:end), 0);
                     % update model
-                    remove(this.RelaxData, indx(k));
+                    this.RelaxData = remove(this.RelaxData, indx(k));
                     this.RelaxData = [this.RelaxData, relaxList];
+                    selectFile(this, [], struct('Action','NodeChecked',...
+                        'Nodes',this.FileManager.gui.tree.CheckedNodes));
                 end
             else
                warning('Not done yet!') 
@@ -616,6 +612,26 @@ classdef FitLike < handle
                 notify(event.Data, 'DataHasChanged')
             end
         end % setMask
+        
+        % Select zone
+        function selectZone(this, src, event)
+            % check the distance between the clicked point and the source
+            % data. Get the minimum to know which zone is concerned
+            d = sqrt((src.XData - event.IntersectionPoint(1,1)).^2 +...
+                (src.YData - event.IntersectionPoint(1,2)).^2);
+            [~,idxZone] = min(d);
+            % get the zone data
+            [~,idx,~] = intersect({this.RelaxData.fileID}, src.Tag);
+            if ~isa(this.RelaxData(idx).parent, 'Zone')
+                warndlg('No Zone data available!')
+                return
+            else
+                hData = this.RelaxData(idx).parent;
+            end
+            % add new tab and display result on it
+            addTab(this.DisplayManager);
+            addPlot(this.DisplayManager, hData, idxZone);
+        end %selectZone
     end
     %% ------------------ ProcessingManager Callback ------------------- %%
     methods (Access = public)
@@ -662,7 +678,9 @@ classdef FitLike < handle
                         % assign the process
                         assignProcessingFunction(relaxObj, ProcessArray(j));
                         % apply the process
+                        warning off
                         relaxObj = processData(relaxObj);
+                        warning on
                     end                        
                     % replace the new relaxObj in the main array
                     this.RelaxData = remove(this.RelaxData, indx);
