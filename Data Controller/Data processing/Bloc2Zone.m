@@ -27,39 +27,46 @@ classdef Bloc2Zone < ProcessDataUnit
             celly = cellfun(@(c,o)c(o),celly,ord,'UniformOutput',0);
             % cast to cell array for cellfun
 %             cellindex = repmat(num2cell(1:bloc.parameter.paramList.NBLK)',1,size(bloc.y,3));
-            for i = 1:bloc.parameter.paramList.NBLK
-                for j = 1:size(bloc.y,3)
-                    cellindex{i,j} = [i,j]; %#ok<AGROW>
-                end
-            end
-            if ~isequal(size(cellindex),size(cellx))
-                cellx = cellx';
-                celly = celly';
-            end
-            % make sure that each acquisition is referenced from the time
-            % of acquisition within the data bloc
-            cellx = cellfun(@(x)x-x(1),cellx,'UniformOutput',0);
-            % process the cell array to get the zone data
-            [z, dz, paramFun] = cellfun(@(x,y,i) process(self,x,y,bloc,i),cellx,celly,cellindex,'Uniform',0);
-            szeout = size(z{1,1});
-            [szeout,ind] = max(szeout); 
-            if ind == 2 % check that the result of the process is a column array
-                z = reshape(cell2mat(z),sze(2),szeout,sze(3));
-                dz = reshape(cell2mat(dz),sze(2),szeout,sze(3));
+            if isempty(bloc.y)
+                z = [];
+                dz = [];
+                paramFun = {};
             else
-                z = reshape(cell2mat(z),szeout,sze(2),sze(3));
-                z = permute(z,[2 1 3]);
-                dz = reshape(cell2mat(dz),szeout,sze(2),sze(3));
-                dz = permute(dz,[2 1 3]);
+                for i = 1:bloc.parameter.paramList.NBLK
+                    for j = 1:size(bloc.y,3)
+                        cellindex{i,j} = [i,j]; %#ok<AGROW>
+                    end
+                end
+                if ~isequal(size(cellindex),size(cellx))
+                    cellx = cellx';
+                    celly = celly';
+                end
+                % make sure that each acquisition is referenced from the time
+                % of acquisition within the data bloc
+                cellx = cellfun(@(x)x-x(1),cellx,'UniformOutput',0);
+                % process the cell array to get the zone data
+                [z, dz, paramFun] = cellfun(@(x,y,i) process(self,x,y,bloc,i),cellx,celly,cellindex,'Uniform',0);
+                szeout = size(z{1,1});
+                [szeout,ind] = max(szeout); 
+                if ind == 2 % check that the result of the process is a column array
+                    z = reshape(cell2mat(z),sze(2),szeout,sze(3));
+                    dz = reshape(cell2mat(dz),sze(2),szeout,sze(3));
+                else
+                    z = reshape(cell2mat(z),szeout,sze(2),sze(3));
+                    z = permute(z,[2 1 3]);
+                    dz = reshape(cell2mat(dz),szeout,sze(2),sze(3));
+                    dz = permute(dz,[2 1 3]);
+                end
+            
+                % finally, reshape the list of updated parameters and make a
+                % list of adapted structure objects
+                params = arrayofstruct2struct(paramFun);
+                fh = str2func(class(bloc.parameter));
+                params = fh(params);
+                params = reshape(params,size(z));
+                params = replace([bloc.parameter,params]);
+                bloc.parameter = params;
             end
-            % finally, reshape the list of updated parameters and make a
-            % list of adapted structure objects
-            params = arrayofstruct2struct(paramFun);
-            fh = str2func(class(bloc.parameter));
-            params = fh(params);
-            params = reshape(params,size(z));
-            params = replace([bloc.parameter,params]);
-            bloc.parameter = params;
             
             % generate one zone object for each component provided by the
             % processing algorithm
