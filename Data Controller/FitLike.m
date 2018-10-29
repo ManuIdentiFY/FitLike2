@@ -58,7 +58,7 @@ classdef FitLike < handle
     methods (Access = public)
         %%% File Menu
         % Open function: allow to open new files or dataset (.sdf, .sef, .mat)
-        function this = open(this,file,path,indx,dataset)
+        function this = open(this, file, path, indx, dataset)
             if nargin==1
                 % open interface to select files
                 [file, path, indx] = uigetfile({'*.sdf','Stelar Raw Files (*.sdf)';...
@@ -231,7 +231,7 @@ classdef FitLike < handle
                         % create a cell array of string with:
                         % 'filename' (Sequence: 'sequence')
                         listDuplicate = arrayfun(@(x) sprintf(['%s\t'...
-                            '(Sequence: %s)'],x.filename,x.sequence),...
+                            '(Sequence: %s)'], x.filename, x.sequence),...
                             bloc(idx),'UniformOutput',0);
                         % ask the user what to do
                         answer = questdlg(sprintf(['The following files '...
@@ -259,7 +259,7 @@ classdef FitLike < handle
             % read the content of the folder and decide which file type to
             % process
             content = dir(folder);
-            for indfile = 1:length(content)
+            for indfile = length(content):-1:1
                 [~,~,ext{indfile}] = fileparts(content(indfile).name);
             end
             datalist = {};
@@ -280,13 +280,15 @@ classdef FitLike < handle
             % recursively
             for indfolder = 3:length(content)
                 foldername = fullfile(folder,content(indfolder).name);
-                if isfolder(foldername)
+                if exist(foldername,'dir') == 7
                     if options.splitFolders
                         subdataset = [dataset filesep content(indfolder).name];
                     else
                         subdataset = dataset;
                     end
                     this = loadfolder(this,foldername,subdataset,options);
+                else
+                   % throw error to the log console 
                 end
             end
         end
@@ -294,13 +296,15 @@ classdef FitLike < handle
         % recursively loads the content of a directory
         function this = opendir(this)
             folder = uigetdir(cd,'Recursively load folder:');
-            if isfolder(folder)
+            if exist(folder,'dir') == 7
                 dataset = inputdlg('Name of the new dataset:','New data set',1,{'NewSet'});
                 ans = questdlg('Load each folder in a new dataset?','Import','Yes','No','No');
                 options.splitFolders = strcmp(ans,'Yes'); 
                 if ~isempty(dataset)
                     this = loadfolder(this,folder,dataset{1},options); 
                 end
+            else
+               % throw error to the log console 
             end
         end
         
