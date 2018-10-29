@@ -86,7 +86,9 @@ classdef ProcessingManager < handle
             % get the root
             root = this.gui.tree.Root;
             % check if it is a relaxObj (unwanted)
-            if ~isempty(event.Data)
+            if strcmp(event.Action, 'UpdateIcon')
+                return
+            elseif ~isempty(event.Data)
                 if contains(event.Data.Value, 'relaxObj')
                     return
                 end
