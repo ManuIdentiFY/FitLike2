@@ -88,7 +88,7 @@ classdef DispersionTab < DisplayTab
     
     methods (Access = public)        
         % Add plot. 
-        function this = addPlot(this, hData) 
+        function this = addPlot(this, hData, varargin) 
             % get index
             n = numel(this.hData);
             
