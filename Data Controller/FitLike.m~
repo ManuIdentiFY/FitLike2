@@ -79,13 +79,8 @@ classdef FitLike < handle
             % switch depending on the type of file
             switch indx
                 case 1 %sdf
-                    if ~isempty(dataset)
-                        % case when the dataset is loaded from a various
-                        % folders.
-                        % the value should be provided in the input.
-                        
                     % enter dataset
-                    elseif isempty(this.RelaxData)
+                    if isempty(this.RelaxData)
                         %%%-------------%%%
                         dataset = inputdlg({'Enter a dataset name:'},...
                             'Create dataset',[1 70],{'myDataset'});
@@ -260,23 +255,22 @@ classdef FitLike < handle
             for indfile = 1:length(content)
                 [~,~,ext{indfile}] = fileparts(content(indfile).name);
             end
-            datalist = {};
             if sum(strcmp(ext,'.sdf'))  % if at least one sdf file if found, load all of them only
                 datalist = {content(strcmp(ext,'.sdf')).name};
                 ind = 1;
             elseif sum(strcmp(ext,'.sef'))
                 datalist = {content(strcmp(ext,'.sef')).name};
                 ind = 2;
-%             elseif sum(strcmp(ext,'.mat'))
-%                 datalist = {content(strcmp(ext,'.mat')).name};
-%                 ind = 3;
+            elseif sum(strcmp(ext,'.mat'))
+                datalist = {content(strcmp(ext,'.mat')).name};
+                ind = 3;
             end
             if ~isempty(datalist)
                 this = open(this,datalist,[folder filesep],ind,dataset);
             end
             % then search for further directory and load their content
             % recursively
-            for indfolder = 3:length(content)
+            for indfolder = 1:length(content)
                 foldername = fullfile(folder,content(indfolder).name);
                 if isfolder(foldername)
                     if options.splitFolders
@@ -284,7 +278,7 @@ classdef FitLike < handle
                     else
                         subdataset = dataset;
                     end
-                    this = loadfolder(this,foldername,subdataset,options);
+                    this = loadfolder(this,foldername,subdataset);
                 end
             end
         end
@@ -293,12 +287,9 @@ classdef FitLike < handle
         function this = opendir(this)
             folder = uigetdir(cd,'Recursively load folder:');
             if isfolder(folder)
-                dataset = inputdlg('Name of the new dataset:','New data set',1,{'NewSet'});
                 ans = questdlg('Load each folder in a new dataset?','Import','Yes','No','No');
-                options.splitFolders = strcmp(ans,'Yes'); 
-                if ~isempty(dataset)
-                    this = loadfolder(this,folder,dataset{1},options); 
-                end
+                options.splitFolders = strcmp(ans,'Yes');                
+                this = loadfolder(this,folder,dataset,options);
             end
         end
         

@@ -22,6 +22,9 @@ classdef FitLikeView < handle
             % Open function
             set(this.gui.Open, 'callback', ...
                 @(src, event) this.FitLike.open());
+            % open folder
+            set(this.gui.OpenFolder, 'callback', ...
+                @(src, event) this.FitLike.opendir());
             % Remove funcion
             set(this.gui.Remove, 'callback', ...
                 @(src, event) this.FitLike.remove());

@@ -12,6 +12,7 @@ fig = figure('Name','FitLike','NumberTitle','off',...
 % +File menu
 fileMenu = uimenu( fig, 'Label', 'File' );
 uimenu( fileMenu, 'Label', 'Open file','Tag','Open');
+uimenu( fileMenu, 'Label', 'Open folder','Tag','OpenFolder');
 uimenu( fileMenu, 'Label', 'Remove file','Tag','Remove');
 exportData = uimenu( fileMenu, 'Label', 'Export');
 uimenu( exportData, 'Label', 'Model parameters','Tag','Export_Model');
