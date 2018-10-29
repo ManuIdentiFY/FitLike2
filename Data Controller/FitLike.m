@@ -59,7 +59,7 @@ classdef FitLike < handle
         %%% File Menu
         % Open function: allow to open new files or dataset (.sdf, .sef, .mat)
         function this = open(this,file,path,indx,dataset)
-            if isempty(file)
+            if nargin==1
                 % open interface to select files
                 [file, path, indx] = uigetfile({'*.sdf','Stelar Raw Files (*.sdf)';...
                                          '*.sef','Stelar Processed Files (*.sef)';...
@@ -79,7 +79,7 @@ classdef FitLike < handle
             % switch depending on the type of file
             switch indx
                 case 1 %sdf
-                    if ~isempty(dataset)
+                    if nargin >= 5
                         % case when the dataset is loaded from a various
                         % folders.
                         % the value should be provided in the input.
@@ -92,7 +92,7 @@ classdef FitLike < handle
                         
                         %dataset = 'myDataset';
                         %%%-------------%%%
-                    elseif isempty(dataset)
+                    elseif nargin < 5
                         % ask user in which dataset we need to put files
                         res = questdlg('Where do you want to import your data?',...
                             'Importation','Existing dataset','New dataset',...
@@ -155,9 +155,11 @@ classdef FitLike < handle
                     end
                 case 2 %sef
                     % enter dataset
-                    if isempty(this.RelaxData)
-                    dataset = inputdlg({'Enter a dataset name:'},...
-                        'Create dataset',[1 70],{'myDataset'});
+                    if nargin >= 5
+                        % dataset already provided
+                    elseif isempty(this.RelaxData)
+                        dataset = inputdlg({'Enter a dataset name:'},...
+                            'Create dataset',[1 70],{'myDataset'});
                     else
                         % ask user in which dataset we need to put files
                         res = questdlg('Where do you want to import your data?',...
