@@ -219,9 +219,9 @@ classdef DispersionTab < DisplayTab
         % Update fileID of the plot
         function this = updateID(this, hData)
             % find which field has changed
-            fileID = split(hData.fileID,'@');
+            fileID = strsplit(hData.fileID,'@');
             tf_prop = strcmp(fileID,...
-                {hData.dataset, hData.sequence, hData.filename, hData.displayName}');
+                {hData.dataset, hData.sequence, hData.filename, hData.displayName});
             % get the corresponding plot
             hPlot = findobj(this.axe.Children, 'Tag', hData.fileID);
             % update their fileID

@@ -722,7 +722,7 @@ classdef FitLike < handle
                 % loop over the file
                 for k = 1:numel(fileID)
                     % get fileID
-                    ifileID = split(fileID{k},'@');
+                    ifileID = strsplit(fileID{k},'@');
                     % check for correspondance
                     indx = find(strcmp(ifileID{1},{this.RelaxData.dataset}) &... 
                         strcmp(ifileID{2},{this.RelaxData.sequence}) &... 

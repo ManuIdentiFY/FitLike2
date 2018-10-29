@@ -185,22 +185,22 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             % format input and split fileID
             if isempty(fileID)
                 return
-            elseif numel(fileID) == 1
-                str = split(fileID,'@');
-            else
-                if size(fileID,2) ~= 1
+            elseif ischar(fileID)
+                str = strsplit(fileID,'@');
+            else % cell               
+                if size(fileID,2) > 1
                     fileID = fileID';
                 end
-                str = split(fileID,'@');
-                str = str';
+                str = cellfun(@(x) strsplit(x, '@'), fileID, 'Uniform', 0);
+                str = vertcat(str{:});
             end
             % get tree root
             hRoot = this.Root;
             % loop over the fileID
-            for iFile = size(str,2):-1:1
+            for iFile = size(str,1):-1:1
                 hNodes(iFile) = hRoot;
-                for iLevel = 1:size(str,1)
-                    tf = strcmp(str{iLevel, iFile},...
+                for iLevel = 1:size(str,2)
+                    tf = strcmp(str{iFile, iLevel},...
                         TreeManager.getName(hNodes(iFile).Children));
                     hNodes(iFile) = hNodes(iFile).Children(tf);
                 end
