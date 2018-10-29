@@ -89,9 +89,6 @@ classdef DispersionTab < DisplayTab
     methods (Access = public)        
         % Add plot. 
         function this = addPlot(this, hData, varargin) 
-            % get index
-            n = numel(this.hData);
-            
             % add listener 
             addlistener(hData,'FileHasChanged',@(src, event) updateID(this, src)); 
             addlistener(hData,'DataHasChanged',@(src, event) updateData(this, src));
@@ -100,37 +97,16 @@ classdef DispersionTab < DisplayTab
             getPlotSpec(this, hData);
             
             % + data
-            if this.optsButton.DataCheckButton.Value
-                h = plotData(hData, this.axe,...
-                    this.PlotSpec(n+1).Color, this.DataLineStyle,...
-                    this.PlotSpec(n+1).DataMarker, this.DataMarkerSize);
-                set(h, 'ButtonDownFcn' ,@(src, event) selectZone(this.FitLike, src, event));
-                % check if error
-                if this.optsButton.ErrorCheckButton.Value
-                    addError(hData, h);
-                end
-                % check if masked data
-                if this.optsButton.MaskCheckButton.Value
-                    plotMaskedData(hData, this.axe, this.PlotSpec(n+1).Color,...
-                        this.DataMaskedMarkerStyle, this.DataMarkerSize);
-                end
-            end
+            showData(this);
 
             % + fit
-            if this.optsButton.FitCheckButton.Value
-                plotFit(hData, this.axe, this.PlotSpec(n+1).Color,...
-                    this.FitLineStyle, this.FitMarkerStyle);
-            end
+            showFit(this);
             
             % + residuals
-            if this.optsButton.DataCheckButton.Value &&...
-                    this.optsButton.FitCheckButton.Value &&...
-                    this.optsButton.ResidualCheckButton.Value
-                plotResidual(this);
-            end
-            
+            showResidual(this);
+
+            % + legend
             showLegend(this);
-            drawnow;
         end %addPlot
         
         % Remove plot.
@@ -142,8 +118,8 @@ classdef DispersionTab < DisplayTab
                 hPlot = findobj(hAxe(k).Children, 'Tag', hData.fileID);
                 delete(hPlot)
             end
-            showLegend(this);
             drawnow;
+            showLegend(this);
         end %deletePlot    
                         
         % Reset data
@@ -249,57 +225,73 @@ classdef DispersionTab < DisplayTab
             % check input
             if this.optsButton.DataCheckButton.Value
                 for k = 1:numel(this.hData)
-                    h = plotData(this.hData(k), this.axe,...
-                        this.PlotSpec(k).Color, this.DataLineStyle,...
-                        this.PlotSpec(k).DataMarker, this.DataMarkerSize);
-                    set(h, 'ButtonDownFcn' ,...
-                        @(src, event) selectZone(this.FitLike, src, event));
+                    % check plot existence
+                    hPlot = findobj(this.axe.Children,'Type','ErrorBar','Tag',this.hData(k).fileID);
+                    if isempty(hPlot)
+                        hPlot = plotData(this.hData(k), this.axe,...
+                            this.PlotSpec(k).Color, this.DataLineStyle,...
+                            this.PlotSpec(k).DataMarker, this.DataMarkerSize);
+                        set(hPlot, 'ButtonDownFcn' ,...
+                            @(src, event) selectZone(this.FitLike, src, event));
+                    end
                 end
+                drawnow;
                 showError(this)
                 showMask(this)
             else
                 delete(findobj(this.axe.Children,'Type','ErrorBar'));
                 delete(findobj(this.axe.Children,'Type','Scatter'));
+                drawnow;
             end
             showLegend(this)
-            drawnow;
         end %showData
         
         function this = showError(this)
             % check input
             if this.optsButton.ErrorCheckButton.Value
                 for k = 1:numel(this.hData)
-                    h = findobj(this.axe.Children,'Type','ErrorBar','Tag',this.hData(k).fileID);
-                    addError(this.hData(k), h);
+                    % check plot existence
+                    hPlot = findobj(this.axe.Children,'Type','ErrorBar','Tag',this.hData(k).fileID);
+                    if ~isempty(hPlot)
+                        addError(this.hData(k), hPlot);
+                    end
                 end
             else
                 set(findobj(this.axe.Children,'Type','ErrorBar'),...
                     'YNegativeDelta',[],'YPositiveDelta',[]);
             end
-             drawnow;
+            drawnow;
         end %showError
         
         function this = showFit(this)
             % check input
             if this.optsButton.FitCheckButton.Value
                 for k = 1:numel(this.hData)
-                    plotFit(this.hData(k), this.axe, this.PlotSpec(k).Color,...
-                        this.FitLineStyle, this.FitMarkerStyle);
+                    % check plot existence
+                    hPlot = findobj(this.axe.Children, 'Type','Line', 'Tag',this.hData(k).fileID);
+                    if isempty(hPlot)
+                        plotFit(this.hData(k), this.axe, this.PlotSpec(k).Color,...
+                            this.FitLineStyle, this.FitMarkerStyle);
+                    end
                 end
             else
                 delete(findobj(this.axe.Children,'Type','Line'));
             end
-            showLegend(this)
             drawnow;
+            showLegend(this)
         end %showFit
         
         function this = showMask(this)
             % check input
             if this.optsButton.MaskCheckButton.Value
                 for k = 1:numel(this.hData)
-                    plotMaskedData(this.hData(k), this.axe,...
-                        this.PlotSpec(k).Color, this.DataMaskedMarkerStyle,...
-                        this.DataMarkerSize);
+                    % check plot existence
+                    hPlot = findobj(this.axe.Children, 'Type','Scatter', 'Tag',this.hData(k).fileID);
+                    if isempty(hPlot)
+                        plotMaskedData(this.hData(k), this.axe,...
+                            this.PlotSpec(k).Color, this.DataMaskedMarkerStyle,...
+                            this.DataMarkerSize);
+                    end
                 end
             else
                 delete(findobj(this.axe.Children,'Type','Scatter'));
@@ -337,6 +329,7 @@ classdef DispersionTab < DisplayTab
            else
                legend(this.axe, 'off')
            end
+           drawnow;
         end %showLegend
     end
     
@@ -525,7 +518,7 @@ classdef DispersionTab < DisplayTab
         % NOTE: LINESTYLE IS NOT IMPLEMENTED YET
         function this = getPlotSpec(this, hData)
             % set properties
-            if isempty(this.hData)
+            if numel(this.hData) == 1
                 this.PlotSpec(1).Color = this.Color(1,:);
                 this.PlotSpec(1).DataMarker = this.DataMarkerStyle{1};
             else
@@ -534,7 +527,7 @@ classdef DispersionTab < DisplayTab
                 plotID = strcat({this.hData.dataset},...
                                  {this.hData.sequence},...
                                  {this.hData.filename});
-                tf_plot = strcmp(plotID, strcat(hData.dataset,...
+                tf_plot = strcmp(plotID(1:end-1), strcat(hData.dataset,...
                                         hData.sequence, hData.filename));
                 if all(tf_plot == 0)
                     color_count = zeros(1,size(this.Color,1));

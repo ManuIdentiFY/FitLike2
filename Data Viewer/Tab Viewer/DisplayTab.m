@@ -52,14 +52,13 @@ classdef DisplayTab < uix.Container & handle
             tf = 0;
             if ~isa(hData, this.inputType)
                 tf = 1;
-            % duplicate
+            % dispersion case
             elseif all((this.hData == hData) == 0)
-                % notify
-                addPlot(this, hData, varargin);
                 % append data
                 this.hData = [this.hData hData];
-                % add listener
-                addlistener(hData, 'FileDeletion', @(src, event) removeData(this, src));
+                addlistener(hData, 'FileDeletion', @(src, event) removeData(this, src)); 
+                % notify
+                addPlot(this, hData, varargin);  
             end
         end %addPlot
         
