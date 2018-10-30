@@ -52,22 +52,28 @@ classdef DisplayTab < uix.Container & handle
             tf = 0;
             if ~isa(hData, this.inputType)
                 tf = 1;
-            % dispersion case
-            elseif all((this.hData == hData) == 0)
-                % append data
-                this.hData = [this.hData hData];
-                addlistener(hData, 'FileDeletion', @(src, event) removeData(this, src)); 
-                % notify
-                addPlot(this, hData, varargin);  
+            % duplicate?
+            elseif isempty(varargin{1})
+                % check duplicate and plot dispersion
+                if all((this.hData == hData) == 0)
+                    addPlot(this, hData);  
+                end
+            else
+                % get subzone
+                hZone = subzone(hData, varargin{1});
+                % check duplicate and plot dispersion
+                if all((this.hData == hZone) == 0)
+                    addPlot(this, hZone, varargin);  
+                end
             end
         end %addPlot
         
         % Remove handle
-        function this = removeData(this, hData)
+        function this = removeData(this, hData, varargin)
             % check if possible
             if isempty(this.hData)
                 return
-            else
+            elseif isempty(varargin{1})
                 tf = strcmp({this.hData.fileID}, hData.fileID);   
                 if ~all(tf == 0)
                     % notify
@@ -76,6 +82,8 @@ classdef DisplayTab < uix.Container & handle
                     this.hData = this.hData(~tf);
                     this.PlotSpec = this.PlotSpec(~tf);
                 end
+            else
+                deletePlot(this, hData, varargin); 
             end
         end %removePlot        
     end

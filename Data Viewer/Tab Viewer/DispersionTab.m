@@ -88,11 +88,13 @@ classdef DispersionTab < DisplayTab
     
     methods (Access = public)        
         % Add plot. 
-        function this = addPlot(this, hData, varargin) 
+        function this = addPlot(this, hData)
+            % append data
+            this.hData = [this.hData hData];
             % add listener 
             addlistener(hData,'FileHasChanged',@(src, event) updateID(this, src)); 
             addlistener(hData,'DataHasChanged',@(src, event) updateData(this, src));
-            
+            addlistener(hData,'FileDeletion', @(src, event) removeData(this, hData));
             % + set plot specification
             getPlotSpec(this, hData);
             
@@ -236,14 +238,14 @@ classdef DispersionTab < DisplayTab
                     end
                 end
                 drawnow;
-                showError(this)
-                showMask(this)
+                showError(this);
+                showMask(this);
             else
                 delete(findobj(this.axe.Children,'Type','ErrorBar'));
                 delete(findobj(this.axe.Children,'Type','Scatter'));
                 drawnow;
             end
-            showLegend(this)
+            showLegend(this);
         end %showData
         
         function this = showError(this)
@@ -278,7 +280,7 @@ classdef DispersionTab < DisplayTab
                 delete(findobj(this.axe.Children,'Type','Line'));
             end
             drawnow;
-            showLegend(this)
+            showLegend(this);
         end %showFit
         
         function this = showMask(this)
@@ -327,7 +329,7 @@ classdef DispersionTab < DisplayTab
                    checkDisplayName(this);
                end
            else
-               legend(this.axe, 'off')
+               legend(this.axe, 'off');
            end
            drawnow;
         end %showLegend

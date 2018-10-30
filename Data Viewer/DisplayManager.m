@@ -128,7 +128,6 @@ classdef DisplayManager < handle
                         return % TO DO
                     case 'Zone'
                         replaceTab(this, tab, 'ZoneTab');
-                        return % TO DO
                     case 'Dispersion'
                         replaceTab(this, tab, 'DispersionTab');
                 end

@@ -39,14 +39,15 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     % file properties
     properties (SetObservable = true, AbortSet = true)
         displayName@char = '';         % char array to place in the legend associated with the data
-        filename@char = '';     % name of the file ('file1.sdf')
-        sequence@char = '';     % name of the sequence ('IRCPMG')
-        dataset@char = 'myDataset';      % name of the dataset('ISMRM2018')
+        filename@char = '';            % name of the file ('file1.sdf')
+        sequence@char = '';            % name of the sequence ('IRCPMG')
+        dataset@char = 'myDataset';    % name of the dataset('ISMRM2018')
     end
     
     % ID properties
     properties (SetObservable = true, AbortSet = true, Hidden = true)
         fileID@char = '';       % ID of the file: [dataset sequence filename] 
+        IDListener % listener of the fileID
     end
     % other properties
     properties (Hidden = true)
@@ -78,8 +79,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             % check if array of struct
             if ~iscell(varargin{2})
                 % add listener to update fileID
-                addlistener(obj,{'dataset','sequence','filename','displayName'},...
-                      'PostSet',@(src, event) generateID(obj));
+                obj.IDListener = addlistener(obj,{'dataset','sequence','filename','displayName'},...
+                      'PostSet', @(src, event) generateID(obj));
                 % struct
                 for ind = 1:2:nargin
                     obj.(varargin{ind}) = varargin{ind+1};                         
@@ -103,8 +104,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         % initialisation required to create unique handle!
                         obj(1,k) = fh();
                         % add listener to update fileID
-                        addlistener(obj(k),{'dataset','sequence','filename','displayName'},...
-                            'PostSet',@(src, event) generateID(obj(k)));
+                        obj(k).IDListener =  addlistener(obj(k),{'dataset','sequence','filename','displayName'},...
+                            'PostSet', @(src, event) generateID(obj(k)));
                         % fill arguments
                         for ind = 1:2:nargin 
                             [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
