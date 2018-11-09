@@ -42,7 +42,6 @@ classdef DispersionTab < DisplayTab
             this = this@DisplayTab(FitLike, tab);
             % set the name of the subtab and init accumColor
             this.Parent.Title = 'Dispersion';
-            this.inputType = 'Dispersion';
             % change the main axis into a subplot (residuals plot)
             this.axe = subplot(3,2,1:6, this.axe);
             this.axe.Position = this.AxePosition; %reset Position
@@ -52,7 +51,7 @@ classdef DispersionTab < DisplayTab
             
             % set the default axis
             this.axe.XScale = this.optsButton.XAxisPopup.String{this.optsButton.XAxisPopup.Value};
-            this.axe.YScale = this.optsButton.YAxisPopup.String{this.optsButton.YAxisPopup.Value};            
+            this.axe.YScale = this.optsButton.YAxisPopup.String{this.optsButton.YAxisPopup.Value}; 
             %%% ----------------------- CALLBACK ---------------------- %%%
             % checkbox callback
             set(this.optsButton.DataCheckButton,'Callback',...
@@ -88,7 +87,21 @@ classdef DispersionTab < DisplayTab
     
     methods (Access = public)        
         % Add plot. 
-        function this = addPlot(this, hData)
+        function [this, tf] = addPlot(this, hData, varargin)
+            % check input
+            if ~isa(hData,'Dispersion')
+                tf = 1;
+                return
+            end
+            % check if duplicates
+            if isempty(this.hData)
+                tf = 0;
+            elseif ~all((this.hData == hData) == 0)
+                tf = 1;
+                return
+            else
+                tf = 0;
+            end
             % append data
             this.hData = [this.hData hData];
             % add listener 
@@ -109,10 +122,13 @@ classdef DispersionTab < DisplayTab
 
             % + legend
             showLegend(this);
+            
+            % + axis
+            setLabel(this, hData);
         end %addPlot
         
         % Remove plot.
-        function this = deletePlot(this, hData)
+        function this = deletePlot(this, hData, varargin)
             % get all plot corresponding to the hData and delete them
             hAxe = findobj(this, 'Type', 'axes');
             % loop
@@ -122,6 +138,10 @@ classdef DispersionTab < DisplayTab
             end
             drawnow;
             showLegend(this);
+            % remove handle
+            tf = strcmp({this.hData.fileID}, hData.fileID);  
+            this.hData = this.hData(~tf);
+            this.PlotSpec = this.PlotSpec(~tf);
         end %deletePlot    
                         
         % Reset data
@@ -167,7 +187,7 @@ classdef DispersionTab < DisplayTab
                hFit = findobj(hPlot,'Type','Line');
                if ~isempty(hFit) && ~isempty(src(k).processingMethod)
                     hFit.XData = sort(src(k).x(src(k).mask));
-                    hFit.YData = evaluate(src.processingMethod, hFit.XData);
+                    hFit.YData = evaluate(src(k).processingMethod, hFit.XData);
                     % clear if needed
                     if isempty(hFit.YData)
                        delete(hFit); 
@@ -380,6 +400,8 @@ classdef DispersionTab < DisplayTab
                 % addlistener to update dynamically the graph
                 addlistener(hData,'Tag','PostSet',@(~,~)set(h,'Tag',hData.Tag)); 
             end %loop plot
+            
+            makeResidualHistogram(this);
         end %plotResidual  
         
         % Create residual axis
@@ -398,19 +420,17 @@ classdef DispersionTab < DisplayTab
                 @(~,~) set(this.axeres,'XScale',this.axe.XScale));
             addlistener(this.axe, 'XLim', 'PostSet',...
                 @(~,~) set(this.axeres,'XLim',this.axe.XLim));
-            addlistener(this.axe, get(this.axe.XLabel, 'String'), 'PostSet',...
-                @(~,~) set(get(this.axehist.XLabel, 'String'), get(this.axe.XLabel, 'String')));
-            addlistener(this.axe, get(this.axe.YLabel, 'String'), 'PostSet',...
-                @(~,~) set(get(this.axehist.YLabel, 'String'), get(this.axe.YLabel, 'String')));
+            addlistener(this.axe, 'XLabel', 'PostSet',...
+                @(~,~) set(this.axeres,'XLabel',this.axe.XLabel));
+            addlistener(this.axe, 'YLabel', 'PostSet',...
+                @(~,~) set(this.axeres,'YLabel',this.axe.YLabel));
             addlistener(this.axe, 'FontSize', 'PostSet',...
                 @(~,~) set(this.axeres,'FontSize',this.axe.FontSize-2)); 
             % update dynamically histogram
-            addlistener(this.axeres, 'Children', 'PostSet',...
-                @(~,~) makeResidualHistogram(this));
             addlistener(this.axeres, 'FontSize', 'PostSet',...
                 @(~,~) set(this.axehist,'FontSize',this.axeres.FontSize)); 
-            addlistener(this.axeres, get(this.axeres.YLabel, 'String'), 'PostSet',...
-                @(~,~) set(get(this.axehist.XLabel, 'String'), get(this.axeres.YLabel, 'String')));
+            addlistener(this.axeres, 'YLabel', 'PostSet',...
+                @(~,~) set(this.axehist,'XLabel', this.axeres.YLabel));
         end %createResidualAxis
         
         % Add an histogram of the residuals
@@ -504,8 +524,8 @@ classdef DispersionTab < DisplayTab
                         end
                     end
                 elseif ischar(str_leg)
-                    fileID = strsplit(str_leg,'@');
-                    if strcmp(fileID{3},str_leg)
+                    fileID = strsplit(fileID,'@');
+                    if ~strcmp(fileID{3},str_leg)
                         % reset filename
                         set(hPlot,'DisplayName',fileID{3});
                     end
@@ -550,6 +570,26 @@ classdef DispersionTab < DisplayTab
                 end
             end
         end % setPlotSpec  
+        
+        function this = setLabel(this, hData)
+            % check axis
+            if isempty(this.axe.XLabel.String)
+                % set name defined in hData
+                xlabel(this.axe, hData.xLabel,'FontSize',12)
+                ylabel(this.axe, hData.yLabel,'FontSize',12)
+            else
+                % check if the same or not
+                xName = this.axe.XLabel.String;
+                if ~strcmp(xName, hData.xLabel)
+                    warndlg('Not the same xLabel!')
+                end
+                
+                yName = this.axe.YLabel.String;
+                if ~strcmp(yName, hData.yLabel)
+                    warndlg('Not the same xLabel!')
+                end               
+            end
+        end %setLabel
         
         % Get fileID 
         function fileID = getFileID(this)
