@@ -135,7 +135,7 @@ classdef DisplayManager < handle
             end
             % call addPlot method of this tab
             for k = 1:numel(hData)
-                [~,tf(k)] = addData(tab.Children, hData(k), varargin);
+                [~,tf(k)] = addPlot(tab.Children, hData(k), varargin);
             end
             % check if everything have been plotted or not and send a call
             % to the presenter if not
@@ -147,11 +147,11 @@ classdef DisplayManager < handle
         end
         
         % call the tab remove method
-        function this = removePlot(this, hData)
+        function this = removePlot(this, hData, varargin)
             % get the selected tab 
             tab = this.gui.tab.SelectedTab;
             for k = 1:numel(hData)
-                removeData(tab.Children, hData(k));
+                deletePlot(tab.Children, hData(k), varargin);
             end
         end
         
