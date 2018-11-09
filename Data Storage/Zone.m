@@ -37,37 +37,20 @@ classdef Zone < DataUnit
         end
                        
         % evaluate the fit function if present, for display purposes
-        function y = evaluate(self,zoneIndex,x)
+        function y = evaluate(self, zoneIndex, x)
             model = self.parameter.paramList.modelHandle{zoneIndex};
             y = model(self.parameter.paramList.coeff(zoneIndex,:), x);
         end
-        
-        % create a zone subset according to a particular zone and link both
-        % objects in case where original object is modified
-        function selfSub = subzone(self, zoneIndex)
-            % create a copy of the obj
-            selfSub = copy(self);
-            % select data according to zoneIndex
-            selfSub.x = selfSub.x(:,zoneIndex{1});
-            selfSub.y = selfSub.y(:,zoneIndex{1});
-            selfSub.dy = selfSub.dy(:,zoneIndex{1});
-            selfSub.mask = selfSub.mask(:,zoneIndex{1});
-            % remove children and parent to avoir errors
-            remove(selfSub.children);
-            remove(selfSub.parent);
-            % add the zoneIndex information in userdata and fileID
-            selfSub.fileID = [self.fileID, '@', num2str(zoneIndex{1})];
-        end %subzone
     end % methods
    
     methods % plotting methods
          % plot dispersion data
         % varargin: color, style, marker, markersize
-        function h = plotData(obj, axe, color, style, mrk, mrksize)
+        function h = plotData(obj, zoneIndex, axe, color, style, mrk, mrksize)
             % plot
             h = errorbar(axe,...
-                    obj.x(obj.mask),...
-                    obj.y(obj.mask),...
+                    obj.x(obj.mask(:, zoneIndex), zoneIndex),...
+                    obj.y(obj.mask(:, zoneIndex), zoneIndex),...
                     [],...
                     'DisplayName', obj.filename,...
                     'Color',color,...
@@ -75,31 +58,31 @@ classdef Zone < DataUnit
                     'Marker',mrk,...
                     'MarkerSize',mrksize,...
                     'MarkerFaceColor','auto',...
-                    'Tag',obj.fileID); 
+                    'Tag',[obj.fileID,'@',num2str(zoneIndex)]); 
         end %plotData
         
         % Add error to an existing errorbar. If multiple, should be in the
         % same order.
-        function h = addError(obj, h)
+        function h = addError(obj, zoneIndex, h)
              set(h,...
-                 'YNegativeDelta',-obj.dy(obj.mask),...
-                 'YPositiveDelta',obj.dy(obj.mask));
+                 'YNegativeDelta',-obj.dy(obj.mask(:, zoneIndex), zoneIndex),...
+                 'YPositiveDelta',obj.dy(obj.mask(:, zoneIndex), zoneIndex));
         end %addError
         
         % Plot Masked data
         % varargin: color, marker, markersize
-        function h = plotMaskedData(obj, axe, color, mrk, mrksize)
+        function h = plotMaskedData(obj, zoneIndex, axe, color, mrk, mrksize)
             % check if data to plot
             if ~isempty(obj.y(~obj.mask))
                 % plot
                 h = scatter(axe,...
-                    obj.x(~obj.mask),...
-                    obj.y(~obj.mask),...
+                    obj.x(~obj.mask(:, zoneIndex), zoneIndex),...
+                    obj.y(~obj.mask(:, zoneIndex), zoneIndex),...
                     'MarkerEdgeColor', color,...
                     'Marker', mrk,...
                     'SizeData',mrksize,...
                     'MarkerFaceColor','auto',...
-                    'Tag',obj.fileID);
+                    'Tag',[obj.fileID,'@',num2str(zoneIndex)]);
                 % remove this plot from legend
                 set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
             end
@@ -107,16 +90,16 @@ classdef Zone < DataUnit
         
         % Plot Fit
         % varargin: color, style, marker
-        function plotFit(obj, axe, color, style, mrk)
+        function plotFit(obj, zoneIndex, axe, color, style, mrk)
             % check if possible to plot fit
             if ~isempty(obj.processingMethod)
                 % get x-values and increase its  number
-                x = sort(obj.x(obj.mask));
+                x = sort(obj.x(obj.mask(:, zoneIndex), zoneIndex));
                 x_add = diff(x/2); % get the interval between x pts
                 x_fit = sort([x; x(1:end-1)+x_add]); %add it
 
                 % get y-values
-                y_fit = evaluate(obj.processingMethod, x_fit);
+                y_fit = evaluate(obj.processingMethod, zoneIndex, x_fit);
 
                 % change the displayed name and add the rsquare
                 fitName = sprintf('%s: %s (R^2 = %.3f)',...
@@ -129,7 +112,7 @@ classdef Zone < DataUnit
                     'Color', color,...
                     'LineStyle', style,...
                     'Marker', mrk,...
-                    'Tag',obj.fileID); 
+                    'Tag',[obj.fileID,'@',num2str(zoneIndex)]); 
             end
         end 
     end
