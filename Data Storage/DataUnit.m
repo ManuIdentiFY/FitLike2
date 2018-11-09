@@ -47,7 +47,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     % ID properties
     properties (SetObservable = true, AbortSet = true, Hidden = true)
         fileID@char = '';       % ID of the file: [dataset sequence filename] 
-        IDListener % listener of the fileID
+        IDListener              % listener of the fileID
     end
     % other properties
     properties (Hidden = true)
