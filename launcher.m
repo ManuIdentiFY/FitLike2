@@ -7,7 +7,7 @@ addpath(genpath('Data Viewer'));
 addpath(genpath('Toolbox'));
 
 % Create application
-this = FitLike();
+this = FitLike2();
 
 end % launcher
 
