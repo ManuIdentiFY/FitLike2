@@ -34,21 +34,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     properties (Access = public)
         legendTag@char = '';
         label@char = '';        % label of the file ('control','tumour',...)
-    end
-    
-    % file properties
-    properties (SetObservable = true, AbortSet = true)
         displayName@char = '';         % char array to place in the legend associated with the data
         filename@char = '';            % name of the file ('file1.sdf')
         sequence@char = '';            % name of the sequence ('IRCPMG')
         dataset@char = 'myDataset';    % name of the dataset('ISMRM2018')
+        fileID@char;                % generate unique ID 
     end
     
-    % ID properties
-    properties (SetObservable = true, AbortSet = true, Hidden = true)
-        fileID@char = '';       % ID of the file: [dataset sequence filename] 
-        IDListener              % listener of the fileID
-    end
     % other properties
     properties (Hidden = true)
         parent@DataUnit;            % parent of the object
@@ -78,9 +70,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             
             % check if array of struct
             if ~iscell(varargin{2})
-                % add listener to update fileID
-                obj.IDListener = addlistener(obj,{'dataset','sequence','filename','displayName'},...
-                      'PostSet', @(src, event) generateID(obj));
                 % struct
                 for ind = 1:2:nargin
                     obj.(varargin{ind}) = varargin{ind+1};                         
@@ -88,6 +77,10 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 % parent explicitely the object if needed
                 if ~isempty(obj.parent)
                     link(obj.parent, obj);
+                    obj.fileID = obj.parent.fileID;
+                else
+                    % add ID
+                    obj.fileID = char(java.util.UUID.randomUUID);
                 end
             else
                 % array of struct
@@ -103,9 +96,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                     for k = n:-1:1
                         % initialisation required to create unique handle!
                         obj(1,k) = fh();
-                        % add listener to update fileID
-                        obj(k).IDListener =  addlistener(obj(k),{'dataset','sequence','filename','displayName'},...
-                            'PostSet', @(src, event) generateID(obj(k)));
                         % fill arguments
                         for ind = 1:2:nargin 
                             [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
@@ -113,32 +103,19 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         % parent explicitely the object if needed
                         if ~isempty(obj(k).parent)
                             link(obj(k).parent, obj(k));
+                            obj(k).fileID = obj(k).parent.fileID;
+                        else
+                            % add ID
+                            obj(k).fileID = char(java.util.UUID.randomUUID);
                         end
                     end
                 end
             end   
-            
             % set displayName
             setDisplayName(obj);
             % generate mask if missing
             resetmask(obj);
         end %DataUnit    
-        
-        % update an existing data set with new properties
-        function self = updateProperties(self,varargin)
-            fieldName = varargin(1:2:end);
-            value = varargin(2:2:end);
-            selfcell = mat2cell(self(:)',1,ones(1,length(self)));
-            for nf = 1:length(fieldName)
-                if ~iscell(value{nf})
-                    value{nf} = repmat(value(nf),1,length(self));
-                elseif length(value{nf}) == 1
-                    value{nf} = repmat(value{nf},1,length(self));
-                end
-                selfcell = cellfun(@(obj,value) setfield(obj,fieldName{nf},value),selfcell,value{nf},'UniformOutput',0);
-            end
-            self = [selfcell{:}];
-        end
         
         % assign a processing function to the data object
         function self = assignProcessingFunction(self,processObj)
@@ -232,16 +209,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         end
     end % methods
     
-    methods (Access = public, Sealed = true)
-        
-        % respond to the events
-%         function self = delete(self, idx)
-%             for i = 1:length(idx)
-%                 notify(self(idx(i)),'FileDeletion');
-%             end
-%             self(idx) = [];
-%         end
-        
+    methods (Access = public, Sealed = true)        
         % other removal method to be used in arrays of objects (array =
         % remove(array,indexes);
         function self = remove(self,ind)
@@ -252,22 +220,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             unlink(self(ind));
             self(ind) = [];
         end        
-        
-        % Generate fileID field
-        function obj = generateID(obj)
-            % notify listeners
-            notify(obj,'FileHasChanged');
-            % change fileID
-            if length(obj) > 1
-                sep = repmat({'@'},1,numel({obj.dataset}));
-                ID = strcat({obj.dataset},sep,{obj.sequence},sep,...
-                    {obj.filename},sep,{obj.displayName});
-                [obj.fileID] = ID{:};            
-            else
-                obj.fileID = [obj.dataset,'@',obj.sequence,'@',...
-                    obj.filename,'@',obj.displayName];
-            end
-        end %generateID
         
         % Fill or adapt the mask to the "y" field 
         function obj = resetmask(obj)
@@ -287,6 +239,22 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 end
             end
         end %resetmask
+        
+        % update an existing data set with new properties
+        function self = updateProperties(self,varargin)
+            fieldName = varargin(1:2:end);
+            value = varargin(2:2:end);
+            selfcell = mat2cell(self(:)',1,ones(1,length(self)));
+            for nf = 1:length(fieldName)
+                if ~iscell(value{nf})
+                    value{nf} = repmat(value(nf),1,length(self));
+                elseif length(value{nf}) == 1
+                    value{nf} = repmat(value{nf},1,length(self));
+                end
+                selfcell = cellfun(@(obj,value) setfield(obj,fieldName{nf},value),selfcell,value{nf},'UniformOutput',0);
+            end
+            self = [selfcell{:}];
+        end
         
         % set displayName following this rule:
         % [class(obj) obj.legendTag (obj.parent.legendTag,
@@ -314,6 +282,95 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 end     
             end
         end %setDisplayName
+        
+        
+        %%% ------------------- PLOT ------------------- %%%
+        % Note: This part will be moved to an external object soon.
+        % [M.Petit]
+        % plot data function
+        function h = plotData(obj, idxZone, plotID, axe, color, style, mrk, mrksize)
+            % get data
+            [xp,yp,~,maskp] = getData(obj, idxZone);
+            % get legend
+            leg = getLegend(obj, idxZone, 'Data', 0);
+            % plot
+            h = errorbar(axe,...
+                    xp(maskp),...
+                    yp(maskp),...
+                    [],...
+                    'DisplayName', leg,...
+                    'Color',color,...
+                    'LineStyle',style,...
+                    'Marker',mrk,...
+                    'MarkerSize',mrksize,...
+                    'MarkerFaceColor','auto',...
+                    'Tag',plotID); 
+         end %plotData
+         
+         % Add error to an existing errorbar. 
+         function h = addError(obj, idxZone, h)
+             % get data
+             [~,~,dyp, maskp] = getData(obj, idxZone);
+             % plot
+             set(h, 'YNegativeDelta',-dyp(maskp), 'YPositiveDelta',dyp(maskp));
+         end %addError
+         
+         % Plot Masked data
+         function h = plotMaskedData(obj, idxZone, plotID, axe, color, mrk, mrksize)
+             % get data
+             [xp,yp,~,maskp] = getData(obj, idxZone);
+             % check if data to plot
+             if ~isempty(yp(~maskp))
+                 % plot
+                 h = scatter(axe,...
+                     xp(~maskp),...
+                     yp(~maskp),...
+                     'MarkerEdgeColor', color,...
+                     'Marker', mrk,...
+                     'SizeData',mrksize,...
+                     'MarkerFaceColor','auto',...
+                     'Tag', plotID);
+                 % remove this plot from legend
+                 set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+             end
+         end %plotMaskedData
+         
+         % Plot Fit
+         % varargin: color, style, marker
+         function h = plotFit(obj, idxZone, plotID, axe, color, style, mrk)
+             % get data
+             [xfit, yfit] = getFit(obj, idxZone, []);
+             % check if possible to plot fit
+             if ~isempty(yfit)
+                 % get legend
+                 leg = getLegend(obj, idxZone, 'Fit', 0);
+                 % plot
+                 h = plot(axe, xfit, yfit,...
+                     'DisplayName', leg,...
+                     'Color', color,...
+                     'LineStyle', style,...
+                     'Marker', mrk,...
+                     'Tag', plotID);
+             end
+         end %plotFit
+         
+         % Plot Residual
+         function h = plotResidual(obj, idxZone, plotID, axe, color, style, mrk, mrksize)
+              % get data
+              [xr,yr,~,maskr] = getData(obj, idxZone);
+              [~, yfit] = getFit(obj, idxZone, xr(maskr));
+             % check if possible to plot fit
+             if ~isempty(yfit) && ~isempty(yr)
+                 h = plot(axe, xr(maskr), yr(maskr) - yfit,...
+                     'LineStyle',style,...
+                     'Color',color,...
+                     'Marker',mrk,...
+                     'MarkerFaceColor',color,...
+                     'MarkerSize', mrksize,...
+                     'Tag',plotID);
+             end
+         end %plotResidual
+        %%% -------------------------------------------- %%%
     end %methods
     
     % The methods described below are used to enable the merge capabilities
@@ -442,7 +499,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 self.parameter = value;
             end
         end
-        
     end
      
 end
