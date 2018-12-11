@@ -171,8 +171,17 @@ classdef ModelManager < handle
             end
             % get the file selected
             fileID = this.gui.FileSelectionPopup.UserData{this.gui.FileSelectionPopup.Value};
-            tf = strcmp({this.FitLike.RelaxData.fileID}, fileID);
-            model = this.FitLike.RelaxData(tf).processingMethod;
+            % check if multiple dispersion data
+            dispersion = getData(this.FitLike, fileID);
+            % get model data
+            if numel(dispersion)
+                % compare the string in the file popup
+                str = this.gui.FileSelectionPopup.String{this.gui.FileSelectionPopup.Value};
+                str = strrep(str, dispersion(1).filename, '');
+                tf = contains({dispersion.displayName}, str);
+                dispersion = dispersion(tf);
+            end
+            model = getModel(dispersion);
             % remove previous results
             nRow = this.gui.jtable.getRowCount();
             for k = 1:nRow
@@ -204,15 +213,18 @@ classdef ModelManager < handle
         % File checked in tree callback
         function this = updateFilePopup(this)
             % get the selected fileID;
-            leg = getLegend(this.FitLike);
+            [leg, fileID] = getLegend(this.FitLike);
             % get the corresponding data
             if ~isempty(leg)
                 % update file popup
                 this.gui.FileSelectionPopup.String = leg;
+                this.gui.FileSelectionPopup.UserData = fileID;
             else
                 % reset filepopup
                 this.gui.FileSelectionPopup.String = {''};
+                this.gui.FileSelectionPopup.UserData = [];
             end
+            updateResultTable(this);
             drawnow;
         end %updateFilePopup
     end      
