@@ -16,11 +16,8 @@ classdef ProcessingManager < handle
             this.FitLike = FitLike;
                       
             % Make the figure
-            gui = buildProcessingManager(FitLike);
+            gui = buildProcessingManager();
             this.gui = guihandles(gui);     
-            
-            % Update handles
-            this.gui.tree = this.gui.tree.UserData;
             
             % Set the first tab and the '+' tab
             ProcessTab(FitLike, uitab(this.gui.tab),'Pipeline1');
@@ -47,10 +44,6 @@ classdef ProcessingManager < handle
             % Set callback for the run pushbutton
             set(this.gui.RunPushButton, 'Callback',...
                 @(src, event) this.FitLike.runProcess());
-            
-            % Add listener to the FileManager tree
-%             addlistener(this.FitLike.FileManager.gui.tree,...
-%                 'TreeUpdate',@(src, event) updateTree(this, src, event));
         end %ProcessingManager
         
         % Destructor
@@ -79,58 +72,7 @@ classdef ProcessingManager < handle
             uimenu(cmenu, 'Label', 'Delete pipeline',...
                 'Callback',@(src,event) removePipeline(this));  
             this.gui.tab.SelectedTab.UIContextMenu = cmenu;  
-        end
-        
-        % Update tree
-        function this = updateTree(this, ~, event)
-            % get the root
-            root = this.gui.tree.Root;
-            % check if it is a relaxObj (unwanted)
-            if strcmp(event.Action, 'UpdateIcon')
-                return
-            elseif ~isempty(event.Data)
-                if contains(event.Data.Value, 'relaxObj')
-                    return
-                end
-            end
-            % check the type of update: insert or delete
-            if strcmp(event.Action, 'Add')
-                % add the nodes
-                parentNode = TreeManager.searchNode(root, event.Parent);
-                copy(event.Data, parentNode);
-            elseif strcmp(event.Action, 'Delete')
-                % search the node to delete
-                for k = 1:numel(event.Data)
-                    % search the node
-                    node = TreeManager.searchNode(root, event.Data(k));                    
-                    delete(node);
-                end
-            elseif strcmp(event.Action, 'ReOrder')
-                % reorder children
-                node = TreeManager.searchNode(root, event.Data(1));  
-                TreeManager.stackNodes(node.Parent.Children, event.NewOrder, []);
-            elseif strcmp(event.Action, 'DragDrop')
-                % get old parent node
-                oldParent = TreeManager.searchNode(root, event.OldParent);  
-                % get new parent node
-                newParent = TreeManager.searchNode(root, event.Parent);
-                % deparent the corresponding node
-                tf = strcmp(get(oldParent.Children,'Name'), event.Data.Name);
-                hNode = oldParent(tf).Children;
-                hNode.Parent = [];
-                TreeManager.stackNodes(newParent.Children, event.NewOrder, hNode); 
-                % delete old parent if no more children
-                if isempty(oldParent.Children)
-                    delete(oldParent)
-                end
-            elseif strcmp(event.Action, 'UpdateName')
-                % search the parent nodes
-                hParent = TreeManager.searchNode(root, event.Parent); 
-                % find the modified nodes
-                tf = strcmp(get(hParent.Children,'Name'), event.OldName);
-                hParent.Children(tf).Name = event.NewName;
-            end
-        end %updateTree
+        end    
         
         % Select Pipeline
         function this = selectPipeline(this)
@@ -185,10 +127,8 @@ classdef ProcessingManager < handle
         function this = loadPipeline(this)
             % open dlg box
             %%%-------------------------------------------------------%%%
-%              [file, path] = uigetfile({'*.mat','MAT-files (*.mat)'},...
-%                'Select a pipeline');
-            path = 'C:/Users/Manu/Documents/GitHub/FitLike2/Data Controller/Data processing/Pipeline Saved';
-            file = 'myPipeline.mat';
+            [file, path] = uigetfile({'*.mat','MAT-files (*.mat)'},...
+               'Select a pipeline');
             %%%-------------------------------------------------------%%%
             % load data
             if ischar(file)
