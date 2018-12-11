@@ -29,7 +29,8 @@ classdef FitLikeView < handle
             set(this.gui.Remove, 'callback', ...
                 @(src, event) this.FitLike.remove());
             % Export function
-            
+            set(this.gui.Export_Dispersion, 'callback', ...
+                @(src, event) this.FitLike.export(src))
             % Save function
             set(this.gui.Save, 'callback',...
                 @(src, event) this.FitLike.save());
@@ -46,8 +47,8 @@ classdef FitLikeView < handle
             % Sort function
             
             % Merge function
-            set(this.gui.Merge, 'callback', ...
-                @(src, event) this.FitLike.merge());
+%             set(this.gui.Merge, 'callback', ...
+%                 @(src, event) this.FitLike.merge());
             % Mask function
             
             %% View Menu

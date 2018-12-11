@@ -86,7 +86,7 @@ classdef DisplayManager < handle
             end
         end %removeTab       
         
-        %Replace tab
+        %Replace tab: should be improved to speed up GUI [M. Petit]
         function this = replaceTab(this, oldTab, newTab)
             % create the new tab
             fh = str2func(newTab);
@@ -115,12 +115,12 @@ classdef DisplayManager < handle
         end
 
         % call the tab plot method
-        function [this, plotFlag, tf] = addPlot(this, hData, varargin)
+        function [this, plotFlag, tf] = addPlot(this, hData, idxZone)
             % get the selected tab 
             tab = this.gui.tab.SelectedTab;
             tf = false(1,numel(hData));
             % check if it is an empty tab
-            if isa(tab.Children, 'EmptyTab')
+            if strcmp(class(tab.Children), 'EmptyTab') %#ok<STISA>
                 % check the class of the first hData
                 switch class(hData(1))
                     case 'Bloc'
@@ -135,7 +135,7 @@ classdef DisplayManager < handle
             end
             % call addPlot method of this tab
             for k = 1:numel(hData)
-                [~,tf(k)] = addPlot(tab.Children, hData(k), varargin);
+                [~,tf(k)] = addPlot(tab.Children, hData(k), idxZone(k));
             end
             % check if everything have been plotted or not and send a call
             % to the presenter if not
@@ -147,11 +147,15 @@ classdef DisplayManager < handle
         end
         
         % call the tab remove method
-        function this = removePlot(this, hData, varargin)
+        function this = removePlot(this, hData, idxZone)
             % get the selected tab 
             tab = this.gui.tab.SelectedTab;
+            if strcmp(class(tab.Children), 'EmptyTab') %#ok<STISA>
+                return
+            end
+            % loop
             for k = 1:numel(hData)
-                deletePlot(tab.Children, hData(k), varargin);
+                deletePlot(tab.Children, hData(k), idxZone(k));
             end
         end
         

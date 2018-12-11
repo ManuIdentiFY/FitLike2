@@ -58,8 +58,8 @@ classdef ModelManager < handle
                 @(src, event) updateFilePopup(this));
             
             % Add listener to the FileManager tree
-            addlistener(this.FitLike.FileManager.gui.tree,...
-                'TreeUpdate',@(src, event) updateTree(this, src, event));
+%             addlistener(this.FitLike.FileManager.gui.tree,...
+%                 'TreeUpdate',@(src, event) updateTree(this, src, event));
         end %ModelManager
         
         % Destructor
