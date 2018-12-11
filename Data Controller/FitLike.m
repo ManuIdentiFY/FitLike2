@@ -606,8 +606,8 @@ classdef FitLike < handle
         end
         
         % Wrapper to get legend (avoid fit)
-        function leg = getLegend(this)
-             leg = getLegend(this.DisplayManager.gui.tab.SelectedTab.Children);
+        function [leg, fileID] = getLegend(this)
+             [leg, fileID] = getLegend(this.DisplayManager.gui.tab.SelectedTab.Children);
         end
         
         % Mask data
@@ -799,6 +799,21 @@ classdef FitLike < handle
                 bloc = checkID(this, bloc);
             end           
         end %checkID
+        
+        % Get data from fileID: TO CHANGE
+        function data = getData(this, fileID, type)
+            % get the fileID list
+            tf = strcmp({this.RelaxData.fileID}, fileID);
+            % check if type is correct
+            data = this.RelaxData(tf);
+            while ~strcmp(class(data), type)
+                if isempty(data(1).parent)
+                    data = []; return
+                else
+                    data = [data.parent];
+                end
+            end
+        end %getData
     end
 end
 

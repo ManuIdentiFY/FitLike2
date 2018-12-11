@@ -172,7 +172,7 @@ classdef ModelManager < handle
             % get the file selected
             fileID = this.gui.FileSelectionPopup.UserData{this.gui.FileSelectionPopup.Value};
             % check if multiple dispersion data
-            dispersion = getData(this.FitLike, fileID);
+            dispersion = getData(this.FitLike, fileID, 'Dispersion');
             % get model data
             if numel(dispersion)
                 % compare the string in the file popup
@@ -181,7 +181,7 @@ classdef ModelManager < handle
                 tf = contains({dispersion.displayName}, str);
                 dispersion = dispersion(tf);
             end
-            model = getModel(dispersion);
+            model = dispersion.processingMethod;
             % remove previous results
             nRow = this.gui.jtable.getRowCount();
             for k = 1:nRow
@@ -216,6 +216,9 @@ classdef ModelManager < handle
             [leg, fileID] = getLegend(this.FitLike);
             % get the corresponding data
             if ~isempty(leg)
+                if numel(leg) < this.gui.FileSelectionPopup.Value
+                    this.gui.FileSelectionPopup.Value = numel(leg);
+                end
                 % update file popup
                 this.gui.FileSelectionPopup.String = leg;
                 this.gui.FileSelectionPopup.UserData = fileID;

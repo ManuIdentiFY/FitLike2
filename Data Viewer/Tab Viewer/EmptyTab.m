@@ -59,8 +59,8 @@ classdef EmptyTab < uix.Container & handle
         end % getDataID
         
         % get legend
-        function leg = getLegend(this)
-            leg = [];
+        function [leg, fileID] = getLegend(this)
+            leg = []; fileID = [];
         end %getLegend
         
         % get the plotID
