@@ -829,7 +829,7 @@ classdef DispersionTab < EmptyTab
                 leg = {hData.DisplayName}; 
                 fileID = {hData.Tag};
                 for k = numel(leg):-1:1
-                    str = strsplit(fileID);
+                    str = strsplit(fileID{k},'@');
                     fileID{k} = str{1};
                 end
             end
