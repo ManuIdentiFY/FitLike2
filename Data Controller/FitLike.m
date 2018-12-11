@@ -712,6 +712,8 @@ classdef FitLike < handle
                     drawnow % EDT
                     dispMsg(this, [sprintf('%d/%d',k,numel(fileID)),'\n']);
                 end %for
+                % notify
+                notify(this.FileManager.SelectedTree, 'TreeHasChanged');
             else
                 % Simulation mode
                 % TO DO

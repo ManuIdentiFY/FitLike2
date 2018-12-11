@@ -386,6 +386,8 @@ classdef FileManager  < handle
                    addData(this.FitLike, hData, this.SelectedTree.Tag,...
                         fileID, legendTag, idx);
             end
+            % notify
+            notify(this.SelectedTree, 'TreeHasChanged');
             src.Enable = 'on';
             drawnow nocallbacks
         end %selectData
@@ -422,6 +424,8 @@ classdef FileManager  < handle
            % check if we need to check data
            [~, fileID, name, idx] = getTabData(this.FitLike);
            checkData(this, fileID, name, idx, 1);
+           % notify
+           notify(this.SelectedTree, 'TreeHasChanged');
            drawnow nocallbacks
        end %changeTree
 
