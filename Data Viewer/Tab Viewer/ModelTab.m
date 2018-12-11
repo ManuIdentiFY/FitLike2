@@ -30,7 +30,7 @@ classdef ModelTab < uix.Container & handle
             % add treetable
             this.container = uicontainer( 'Parent', box);
             
-            header = {'M','Parameter','isFixed?','MinBound','MaxBound','StartPoint'};
+            header = {'','Parameter','isFixed?','MinBound','MaxBound','StartPoint'};
             type = {'char','char','logical','','',''};
             editable = {false,true,true,true,true,true};
             dummy_data = {'','',true,0,0,0};
