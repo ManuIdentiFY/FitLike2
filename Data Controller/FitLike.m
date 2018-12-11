@@ -216,6 +216,8 @@ classdef FitLike < handle
                         bloc = [bloc new_bloc]; %#ok<AGROW>
                     end
             end
+            % check ID integrity
+            bloc = checkID(this, bloc);
             % append data to RelaxData
             this.RelaxData = [this.RelaxData bloc];
             % update FileManager
@@ -313,7 +315,7 @@ classdef FitLike < handle
             % check the selected files in FileManager
             fileID = nodes2fileID(this.FileManager.gui.tree);
             % remove files in RelaxData 
-            [~,idx,~] = intersect({this.RelaxData.fileID},fileID);
+            [~,idx,~] = intersect({this.RelaxData.fileID}, fileID);
             this.RelaxData = remove(this.RelaxData, idx);
             % update FileManager
             remove(this.FileManager.gui.tree);
@@ -407,11 +409,6 @@ classdef FitLike < handle
         end %merge       
         
         %%% View Menu
-        % Axis function: allow to set the axis scaling
-        function this = setAxis(this, src)
-            
-        end %setAxis
-        
         % Plot function: allow to plot data by name or label
         function this = setPlot(this, src)
             
@@ -634,6 +631,40 @@ classdef FitLike < handle
                 end
             end
         end %addLabel
+        
+        % Get datafile info: WILL CHANGED SOON! DUMMY FUNCTION
+        function datainfo = getFileInfo(this, fileID)
+            % get the corresponding data(s)
+            tf = strcmp({this.RelaxData.fileID}, fileID);
+            hData = this.RelaxData(tf);
+            % form the output structure
+            while ~isempty(hData(1).parent)
+                hData = hData(1).parent;
+            end
+            % get the info
+            while isempty(hData(1).children)
+                % get the number of zone
+                nZone = numel(hData(1).parameter.paramList.ZONE);
+                % switch
+                switch class(hData)
+                    case 'Dispersion'
+                        dispersion = {hData.displayName};
+                        datainfo.dispersion = dispersion;
+                    case 'Zone'
+                        zone = {hData.displayName};
+                        zonelist = strcat('Zone',...
+                            cellfun(@num2str, num2cell(1:nZone),'Uniform',0));
+                        datainfo.zone = {zone, zonelist};
+                    case 'Bloc'
+                        bloc = {hData.displayName};
+                        bloclist = strcat('Bloc',...
+                            cellfun(@num2str, num2cell(1:nZone),'Uniform',0));
+                        datainfo.bloc = {bloc, bloclist};
+                end
+                % get the children
+                hData = hData.children;
+            end
+        end %getFileInfo
     end   
     %% -------------------- DisplayManager Callback -------------------- %% 
     methods (Access = public)
@@ -787,10 +818,6 @@ classdef FitLike < handle
             end
         end %runProcess
     end
-    
-    methods (Access = public, Static = true)
-        
-    end
     %% --------------------- ModelManager Callback --------------------- %%
     methods (Access = public)
         % Run Fit
@@ -842,7 +869,25 @@ classdef FitLike < handle
             tag = strrep(src.Name,' ',''); %just remove space
             src = this.FitLikeView.gui.(tag);
             showWindow(this, src);
-        end %hideWindowPressed    
+        end %hideWindowPressed  
+        
+        % Check ID integrity of the new bloc. Change ID if needed.
+        function bloc = checkID(this, bloc)
+            % check if data
+            if isempty(this.RelaxData)
+                return
+            end
+            % intersect
+            [~,~,idx] = intersect({this.RelaxData.fileID},{bloc.fileID});
+            if ~isempty(idx)
+                % generate new ID
+                for k = 1:numel(idx)
+                    bloc(idx).fileID = char(java.util.UUID.randomUUID);
+                end
+                % redo
+                bloc = checkID(this, bloc);
+            end           
+        end %checkID
     end
 end
 
