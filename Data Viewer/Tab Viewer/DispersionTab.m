@@ -819,14 +819,19 @@ classdef DispersionTab < EmptyTab
         end % resetMaskData
         
         % get legend: avoid fit
-        function leg = getLegend(this)
+        function [leg, fileID] = getLegend(this)
             % get the data plotted
             hData = findobj(this.axe.Children,'Type','ErrorBar');
             
             if isempty(hData)
-                leg = []; return
+                leg = []; fileID = []; return
             else
                 leg = {hData.DisplayName}; 
+                fileID = {hData.Tag};
+                for k = numel(leg):-1:1
+                    str = strsplit(fileID);
+                    fileID{k} = str{1};
+                end
             end
         end %getLegend
     end
