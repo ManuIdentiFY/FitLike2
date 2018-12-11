@@ -30,12 +30,6 @@ classdef FitLike < handle
             this.FileManager.gui.fig.Visible = 'on';
             this.DisplayManager.gui.fig.Visible = 'on';
             this.ModelManager.gui.fig.Visible = 'on';
-            %%%-----------%%%
-            % call open
-%             open(this);
-%             loadPipeline(this.ProcessingManager);
-%             this.ProcessingManager.gui.tree.UserData.Root.Children.Children(3).Checked = 1;
-%             runProcess(this);
         end %FitLike
         
         % Destructor             
@@ -130,8 +124,8 @@ classdef FitLike < handle
                                 [data, parameter] = readsdfv2(filename);
                             end
                         catch ME
-                            disp(['Error while importing file ' filename '. File not loaded.']) % simple error handling for file import
-                            disp(ME.message)
+                            dispMsg(this, ['Error while importing file ' filename '. File not loaded.']) % simple error handling for file import
+                            dispMsg(this, ME.message)
                             continue
                         end   
                         % get the data
@@ -221,36 +215,29 @@ classdef FitLike < handle
             % append data to RelaxData
             this.RelaxData = [this.RelaxData bloc];
             % update FileManager
-            add(this.FileManager.gui.tree, bloc, 0);
+            addFile(this.FileManager, bloc);
+            % throw message
+            dispMsg(this, sprintf('%d files have been imported!', numel(bloc)));
                 %%-------------------------------------------------------%%
-                % Check if duplicates are imported and let the user decides
-                % if we keep them and add '_bis' to their filename or just
-                % remove them from the current array of object "bloc".
+                % Check if duplicates are imported
                 function bloc = checkDuplicates(this, bloc)
                     % check if duplicates have been imported
-                    [~,idx,~] = intersect({bloc.fileID}, {this.RelaxData.fileID});
+                    [~,idx,~] = intersect(strcat({bloc.dataset},{bloc.sequence},...
+                        {bloc.filename}),strcat({this.RelaxData.dataset},{this.RelaxData.sequence},...
+                        {this.RelaxData.filename}));
                     if ~isempty(idx)
                         % create a cell array of string with:
                         % 'filename' (Sequence: 'sequence')
                         listDuplicate = arrayfun(@(x) sprintf(['%s\t'...
                             '(Sequence: %s)'], x.filename, x.sequence),...
                             bloc(idx),'UniformOutput',0);
-                        % ask the user what to do
-                        answer = questdlg(sprintf(['The following files '...
-                           'are already stored in FitLike:\n\n%s\nDo you '...
-                           'still want to keep them or not?\n'...
-                           'Note: Filename will be changed if Yes'],...
-                           sprintf('%s \n',listDuplicate{:})),...
-                           'Import','Yes','No','No');
-                       if strcmp(answer,'Yes')
-                           % rename bloc: add '_bis'
-                           new_filename = arrayfun(@(x) [x.filename '_bis'],...
-                               bloc(idx),'UniformOutput',0);
-                           [bloc(idx).filename] = new_filename{:};
-                       else
-                           % delete duplicated
-                           bloc(idx) = [];
-                       end
+                        % display message
+                        msg = sprintf(['The following files '...
+                            'are already stored in FitLike:\n\n%s'],...
+                            sprintf('%s \n',listDuplicate{:}));
+                        dispMsg(this, msg);
+                        % delete duplicated
+                        bloc(idx) = [];
                     end
                 end %checkDuplicated
                 %%-------------------------------------------------------%%
@@ -313,24 +300,44 @@ classdef FitLike < handle
         % Remove funcion: allow to remove files, sequence, dataset
         function this = remove(this)
             % check the selected files in FileManager
-            fileID = nodes2fileID(this.FileManager.gui.tree);
+            fileID = getSelectedFile(this.FileManager);
             % remove files in RelaxData 
             [~,idx,~] = intersect({this.RelaxData.fileID}, fileID);
             this.RelaxData = remove(this.RelaxData, idx);
             % update FileManager
-            remove(this.FileManager.gui.tree);
+            deleteFile(this.FileManager)
         end %remove
         
         % Export function: allow to export data (dispersion, model)
         function export(this, src)
-            
+            % get selected data
+            fileID = getSelectedFile(this.FileManager);
+            % check input
+            if strcmp(src.Tag,'Export_Dispersion')
+                % get save folder
+                path = uigetdir(pwd, 'Export Dispersion data');
+                % loop over the files
+                for k = 1:numel(fileID)
+                    % get dispersion data
+                    tf = strcmp({this.RelaxData.fileID}, fileID{k});
+                    % check if dispersion
+                    if ~isa(this.RelaxData(tf), 'Dispersion')
+                        continue
+                    else
+                        export_data(this.RelaxData(tf), path);
+                    end
+                    dispMsg(this, sprintf('Files exported...%d/%d',k,numel(fileID)));
+                end
+            else
+                
+            end
         end %export
         
         % Save function: allow to save all data in .mat dataset
         function save(this)
             relaxData = this.RelaxData; %#ok<NASGU>
             uisave('relaxData','data');
-            disp('File saved!')
+            dispMsg(this, 'Files saved succesfully!');
         end %save
 
         %%% Edit Menu
@@ -415,35 +422,12 @@ classdef FitLike < handle
         end %setPlot
         
         % CreateFig function: allow to export current axis in new figure
-        function createFig(this)
+        function this = createFig(this)
             % get the handle of the selected tab
             h = this.DisplayManager.gui.tab.SelectedTab;
             % call createFig() in the concerned tab
             createFig(h.Children);
-        end %createFig
-        
-        
-        %%% Tool Menu
-        % Filter function: allow to apply filters on data
-        function this = applyFilter(this)
-            
-        end %applyFilter
-        
-        % Mean function: allow to average files in a new one
-        function this = average(this)
-            
-        end %average
-        
-        % Normalise: allow to normalise data
-        function this = normalise(this)
-            
-        end %normalise
-        
-        % BoxPlot: allow to plot model results as boxplot
-        function this = boxplott(this)
-            
-        end %boxplott
-        
+        end %createFig          
         
         %%% Display Menu
         % Show/Hide FileManager, DisplayManager, Processing Manager,...
@@ -467,171 +451,23 @@ classdef FitLike < handle
     end      
     %% --------------------- FileManager Callback ---------------------- %%  
     methods (Access = public)                
-        % File selection callback
-        function selectFile(this, ~, event)
-            % check the current action: select or edit
-            if strcmp(event.Action,'NodeChecked')
-                % avoid problems: enable 'off'
-                %src.Enable = 'off';
-                % get the fileID list of the checked object
-                fileID = nodes2fileID(this.FileManager.gui.tree, event.Nodes);
-                % get the corresponding index
-                [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
-                % check the state of the node
-                if event.Nodes.Checked
-                    % add data to current plot
-                    [~, plotFlag, tf] = addPlot(this.DisplayManager, this.RelaxData(indx));
-                    % check if everything have been plotted 
-                    if ~plotFlag
-                        str = cellfun(@(x,y) sprintf('%s (Sequence: %s)',x,y),...
-                                {this.RelaxData(indx(tf)).filename},...
-                                {this.RelaxData(indx(tf)).sequence},'Uniform',0);
-                        warndlg(sprintf(['The following data have not been '...
-                            'displayed because their type do not fit with '...
-                            'the graph type: \n\n%s.'], sprintf('%s \n',str{:})))
-                        drawnow; pause(0.05);
-                        % uncheck these nodes
-                        fileID2check(this.FileManager.gui.tree,...
-                            {this.RelaxData(indx(tf)).fileID});
-                    end
-                else
-                    % add data from the current plot
-                    removePlot(this.DisplayManager, this.RelaxData(indx));
-                end
-                % enable tree
-                %src.Enable = 'on';  
-            elseif strcmp(event.Action,'NodeEdited')
-                % check if the node has been edited
-                if ~strcmp(event.NewName, event.OldName)
-                    oldName = event.OldName;
-                    newName = event.NewName;
-                    % check if file
-                    if strcmp(event.Nodes.Value, 'file')
-                        % check if label
-                        idx = strfind(event.OldName,']');
-                        if ~isempty(idx)
-                            label = [event.OldName(1:idx(1)),' '];
-                            % check if the label exists in the new name
-                            if ~contains(event.NewName, label)
-                                warndlg('You can not modify the label of the filename.')
-                                drawnow;
-                                event.Nodes.Name = event.OldName;
-                                return
-                            elseif numel(idx) > 1 ||...
-                                    any(contains(event.NewName,'@')) ||...
-                                    numel(strfind(event.NewName,'[')) > 1
-                                warndlg('You can not use ''@'' in any name and ''['' or '']'' for the filename.')
-                                drawnow;
-                                event.Nodes.Name = event.OldName;
-                                return
-                            end
-                           oldName = strtrim(oldName(idx+1:end));
-                           newName = strtrim(newName(idx+1:end));
-                        end
-                    elseif any(contains(event.NewName,'@'))
-                        warndlg('You can not use @ in the sequence or dataset name.')
-                        drawnow;
-                        event.Nodes.Name = event.OldName;
-                        return
-                    end
+%         % Callback to update data when using DragDrop method
+%         function editDragDropFile(this, oldFileID, newFileID)
+%             PROP_LIST = {'dataset','sequence','filename','displayName'};
+%             % get the corresponding object
+%             oldFileID = strsplit(oldFileID,'@');
+%             tf = true(size(this.RelaxData));
+%             for k = 1:numel(oldFileID)
+%                 tf = tf & strcmp({this.RelaxData.(PROP_LIST{k})},...
+%                     oldFileID{k});
+%             end
+%             % update their properties
+%             newFileID = strsplit(newFileID,'@');
+%             for k = 1:numel(newFileID)-1
+%                 [this.RelaxData(tf).(PROP_LIST{k})] = deal(newFileID{k});
+%             end
+%         end %editDragDropFile
 
-                    PROP_LIST = {'dataset','sequence','filename','displayName'};
-                    % get the path ID of the nodes and split it
-                    ancestorID = TreeManager.getAncestorID(event.Nodes);
-                    ancestorID = strtrim(strsplit(ancestorID{1},'@'));
-                    ancestorID = [ancestorID(1:end-1), oldName];
-                    % get the selection by looping over the properties
-                    tf = true(size(this.RelaxData));
-                    for k = 1:numel(ancestorID)
-                        tf = tf & strcmp({this.RelaxData.(PROP_LIST{k})},...
-                            ancestorID{k});
-                    end
-                    % now update the data
-                    [this.RelaxData(tf).(PROP_LIST{k})] = deal(strtrim(newName));
-                    % notify
-                    eventdata = TreeEventData('Action','UpdateName',...
-                                  'Parent',event.Nodes.Parent,...
-                                  'OldName',event.OldName,...
-                                  'NewName',event.NewName);
-                    notify(this.FileManager.gui.tree, 'TreeUpdate', eventdata);
-                end
-            end
-        end %selectFile
-        
-        % Callback to update data when using DragDrop method
-        function editDragDropFile(this, oldFileID, newFileID)
-            PROP_LIST = {'dataset','sequence','filename','displayName'};
-            % get the corresponding object
-            oldFileID = strsplit(oldFileID,'@');
-            tf = true(size(this.RelaxData));
-            for k = 1:numel(oldFileID)
-                tf = tf & strcmp({this.RelaxData.(PROP_LIST{k})},...
-                    oldFileID{k});
-            end
-            % update their properties
-            newFileID = strsplit(newFileID,'@');
-            for k = 1:numel(newFileID)-1
-                [this.RelaxData(tf).(PROP_LIST{k})] = deal(newFileID{k});
-            end
-        end %editDragDropFile
-        
-        % Callback right-click: add label
-        function addLabel(this, ~, ~)
-            % ask user
-            answer = inputdlg({'Enter a label (avoid @, [, ]):'},...
-                'Label input',[1 40],{'0'});
-            % check output and set it
-            if isempty(answer)
-                return
-            elseif contains(answer{1},{'@','[',']'})
-                warndlg('The following character are not allowed: @, [, ].')
-                return
-            else 
-                % get the selected file nodes and update their name
-                hNodes = this.FileManager.gui.tree.SelectedNodes;
-                % if sequence, dataset update all the children
-                while ~strcmp(hNodes(1).Value, 'file')
-                    hNodes = get(hNodes, 'Children');
-                    if iscell(hNodes)
-                        hNodes = [hNodes{:}];
-                    end
-                end
-                PROP_LIST = {'dataset','sequence','filename','displayName'};
-                % update name
-                for k = 1:numel(hNodes)
-                    name = hNodes(k).Name;
-                    % remove previous label
-                    idx = strfind(name,']');
-                    if ~isempty(idx)
-                        new_name = strtrim(name(idx+1:end));
-                    else
-                        new_name = strtrim(name);
-                    end
-                    % update model
-                    ancestorID = TreeManager.getAncestorID(hNodes(k));
-                    ancestorID = strtrim(strsplit(ancestorID{1},'@'));
-                    ancestorID{end} = new_name;
-                    % replace it
-                    new_name = ['[',strtrim(answer{1}),'] ',new_name]; %#ok<AGROW>
-                    hNodes(k).Name = new_name;
-                    % get the selection by looping over the properties
-                    tf = true(size(this.RelaxData));
-                    for i = 1:numel(ancestorID)
-                        tf = tf & strcmp({this.RelaxData.(PROP_LIST{i})},...
-                            ancestorID{i});
-                    end
-                    % now update the data
-                    [this.RelaxData(tf).label] = deal(strtrim(answer{1}));
-                    % notify
-                    eventdata = TreeEventData('Action','UpdateName',...
-                                      'Parent',hNodes(k).Parent,...
-                                      'OldName',name,...
-                                      'NewName',new_name);
-                    notify(this.FileManager.gui.tree, 'TreeUpdate', eventdata);
-                end
-            end
-        end %addLabel
-        
         % Get datafile info: WILL CHANGED SOON! DUMMY FUNCTION
         function datainfo = getFileInfo(this, fileID)
             % get the corresponding data(s)
@@ -642,14 +478,14 @@ classdef FitLike < handle
                 hData = hData(1).parent;
             end
             % get the info
-            while isempty(hData(1).children)
+            while numel(hData) > 0
                 % get the number of zone
                 nZone = numel(hData(1).parameter.paramList.ZONE);
                 % switch
                 switch class(hData)
                     case 'Dispersion'
                         dispersion = {hData.displayName};
-                        datainfo.dispersion = dispersion;
+                        datainfo.dispersion = {dispersion};
                     case 'Zone'
                         zone = {hData.displayName};
                         zonelist = strcat('Zone',...
@@ -662,9 +498,73 @@ classdef FitLike < handle
                         datainfo.bloc = {bloc, bloclist};
                 end
                 % get the children
-                hData = hData.children;
+                hData = [hData.children];
             end
         end %getFileInfo
+        
+        % Event: data is selected. NEED TO MODIFY RELAXOBJ ACCESS
+        function addData(this, hNode, type, fileID, name, idx)
+                % loop over the input
+                for k = 1:numel(fileID)
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    % get the corresponding dataobj
+                    tf = strcmp({this.RelaxData.fileID}, fileID{k});
+                    hData = this.RelaxData(tf);
+                    while ~strcmpi(class(hData), type)
+                        hData = [hData.parent];
+                    end
+                    hData = hData(strcmp({hData.displayName}, name{k}));
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    % add data from current plot
+                    [~, plotFlag, ~] = addPlot(this.DisplayManager, hData, idx(k));
+                    if ~plotFlag
+                        % uncheck this node
+                        dispMsg(this, sprintf(['Cannot plot %s:'...
+                            'the data type doesnt fit with the current tab!'], hData.filename));
+                        hNode(k).Checked = 0;
+                    end
+                    pause(0.005)
+                end
+                drawnow;
+        end %addData
+        
+        % Event: data is selected. NEED TO MODIFY RELAXOBJ ACCESS
+        function removeData(this, type, fileID, name, idx)
+                % loop over the input
+                for k = 1:numel(fileID)
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    % get the corresponding dataobj
+                    tf = strcmp({this.RelaxData.fileID}, fileID{k});
+                    hData = this.RelaxData(tf);
+                    while ~strcmpi(class(hData), type)
+                        hData = [hData.parent];
+                    end
+                    hData = hData(strcmp({hData.displayName}, name{k}));
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    % remove data from current plot
+                    removePlot(this.DisplayManager, hData, idx(k));
+                    pause(0.005)
+                end
+                drawnow;
+        end %addData
+        
+        % edit files callback
+        function editFile(this, fileID, propname, newValue)         
+             % get the file to modify
+             [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
+             % update them
+             oldName = this.RelaxData(indx(1)).(propname);
+             [this.RelaxData(indx).(propname)] = deal(newValue);
+             % notify if filename has changed
+             if strcmp(propname, 'filename')
+                notify(this.RelaxData(indx), 'FileHasChanged', EventFile(oldName, newValue)); 
+             end
+        end %editFile
+        
+        % Wrapper to throw message
+        function dispMsg(this, msg)
+            this.FileManager = throwMessage(this.FileManager, msg);
+        end %disp
     end   
     %% -------------------- DisplayManager Callback -------------------- %% 
     methods (Access = public)
@@ -672,17 +572,24 @@ classdef FitLike < handle
         function selectTab(this, src)
             % get the selected tab
             hTab = src.SelectedTab.Children;
-            resetTree(this.FileManager.gui.tree);
+            resetFileTree(this.FileManager);
             if isa(hTab,'EmptyPlusTab')
                 % add new tab
                 addTab(this.DisplayManager);
-            elseif isa(hTab,'EmptyTab')
-                % dumb
-            elseif isa(hTab,'DispersionTab')
-                % get the fileID plotted and check them
-                fileID2check(this.FileManager.gui.tree, getFileID(hTab));
+            else 
+                [~, fileID, displayName, idx] = getTabData(this);
+                % update FileManager
+                setSelectedTree(this.FileManager, hTab.inputType);
+                checkFile(this.FileManager, fileID);
+                checkData(this.FileManager, fileID, displayName, idx, 1);
+                drawnow;
             end
         end %selectTab
+        
+        % Wrapper to get plot data
+        function [c, fileID, displayName, idx] = getTabData(this)
+            [c, fileID, displayName, idx] = getDataID(this.DisplayManager.gui.tab.SelectedTab.Children);
+        end
         
         % Mask data
         function setMask(~, ~, event)
@@ -691,73 +598,46 @@ classdef FitLike < handle
                 xmin = event.XRange(1); xmax = event.XRange(2);
                 ymin = event.YRange(1); ymax = event.YRange(2);
                 % define mask
-                mask = arrayfun(@(data) data.mask &...
-                                        ~((xmin < data.x & data.x < xmax) &...
-                                          (ymin < data.y & data.y < ymax)),...
-                                         event.Data,'Uniform',0);
-                [event.Data.mask] = mask{:};
-                % notify
-                notify(event.Data, 'DataHasChanged')
+                for k = 1:numel(event.Data)
+                   event.Data(k) = setMask(event.Data(k), event.idxZone(k),...
+                                        [xmin xmax], [ymin ymax]);
+                    % notify
+                    notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))                 
+                end
             elseif strcmp(event.Action,'ResetMask')
                 % reset mask
-                mask = arrayfun(@(data) true(size(data.y)),...
-                            event.Data,'Uniform',0);
-                [event.Data.mask] = mask{:};
-                % notify
-                notify(event.Data, 'DataHasChanged')
+                for k = 1:numel(event.Data)
+                   event.Data(k) = setMask(event.Data(k), event.idxZone(k));
+                   % notify
+                   notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k))) 
+                end
             end
         end % setMask
-        
-        % Select zone
-        function selectZone(this, src, event)
-            % check the distance between the clicked point and the source
-            % data. Get the minimum to know which zone is concerned
-            d = sqrt((src.XData - event.IntersectionPoint(1,1)).^2 +...
-                (src.YData - event.IntersectionPoint(1,2)).^2);
-            [~,idxZone] = min(d);
-            % get the zone data
-            [~,idx,~] = intersect({this.RelaxData.fileID}, src.Tag);
-            if ~isa(this.RelaxData(idx).parent, 'Zone')
-                warndlg('No Zone data available!')
-                return
-            else
-                hData = this.RelaxData(idx).parent;
-            end
-            % add new tab and display result on it
-            addTab(this.DisplayManager);
-            addPlot(this.DisplayManager, hData, idxZone);
-        end %selectZone
     end
     %% ------------------ ProcessingManager Callback ------------------- %%
     methods (Access = public)
         % Run process
         function this = runProcess(this)
             % check if data are selected
-            tree = this.ProcessingManager.gui.tree;
-            fileID = nodes2fileID(tree, tree.CheckedNodes);
+            fileID = getSelectedFile(this.FileManager);
             % according to the mode process, run it
             if isempty(fileID)
-                warndlg('You need to select file to run process!','Warning')
+                dispMsg(this, 'Warning: You need to select data to run process!');
                 return
             elseif this.ProcessingManager.gui.BatchRadioButton.Value
                 % Batch mode
                 tab = this.ProcessingManager.gui.tab.SelectedTab.Children;
                 % check the selected pipeline
-                tf = ProcessTab.checkProcess(tab);
-                % check output
-                if ~tf
+                if ~ProcessTab.checkProcess(tab)
                     return
                 end
                 % get the process array
                 ProcessArray = flip(tab.ProcessArray);
+                dispMsg(this, 'Starting to process file...');
                 % loop over the file
                 for k = 1:numel(fileID)
                     % get fileID
-                    ifileID = strsplit(fileID{k},'@');
-                    % check for correspondance
-                    indx = find(strcmp(ifileID{1},{this.RelaxData.dataset}) &... 
-                        strcmp(ifileID{2},{this.RelaxData.sequence}) &... 
-                        strcmp(ifileID{3},{this.RelaxData.filename}));
+                    indx = find(strcmp({this.RelaxData.fileID}, fileID{k}));
                     % get the ancestor
                     bloc = this.RelaxData(indx(1)); %take the first one
                     while ~isempty(bloc.parent)
@@ -776,41 +656,41 @@ classdef FitLike < handle
                         warning off
                         relaxObj = processData(relaxObj);
                         warning on
-                    end                        
+                    end   
                     % replace the new relaxObj in the main array
                     this.RelaxData = remove(this.RelaxData, indx);
                     this.RelaxData = [this.RelaxData, relaxObj];
-                    % update FileManager
-                    hParent = fileID2nodes(this.FileManager.gui.tree, fileID(k));
-                    hNodes = hParent.Children;
-                    n = numel(hNodes);
-                    m = numel(relaxObj);
-                    if n < m
-                        nodes2modify(this.FileManager.gui.tree, hNodes,...
-                            {relaxObj(1:n).displayName}, repmat({class(relaxObj)},1,n), 1); 
-                        add(this.FileManager.gui.tree, relaxObj(n+1:end), 1);
-                    elseif n > numel(relaxObj)
-                        nodes2modify(this.FileManager.gui.tree, hNodes,...
-                            {relaxObj.displayName}, repmat({class(relaxObj)},1,m), 1); 
-                        remove(this.FileManager.gui.tree, hNodes(m+1));
+                    drawnow; %EDT
+                    % replace the new relaxObj in the main array
+                    setSelectedTree(this.FileManager, class(relaxObj));
+                    updateData(this.FileManager, relaxObj(1).filename, fileID{k});
+                    drawnow;
+                    if isa(relaxObj, 'Dispersion')
+                        idxZone = repelem(NaN, numel(relaxObj));
                     else
-                        nodes2modify(this.FileManager.gui.tree, hNodes,...
-                            {relaxObj.displayName}, repmat({class(relaxObj)},1,n), 1);                     
+                        idxZone = repelem(1,numel(relaxObj));
                     end
+                    pause(0.005);
+                    checkData(this.FileManager, {relaxObj.fileID},...
+                        {relaxObj.displayName}, idxZone, 1);
+                    drawnow; %EDT
                     % try to plot
-                    [~, plotFlag, ~] = addPlot(this.DisplayManager, relaxObj);
+                    [~, plotFlag, ~] = addPlot(this.DisplayManager, relaxObj, idxZone);
                     % check if everything have been plotted 
                     if ~plotFlag
-                        str = cellfun(@(x,y) sprintf('%s (Sequence: %s)',x,y),...
-                                {relaxObj.filename},...
-                                {relaxObj.sequence},'Uniform',0);
-                        warndlg(sprintf(['The following data have not been '...
-                            'displayed because their type do not fit with '...
-                            'the graph type: \n\n%s.'], sprintf('%s \n',str{:})))
+%                         str = cellfun(@(x,y) sprintf('%s (Sequence: %s)',x,y),...
+%                                 {relaxObj.filename},...
+%                                 {relaxObj.sequence},'Uniform',0);
+%                         warndlg(sprintf(['The following data have not been '...
+%                             'displayed because their type do not fit with '...
+%                             'the graph type: \n\n%s.'], sprintf('%s \n',str{:})))
                         drawnow; pause(0.05);
                         % uncheck these nodes
-                        fileID2check(this.FileManager.gui.tree,{relaxObj.fileID});
+                        checkData(this.FileManager, {relaxObj.fileID},...
+                            {relaxObj.displayName}, idxZone, 0);
                     end
+                    drawnow % EDT
+                    dispMsg(this, sprintf('Terminated to process file...%d/%d',k,numel(fileID)));
                 end %for
             else
                 % Simulation mode
@@ -823,21 +703,27 @@ classdef FitLike < handle
         % Run Fit
         function this = runFit(this)
             % check if data are selected
-            tree = this.ModelManager.gui.tree;
-            fileID = nodes2fileID(tree, tree.CheckedNodes);
+            [~, fileID, legendTag, ~] = getSelectedData(this.FileManager,[]);
             % according to the mode process, run it
             if isempty(fileID)
-                warndlg('You need to select file to run process!','Warning')
+                dispMsg(this, 'Warning: You need to select dispersion data to run fit!');
                 return
             elseif this.ModelManager.gui.BatchRadioButton.Value
+                throwMessage(this.FileManager, 'Starting to fit file...');
                 % Batch mode
                 tab = this.ModelManager.gui.tab.SelectedTab.Children;
                 % get the process array
                 ModelArray = tab.ModelArray;
                  % loop over the file
                 for k = 1:numel(fileID)
-                    % check for correspondance
-                    tf = strcmp(fileID{k},{this.RelaxData.fileID});
+                    % check for correspondance (same data file)
+                    tf = strcmp(strcat({this.RelaxData.fileID},...
+                        {this.RelaxData.displayName}), strcat(fileID{k},...
+                        legendTag{k}));
+                    % check if dispersion
+                    if ~isa(this.RelaxData(tf), 'Dispersion')
+                        continue
+                    end
                     % apply the fit to the file
                     procObj = DispersionLsqCurveFit;
                     procObj = addModel(procObj,ModelArray);
@@ -846,11 +732,13 @@ classdef FitLike < handle
                     processData(this.RelaxData(tf)); 
                     % update model name
                     this.RelaxData(tf).processingMethod.model.modelName = tab.TabTitle;
+                    % notify
+                    notify(this.RelaxData(tf), 'DataHasChanged', EventData(NaN)) 
+                    dispMsg(this, sprintf('Terminated to fit file...%d/%d',k,numel(fileID)));
                 end
-                % notify    
-                [~,~,idx] = intersect(fileID,{this.RelaxData.fileID});
-                notify(this.RelaxData(idx), 'DataHasChanged');
+                drawnow;
                 updateResultTable(this.ModelManager);
+                drawnow;
             else
                 % Simualation mode
             end

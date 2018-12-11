@@ -1,24 +1,21 @@
 classdef TreeManager < uiextras.jTree.CheckboxTree
     %
-    % Class that manages checkboxtree in FitLike.
+    % Extension of the checkboxtree class from Robyn Jackey.
+    % https://fr.mathworks.com/matlabcentral/fileexchange/47630-tree-controls-for-user-interfaces
+    % Adaptation to the FileManager tree(s)
     %
+    % M. Petit - 11/2018
+    % manuel.petit@inserm.fr
     
     properties
         FitLike
-        DatasetIcon = fullfile(matlabroot,'toolbox','matlab','icons','foldericon.gif');
-        SequenceIcon = fullfile(matlabroot,'toolbox','matlab','icons','greencircleicon.gif');
-        FileIcon = fullfile(matlabroot,'toolbox','matlab','icons','HDF_filenew.gif');
-        RelaxObjIcon = {fullfile(matlabroot,'toolbox','matlab','icons','HDF_object02.gif'),...
-                        fullfile(matlabroot,'toolbox','matlab','icons','HDF_object01.gif'),...
-                        fullfile(matlabroot,'toolbox','matlab','icons','unknownicon.gif')};
-        Name
     end
     
     events
-        TreeUpdate
+       TreeHasChanged        
     end
     
-    methods
+    methods (Access= public)
         % Constructor
         function this = TreeManager(FitLike, varargin)
             % call superconstructor
@@ -32,88 +29,169 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             end
         end %TreeManager
         
-        % Add new data to the tree.
-        function this = add(this, DataUnit, checkFlag)
-            % check input 
-            tf = arrayfun(@(x) all(strcmp(superclasses(x),'DataUnit') == 0), DataUnit);
-            if ~ all(tf == 0)
-                error('FileManager:addData','Input type is not correct')
-            end   
+        % Search node based on its tag (userdata). Stop at the first node!
+        function hNode = search(this, tag)
+            % search recursively along the tree
+            hNode = visit(this.Root, tag, this.Root);
             
-            % loop over the input
-            for k = 1:length(DataUnit)
-                % + dataset
-                hDataset = checkNodeExistence(this, this.Root,...
-                    DataUnit(k).dataset, this.DatasetIcon, 'dataset');
-                addUIMenu(this, hDataset);
-                expand(hDataset);
-                % + sequence
-                hSequence = checkNodeExistence(this, hDataset,...
-                    DataUnit(k).sequence, this.SequenceIcon, 'sequence');
-                addUIMenu(this, hSequence);
-                expand(hSequence);
-                % + filename
-                % check if label
-                if ~isempty(DataUnit(k).label)
-                    name = ['[',DataUnit(k).label,'] ',DataUnit(k).filename];
+            %%% ---- Nested function ----- %%%
+            function currentNode = visit(currentNode, tag, stopNode)
+                % check the currentNode
+                if isempty(currentNode)
+                    return
+                elseif strcmp(currentNode.UserData, tag)
+                    return
                 else
-                    name = DataUnit(k).filename;
-                end
-                hFile = checkNodeExistence(this, hSequence,...
-                    name, this.FileIcon, 'file');
-                addUIMenu(this, hFile);
-                expand(hFile);
-                % + relaxobj
-                [type,~,idx] = intersect({'bloc','zone','dispersion'},...
-                                            lower(class(DataUnit(k))));
-                hObj = checkNodeExistence(this, hFile, DataUnit(k).displayName,...
-                    this.RelaxObjIcon{idx}, ['relaxObj:', type{1}]);
-                % check flag
-                if checkFlag
-                    hObj.Checked = 1;
-                end
-            end
-        end %addData 
-        
-        % Remove data from the tree 
-        function this = remove(this, varargin)
-            % check input
-            if nargin < 2
-                hNodes = this.CheckedNodes;
-            else
-                hNodes = varargin{1};
-            end
-            % check if nodes
-            if isempty(hNodes)
-                return
-            end
-            % loop recursively to find ancestor if alone child
-            for k = 1:numel(hNodes)
-                while ~isempty(hNodes(k).Parent)
-                    if numel(hNodes(k).Parent.Children) < 2
-                        hNodes(k) = hNodes(k).Parent;
-                    else
-                        break
+                    % check if children
+                    while ~isempty(currentNode.Children)
+                        currentNode = currentNode.Children(1);
+                        if strcmp(currentNode.UserData, tag)
+                            return
+                        end
                     end
+                    % push and visit
+                    currentNode = TreeManager.push(currentNode, stopNode);
+                    currentNode = visit(currentNode, tag, stopNode);
                 end
-                % notify
-                eventdata = TreeEventData('Action','Delete',...
-                                          'Data',hNodes(k));
-                notify(this, 'TreeUpdate', eventdata);
-            end
-            % just delete the selected nodes and their children
-            delete(hNodes);
-        end %removeData 
+            end %visit
+        end %search
+    end
+    
+    % Adapt the edit/check methods:
+    % *1 click on node activates the edit mode
+    % *1 click on the checkbox activates the check mode
+    %
+    % Here multiple and unwanted calls are manage using a modified version of 
+    % isMultipleCall() from http://undocumentedmatlab.com/ website.  
+    methods (Access = protected)
+        % Overwrite the checked box method to avoid multiple call (add the
+        % static method isMultipleCall(). Also get the checked node instead
+        % of all the checked nodes.
+        function onCheckboxClicked(tObj,~)   
+            
+            % Avoid multiple calls
+            if TreeManager.isMultipleCall('onCheckboxClicked');  return;  end
+            
+            if callbacksEnabled(tObj)  
+                
+                % Get the position of the mouse
+                pos = tObj.jTree.getMousePosition();
+                
+                if isempty(pos)
+                    return
+                end
+                
+                x = pos.getX();
+                y = pos.getY();    
+                
+                % Was a tree node clicked?
+                treePath = tObj.jTree.getPathForLocation(x,y);
+                if ~isempty(treePath)
+                    % get node
+                    nObj = get(treePath.getLastPathComponent,'TreeNode');
+                    % Prepare the event data
+                    e1 = struct('CheckedNodes',nObj);
+                    % Call the custom callback
+                    hgfeval(tObj.CheckboxClickedCallback, tObj, e1); 
+                end
+                
+                % EDT
+                drawnow;
+            end %if callbacksEnabled(tObj)            
+        end
         
-        % Check node existence and create it if needed. 
-        % this function also take an icon and a type (dataset, sequence,...)
-        % that will be add to the new children.
-        function hChildren = checkNodeExistence(this, hParent, nodeName, icon, type)
+        % Overwrite the button up method to edit nodes with only one
+        % click.
+        function onButtonUp(tObj,e)
+            
+            % Avoid multiple calls
+            if TreeManager.isMultipleCall('onButtonUp');  return;  end
+            
+            % Is there a custom ButtonUpFcn?
+            if callbacksEnabled(tObj) && ~isempty(tObj.ButtonUpFcn)
+                
+                % Get the click position
+                x = e.getX;
+                y = e.getY;
+                
+                % Was a tree node clicked?
+                nObj = getNodeFromMouseEvent(tObj,e); 
+                
+                % If it is a node, edit it
+                if ~isempty(nObj)
+                    
+                    % get the current name
+                    oldName = nObj.Name;
+                    % Edit the selected nodes
+                    treePath = tObj.jTree.getPathForLocation(x,y); 
+                    tObj.jTree.startEditingAtPath(treePath)
+                    % wait until the path is not edit anymore
+                    while tObj.jTree.isEditing
+                        pause(0.001);
+                    end
+                    % avoid edit/selection problem. Remove the node
+                    % from selection.
+                    tObj.jTree.removeSelectionPath(treePath);
+                    % get new name and call the custom callback
+                    newName = nObj.Name;
+                    e1 = struct('Nodes',nObj,...
+                        'OldName',oldName,'NewName',newName);
+                    hgfeval(tObj.ButtonUpFcn, tObj, e1);
+                end
+                drawnow;
+            end
+        end
+    end
+    
+     methods (Static)         
+         % Function from http://undocumentedmatlab.com/ website.
+         % Modified to handle multiple callbacks call (here edit and
+         % check).
+         function flag = isMultipleCall(CallbackName)
+             % create a persistent variable that keep in memory a previous
+             % and specific function call (here onCheckboxClicked).
+             persistent n
+                         
+             flag = false;
+             
+             if strcmp('onCheckboxClicked', CallbackName)
+                 n = 1;
+             elseif ~isempty(n)
+                 % if the persistent variable is not empty, previous call
+                 % was made with the specific function (onCheckboxClicked).
+                 flag = true;
+                 clear n
+                 return
+             else
+                 clear n
+                 return
+             end
+             
+             % Get the stack
+             s = dbstack();
+             if numel(s) <= 2
+                 % Stack too short for a multiple call
+                 return
+             end
+             
+             % How many calls to the calling function are in the stack?
+             names = {s(:).name};
+             TF = strcmp(s(2).name, names(2:end));
+             count = sum(TF);
+             
+             if count>1
+                 % More than 1
+                 flag = true;
+             end
+        end
+                 
+        % add new nodes. Pass to children nodes if duplicates.
+        function hChildren = addNode(hParent, name, icon, type)
             % check if children
             if ~isempty(hParent.Children)
                 % check if the wanted name corresponds to a children in the
                 % parent container
-                tf = strcmp(get(hParent.Children,'Name'),nodeName);
+                tf = strcmp(get(hParent.Children,'Name'), name);
                 if ~all(tf == 0)
                     hChildren = hParent.Children(tf);
                     return
@@ -121,281 +199,66 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             end
             % add checkbox               
             hChildren = uiextras.jTree.CheckboxTreeNode('Parent', hParent,...
-                                         'Name', nodeName,...
+                                         'Checked',0,...
+                                         'Name', name,...
                                          'Value', type);
-            setIcon(hChildren,icon);
-            % notify
-            eventdata = TreeEventData('Action','Add',...
-                                      'Parent',hParent,...
-                                      'Data',hChildren);
-            notify(this, 'TreeUpdate', eventdata);
-        end %checkNodeExistence
-        
-        % Return the fileID of nodes. If no input: checked nodes.
-        function fileID = nodes2fileID(this, varargin)
-           % check input
-           if nargin < 2
-               hNodes = this.CheckedNodes;
-           else
-               hNodes = varargin{1};
-           end
-           % check if root
-           if isempty(hNodes)
-               fileID = [];
-               return
-           elseif strcmp(hNodes(1).Name, 'Root')
-               hNodes = [hNodes.Children];
-           end
-           % get the ancestor ID
-           ancestorID = TreeManager.getAncestorID(hNodes);
-           % use it and get the descendant ID
-           fileID = TreeManager.getDescendantID(hNodes, ancestorID);
-        end
-        
-        function this = nodes2modify(this, hNodes, name, type, checkFlag)
-            % loop over the files
-            for k = 1:numel(hNodes)
-                % update name
-               if ~strcmp(hNodes(k).Name, name{k}) && ~isempty(name{k})
-                   % notify
-                   eventdata = TreeEventData('Action','UpdateName',...
-                              'Parent',hNodes(k).Parent,...
-                              'Data', hNodes(k),...
-                              'OldName',hNodes(k).Name,...
-                              'NewName',name{k});
-                   notify(this, 'TreeUpdate', eventdata);
-                   % update name
-                   hNodes(k).Name = name{k};
-               end
-               % update icon if relaxObj
-               if contains(hNodes(k).Value, 'relaxObj') && ~isempty(type{k})
-                   if ~contains(hNodes(k).Value, type{k})
-                        resetIcon(this, hNodes(k), type{k});
-                   end
-               end
-               % update check
-               if checkFlag
-                   hNodes(k).Checked = 1;
-               end
+            if ~isempty(icon)
+                setIcon(hChildren, icon);
             end
-        end
-        % Return the nodes corresponding to the fileID list. fileID can be
-        % partial (dataset@sequence, dataset@sequence@file,...).
-        function hNodes = fileID2nodes(this, fileID)
-            % format input and split fileID
-            if isempty(fileID)
-                return
-            elseif ischar(fileID)
-                str = strsplit(fileID,'@');
-            else % cell               
-                if size(fileID,2) > 1
-                    fileID = fileID';
-                end
-                str = cellfun(@(x) strsplit(x, '@'), fileID, 'Uniform', 0);
-                str = vertcat(str{:});
-            end
-            % get tree root
-            hRoot = this.Root;
-            % loop over the fileID
-            for iFile = size(str,1):-1:1
-                hNodes(iFile) = hRoot;
-                for iLevel = 1:size(str,2)
-                    tf = strcmp(str{iFile, iLevel},...
-                        TreeManager.getName(hNodes(iFile).Children));
-                    hNodes(iFile) = hNodes(iFile).Children(tf);
-                end
-            end
-        end %fileID2nodes
+        end % addNode
         
-        % Delete nodes from fileID
-        function this = fileID2delete(this, fileID)
-            % check input
-            if isempty(fileID)
-                return
+        % get all deepest child (root is automaticaly removed)
+        function hChildren = getEndChild(hParent)
+            % init
+            if isempty(hParent.Children)
+                hChildren = hParent; 
             else
-                % get the nodes and delete them
-                hNodes = fileID2nodes(this, fileID);
-                remove(this, hNodes);
-            end    
-        end %fileID2delete
-        
-         % Modify node from fileID. Modification can be:
-         % - Name
-         % - Type (Icon): bloc, zone, dispersion
-         % - Checked: checkFlag (logical)
-         function this = fileID2modify(this, fileID, name, type, checkFlag)
-            % check input
-            if isempty(fileID)
-                return
-            else
-                % get the nodes and modify them
-                hNodes = fileID2nodes(this, fileID);
-                nodes2modify(this, hNodes, name, type, checkFlag);
-            end 
-         end %fileID2modify
-        
-        % Check/Uncheck nodes from fileID 
-        function this = fileID2check(this, fileID)
-            % check input
-            if isempty(fileID)
-                return
-            else
-                % get the nodes state
-                hNodes = fileID2nodes(this, fileID);
-                state = cellfun(@(x) ~logical(x), {hNodes.Checked},'Uniform',0);
-                % invert state
-                [hNodes.Checked] = state{:};
-            end            
-        end %fileID2check
-
-        % this function determines if the dragged target is valid or not
-        % and drop the object.
-        % *User can drag dataset, sequence and file
-        % *File can be dropped in sequence or file
-        % *Sequence can be dropped in dataset or sequence
-        % *Dataset can be dropped in dataset
-        function DropOk = DragDrop(this, ~, event)
-            % Is this the drag or drop part?
-            DoDrop = ~(nargout); % The drag callback expects an output, drop does not
-
-            % get source and target
-            src = event.Source;
-            target = event.Target;
-            
-            % Check if the source & target are valid:
-            % *User can drag dataset, sequence and file
-            % *File can be dropped in sequence or file
-            % *Sequence can be dropped in dataset or sequence
-            % *Dataset can be dropped in dataset
-            if strcmp(src.Value,'file') &&...
-                  (strcmp(target.Value,'sequence') || strcmp(target.Value,'file'))
-                % file to sequence/file
-                DropOk = true;
-            elseif strcmp(src.Value,'sequence') &&...
-                  (strcmp(target.Value,'dataset') || strcmp(target.Value,'sequence')) 
-                % sequence to dataset/sequence
-                DropOk = true;
-            elseif strcmp(src.Value,'dataset') && strcmp(target.Value,'dataset')
-                % dataset to dataset
-                DropOk = true;
-            else
-                % invalid target or source
-                DropOk = false;
+                % search recursively along the tree
+                [hChildren, ~] = visit(hParent, [], hParent);
             end
-
-            % If drop is allowed
-            if DoDrop && strcmpi(event.DropAction,'move')
-                % Get list of children in target container
-                hChildren = [target.Parent.Children];
-                % Get index or source and target
-                idxTarget = find(hChildren == target);
-                idxSource = find(hChildren == src);
-                isChecked = logical(src.Checked);
-                % check if we change nodes or not
-                if src.Parent ~= target.Parent
-                    % store parent handle for updating
-                    hParent = src.Parent;
-                    
-                    % check if target type is the same as source type
-                    if ~strcmp(src.Value, target.Value)
-                        hChildren = target.Children;
-                        new_order = [NaN 1:numel(hChildren)];
-                        % get target fileID
-                        ancestorID_target = TreeManager.getAncestorID(target.Children(1));
-                    else
-                        new_order = [1:(idxTarget-1) NaN idxTarget:numel(hChildren)];
-                        % get target fileID
-                        ancestorID_target = TreeManager.getAncestorID(target);
+                       
+            %%% ---- Nested function ----- %%%
+            function [hChild, currentNode] = visit(currentNode, hChild, hStop)
+                % check the currentNode
+                if isempty(currentNode)
+                    return
+                else
+                    % check if children
+                    while ~isempty(currentNode.Children)
+                        currentNode = currentNode.Children(1);
                     end
-                    
-                    % check if duplicate
-                    tf = strcmp({hChildren.Name}, src.Name);
-                    if ~all(tf == 0)
-                        % throw warning
-                        msg = sprintf(['You can not drop your %s as is in this %s '...
-                            'because it already contains the same %s: %s.'],src.Value,...
-                            hParent.Value, src.Value, src.Name);
-                        warndlg(msg, 'Warning: duplicate');
-                        return
-                    else
-                        % update data
-                        ancestorID_src = TreeManager.getAncestorID(src);
-                        editDragDropFile(this.FitLike, ancestorID_src{1},...
-                            ancestorID_target{1});
+                    % add child (not if root)
+                    if ~isempty(currentNode.Parent)
+                        hChild = [hChild, currentNode];
                     end
-                    
-                    % De-parent
-                    oldParent = src.Parent;
-                    src.Parent = [];
-                    % reorder children
-                    this.Visible = 'off';
-                    TreeManager.stackNodes(hChildren, new_order, src);
-                    this.Visible = 'on';
-                    % notify
-                    eventdata = TreeEventData('Action','DragDrop',...
-                                      'Data', src,...
-                                      'OldParent',oldParent,...
-                                      'Parent',src.Parent,...
-                                      'NewOrder',new_order);
-                    notify(this,'TreeUpdate',eventdata)
-                    % delete old parent if no more children
-                    if isempty(hParent.Children)
-                        delete(hParent)
-                    end
-                else                 
-                    % prepare re-ordering
-                    new_order = 1:numel(hChildren);
-                    new_order(idxTarget) = idxSource; 
-                    new_order(idxSource) = idxTarget;
-                    % reorder children
-                    this.Visible = 'off';
-                    TreeManager.stackNodes(hChildren, new_order, []);
-                    this.Visible = 'on';
-                    % notify
-                    eventdata = TreeEventData('Action','ReOrder',...
-                                      'Data', hChildren,...
-                                      'NewOrder',new_order);
-                    notify(this,'TreeUpdate',eventdata)
+                    % push and visit
+                    currentNode = TreeManager.push(currentNode, hStop);
+                    [hChild, currentNode] = visit(currentNode, hChild, hStop);
                 end
-                % checked
-                if isChecked
-                   src.Checked = 1; 
-                end
-            end
-        end %DragNodeCallback                
-                              
-        % Set icon according to an input type
-        function this = resetIcon(this, hNodes, type)
-            [~,idx,~] = intersect({'bloc','zone','dispersion'},lower(type));
-            setIcon(hNodes, this.RelaxObjIcon{idx});
-            % notify
-            eventdata = TreeEventData('Action','UpdateIcon',...
-                              'Data', this.RelaxObjIcon{idx},...
-                              'Parent',hNodes);
-            notify(this,'TreeUpdate',eventdata)
-        end %resetIcon
-               
-        % Reset tree: uncheck all the nodes
-        function this = resetTree(this)
-            % check the tree state
-            if ~isempty(this.CheckedNodes)
-               % uncheck
-               [this.CheckedNodes.Checked] = deal(false);
-            end
-        end %resetTree
+            end %visit
+        end %getEndChild
         
-        % Add UIContextMenu to the node
-        function this = addUIMenu(this, hNode)
-            % check if existing menu
-            if isempty(hNode.UIContextMenu)
-                c = uicontextmenu(ancestor(this,'figure'));
-                uimenu(c,'Label','Add Label...',...
-                    'Callback',@(s,e)this.FitLike.addLabel(s, e));
-                hNode.UIContextMenu = c;
+        % function that find the next left node according to a current
+        % node (backtracking). The function is called recursively until a new node is
+        % found.
+        function currentNode = push(currentNode, stopNode)
+            % check the current node 
+            if isequal(stopNode, currentNode)
+                currentNode = []; %stop node
+                return
             end
-        end
-    end
-    methods (Static)
+            ancestor = currentNode.Parent;
+            % get the node position
+            idx = find(ancestor.Children == currentNode);
+            % go to the next child if possible and check
+            if numel(ancestor.Children) ~= idx
+                currentNode = ancestor.Children(idx+1);
+            else
+                % call recursively push
+                currentNode = TreeManager.push(ancestor, stopNode);
+            end
+        end %push
+        
         % This function allow to reorder nodes. A new node can also be
         % insert at the position indicates by 'NaN'.
         % Example: hNodes = stackNodes(tree, hNodes,[1 3 2]);
@@ -423,128 +286,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                     hNodes(k).Parent = hParent;
                 end               
             end
-        end %stackNodes        
-        
-        % Search a specific node inside another tree
-        function treeNode = searchNode(root, node)
-            % check input
-           if strcmp(node.Name,'Root')
-                treeNode = root;
-                return
-           elseif isempty(root.Children)
-                treeNode = [];
-                return
-            end
-            % start by checking the depth of search (dataset, sequence,...)
-            children = root.Children;
-            if strcmp(children(1).Value, node.Value)
-                tf = strcmp({children.Name}, node.Name);
-                treeNode = root.Children(tf);
-            else
-                % pathway
-                parent = node;
-                parentNode = [];
-                while ~strcmp(parent.Name, 'Root')
-                    parentNode = [parent parentNode]; %#ok<AGROW>
-                    parent = parent.Parent;
-                end
-                % now loop over the level
-                treeNode = root;
-                for k = 1:numel(parentNode)
-                    tf = strcmp({treeNode.Children.Name}, parentNode(k).Name);
-                   	treeNode = treeNode.Children(tf);
-                end
-            end    
-        end
-        
-        % Get the fileID of the ancestor 
-        % Example: dataset@sequence@file for a given node (file type)
-        function ancestorID = getAncestorID(nodes)
-            % check input
-            if isempty(nodes)
-                return
-            end
-            % check if an ancestor if available
-            ancestorID = TreeManager.getName(nodes);
-            %loop over the input
-            for k = 1:numel(nodes)
-                hAncestor = nodes(k);
-                % loop until we reach the root    
-                while ~strcmp(TreeManager.getName(hAncestor.Parent),'Root')
-                    hAncestor = hAncestor.Parent;
-                    currentID = TreeManager.getName(hAncestor);
-                    ancestorID{k} = [currentID{1},'@',ancestorID{k}];
-                end
-            end
-        end %getAncestorID
-        
-        % Get the fileID of the descendant nodes. You can directly add a
-        % fileID to complete (if you use getAncestorID for instance).
-        function fileID = getDescendantID(nodes, varargin)
-            % check input
-            if isempty(nodes)
-                return
-            end
-            if nargin < 2
-                fileID = TreeManager.getName(nodes);
-            else
-                fileID = varargin{1};
-            end
-            % initialise and search recurvisely
-            [fileID, ~] = searchDescendantID(nodes, fileID);
-            
-            % Nested function
-            function [fileID, hNodes] = searchDescendantID(hNodes, fileID)
-                % check children
-                indx = find(~cellfun(@isempty, {hNodes.Children}));
-                % check output and concatenate fileID
-                if isempty(indx)
-                    return
-                else
-                    for k = 1:numel(indx)
-                        names = arrayfun(@(x) TreeManager.getName(x),...
-                            hNodes(indx(k)).Children, 'Uniform', 0);
-                        names = [names{:}];
-                        fileID{indx(k)} = strcat(repmat(strcat(fileID(indx(k)),'@'),...
-                            1,numel(names)), names);
-                    end 
-                    %uncell
-                    fileID = [fileID{:}];
-                    % call the function again
-                    [fileID, hNodes] = searchDescendantID([hNodes.Children], fileID);
-                end
-            end
-        end %getDescendantID
-        
-        % Get the name of the node. If file, remove the label to fit with
-        % the data
-        function [name, label] = getName(nodes)
-            % check input
-            if isempty(nodes)
-                name = [];
-                label = [];
-            else
-                % loop over the nodes
-                for k = numel(nodes):-1:1
-                    % check if file
-                    if strcmp(nodes(k).Value,'file')
-                        % check if label
-                        idx = strfind(nodes(k).Name,']');
-                        if ~isempty(idx)
-                            name{k} = strtrim(nodes(k).Name(idx+1:end));
-                            label{k} = strtrim(nodes(k).Name(2:idx-1));
-                        else
-                            name{k} = nodes(k).Name;
-                            label{k} = [];
-                        end
-                    else
-                        name{k} = nodes(k).Name;
-                        label{k} = [];
-                    end
-                end
-            end
-            h = 1;
-        end
-    end   
+        end %stackNodes       
+     end
 end
 
