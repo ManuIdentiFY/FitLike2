@@ -476,9 +476,16 @@ classdef FileManager  < handle
         function this = throwMessage(this, txt)
             % get previous text
             msg = this.gui.console.String;
-            % complete the last one with the new txt
-            msg{end} = [msg{end}, txt];
-            msg = [msg;{'>> '}];
+            % check if we need to add new line or not
+            if ~contains(txt,'\n')
+                % add new txt
+                msg{end} = [msg{end}, txt];
+            else
+                % add new txt and line
+                txt = strrep(txt,'\n','');
+                msg{end} = [msg{end}, txt];
+                msg = [msg;{'>> '}];
+            end
             % add new one
             set(this.gui.console, 'String', msg); drawnow;
             % get the Java object and move the position to the end

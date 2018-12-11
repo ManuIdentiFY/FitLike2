@@ -123,9 +123,8 @@ classdef FitLike < handle
                             else
                                 [data, parameter] = readsdfv2(filename);
                             end
-                        catch ME
-                            dispMsg(this, ['Error while importing file ' filename '. File not loaded.']) % simple error handling for file import
-                            dispMsg(this, ME.message)
+                        catch
+                            dispMsg(this, ['Error while importing file ' filename '. File not loaded.\n']) % simple error handling for file import
                             continue
                         end   
                         % get the data
@@ -139,7 +138,8 @@ classdef FitLike < handle
                             'yLabel',repmat({'Signal'},1,length(name)),...
                             'parameter',num2cell(parameter),...
                             'filename',name,'sequence',sequence,...
-                            'dataset',repmat(dataset,1,length(name)));                         
+                            'dataset',repmat(dataset,1,length(name)));  
+                        new_bloc = checkBloc(new_bloc);
                         % check duplicates
                         if ~isempty(this.RelaxData)
                             new_bloc = checkDuplicates(this, new_bloc);
@@ -217,7 +217,7 @@ classdef FitLike < handle
             % update FileManager
             addFile(this.FileManager, bloc);
             % throw message
-            dispMsg(this, sprintf('%d files have been imported!', numel(bloc)));
+            dispMsg(this, [sprintf('%d files have been imported!', numel(bloc)),'\n']);
                 %%-------------------------------------------------------%%
                 % Check if duplicates are imported
                 function bloc = checkDuplicates(this, bloc)
@@ -235,11 +235,25 @@ classdef FitLike < handle
                         msg = sprintf(['The following files '...
                             'are already stored in FitLike:\n\n%s'],...
                             sprintf('%s \n',listDuplicate{:}));
-                        dispMsg(this, msg);
+                        dispMsg(this, [msg, '\n']);
                         % delete duplicated
                         bloc(idx) = [];
                     end
                 end %checkDuplicated
+                
+                function bloc = checkBloc(bloc)
+                     % check if bloc are uniques
+                    [~,~,X] = unique(strcat({bloc.dataset},{bloc.sequence},...
+                        {bloc.filename}));
+                    Y = hist(X,unique(X));
+                    idx = find(Y > 1);
+                    for k = 1:numel(idx)
+                        ibloc = bloc(X == idx(k));
+                        new_filename = cellfun(@(x) [ibloc(1).filename,' (',num2str(x),')'],...
+                            num2cell(1:numel(ibloc)), 'Uniform',0);
+                        [bloc(X == idx(k)).filename] = new_filename{:};                        
+                    end
+                end %checkBloc
                 %%-------------------------------------------------------%%
         end %open
         
@@ -326,7 +340,7 @@ classdef FitLike < handle
                     else
                         export_data(this.RelaxData(tf), path);
                     end
-                    dispMsg(this, sprintf('Files exported...%d/%d',k,numel(fileID)));
+                    dispMsg(this, [sprintf('Files exported...%d/%d',k,numel(fileID)),'\n']);
                 end
             else
                 
@@ -337,7 +351,7 @@ classdef FitLike < handle
         function save(this)
             relaxData = this.RelaxData; %#ok<NASGU>
             uisave('relaxData','data');
-            dispMsg(this, 'Files saved succesfully!');
+            dispMsg(this, 'Files saved succesfully!\n');
         end %save
 
         %%% Edit Menu
@@ -622,7 +636,7 @@ classdef FitLike < handle
             fileID = getSelectedFile(this.FileManager);
             % according to the mode process, run it
             if isempty(fileID)
-                dispMsg(this, 'Warning: You need to select data to run process!');
+                dispMsg(this, 'Warning: You need to select data to run process!\n');
                 return
             elseif this.ProcessingManager.gui.BatchRadioButton.Value
                 % Batch mode
@@ -633,9 +647,10 @@ classdef FitLike < handle
                 end
                 % get the process array
                 ProcessArray = flip(tab.ProcessArray);
-                dispMsg(this, 'Starting to process file...');
+                dispMsg(this, 'Starting to process file...\n');
                 % loop over the file
                 for k = 1:numel(fileID)
+                    dispMsg(this, 'Processing...');
                     % get fileID
                     indx = find(strcmp({this.RelaxData.fileID}, fileID{k}));
                     % get the ancestor
@@ -690,7 +705,7 @@ classdef FitLike < handle
                             {relaxObj.displayName}, idxZone, 0);
                     end
                     drawnow % EDT
-                    dispMsg(this, sprintf('Terminated to process file...%d/%d',k,numel(fileID)));
+                    dispMsg(this, [sprintf('%d/%d',k,numel(fileID)),'\n']);
                 end %for
             else
                 % Simulation mode
@@ -706,16 +721,17 @@ classdef FitLike < handle
             [~, fileID, legendTag, ~] = getSelectedData(this.FileManager,[]);
             % according to the mode process, run it
             if isempty(fileID)
-                dispMsg(this, 'Warning: You need to select dispersion data to run fit!');
+                dispMsg(this, 'Warning: You need to select dispersion data to run fit\n!');
                 return
             elseif this.ModelManager.gui.BatchRadioButton.Value
-                throwMessage(this.FileManager, 'Starting to fit file...');
+                dispMsg(this, 'Starting to fit file...\n');
                 % Batch mode
                 tab = this.ModelManager.gui.tab.SelectedTab.Children;
                 % get the process array
                 ModelArray = tab.ModelArray;
                  % loop over the file
                 for k = 1:numel(fileID)
+                    dispMsg(this, 'Fitting...');
                     % check for correspondance (same data file)
                     tf = strcmp(strcat({this.RelaxData.fileID},...
                         {this.RelaxData.displayName}), strcat(fileID{k},...
@@ -734,7 +750,7 @@ classdef FitLike < handle
                     this.RelaxData(tf).processingMethod.model.modelName = tab.TabTitle;
                     % notify
                     notify(this.RelaxData(tf), 'DataHasChanged', EventData(NaN)) 
-                    dispMsg(this, sprintf('Terminated to fit file...%d/%d',k,numel(fileID)));
+                    dispMsg(this, [sprintf('%d/%d',k,numel(fileID)),'\n']);
                 end
                 drawnow;
                 updateResultTable(this.ModelManager);
