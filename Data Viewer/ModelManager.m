@@ -52,9 +52,9 @@ classdef ModelManager < handle
             set(this.gui.FileSelectionPopup,'Callback',...
                 @(src, event) updateResultTable(this));
             
-%             % Set callback if file is checked
-%             set(this.gui.tree,'CheckboxClickedCallback',...
-%                 @(src, event) updateFilePopup(this));
+            % Add listener to the Dispersion tree
+            addlistener(this.FitLike.FileManager.gui.treedata(1),...
+                'TreeHasChanged',@(src, event) updateFilePopup(this));
         end %ModelManager
         
         % Destructor
@@ -204,16 +204,14 @@ classdef ModelManager < handle
         % File checked in tree callback
         function this = updateFilePopup(this)
             % get the selected fileID;
-            fileID = nodes2fileID(this.gui.tree);
+            leg = getLegend(this.FitLike);
             % get the corresponding data
-            if ~isempty(fileID)
-                [~,~,idx] = intersect(fileID, {this.FitLike.RelaxData.fileID});
+            if ~isempty(leg)
                 % update file popup
-                this.gui.FileSelectionPopup.String = {this.FitLike.RelaxData(idx).filename};
-                this.gui.FileSelectionPopup.UserData = {this.FitLike.RelaxData(idx).fileID};
+                this.gui.FileSelectionPopup.String = leg;
             else
                 % reset filepopup
-                this.gui.FileSelectionPopup.String = 'Select a file:';
+                this.gui.FileSelectionPopup.String = {''};
             end
             drawnow;
         end %updateFilePopup
