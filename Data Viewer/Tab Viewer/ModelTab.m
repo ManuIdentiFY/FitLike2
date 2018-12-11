@@ -138,7 +138,7 @@ classdef ModelTab < uix.Container & handle
                        if newData > model.startPoint(tf)
                            javaMethodEDT('setValueAt',...
                                this.jtable, model.minValue(tf), row, col);
-                           warndlg('The minBoundarie need to be lower than the startPoint')
+                           dispMsg(this.FitLike, 'The minBoundarie need to be lower than the startPoint\n');
                        else
                            this.ModelArray(tf_model).minValue(tf) = newData;
                        end
@@ -148,7 +148,7 @@ classdef ModelTab < uix.Container & handle
                       if newData < model.startPoint(tf)
                           javaMethodEDT('setValueAt',...
                                this.jtable, model.maxValue(tf), row, col);
-                          warndlg('The maxBoundarie need to be higher than the startPoint')
+                           dispMsg(this.FitLike, 'The maxBoundarie need to be higher than the startPoint\n');
                       else
                            this.ModelArray(tf_model).maxValue(tf) = newData;
                        end    
@@ -158,7 +158,7 @@ classdef ModelTab < uix.Container & handle
                        if model.minValue(tf) > newData || model.maxValue(tf) < newData
                            javaMethodEDT('setValueAt',...
                                this.jtable, model.startPoint(tf), row, col);
-                           warndlg('The startPoint need to be between the min and max boundaries')
+                           dispMsg(this.FitLike, 'The startPoint need to be between the min and max boundaries\n');
                        else
                            this.ModelArray(tf_model).startPoint(tf) = newData;
                        end
