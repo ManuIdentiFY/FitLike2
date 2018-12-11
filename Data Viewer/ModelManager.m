@@ -16,11 +16,10 @@ classdef ModelManager < handle
             this.FitLike = FitLike;
                       
             % Make the figure
-            [gui, jtable] = buildModelManager(FitLike);
+            [gui, jtable] = buildModelManager();
             this.gui = guihandles(gui);     
             
             % Update handle
-            this.gui.tree = this.gui.tree.UserData;
             this.gui.jtable = jtable.getModel.getActualModel.getActualModel;
             
             % Set the first tab and the '+' tab
@@ -53,13 +52,9 @@ classdef ModelManager < handle
             set(this.gui.FileSelectionPopup,'Callback',...
                 @(src, event) updateResultTable(this));
             
-            % Set callback if file is checked
-            set(this.gui.tree,'CheckboxClickedCallback',...
-                @(src, event) updateFilePopup(this));
-            
-            % Add listener to the FileManager tree
-%             addlistener(this.FitLike.FileManager.gui.tree,...
-%                 'TreeUpdate',@(src, event) updateTree(this, src, event));
+%             % Set callback if file is checked
+%             set(this.gui.tree,'CheckboxClickedCallback',...
+%                 @(src, event) updateFilePopup(this));
         end %ModelManager
         
         % Destructor
@@ -89,60 +84,6 @@ classdef ModelManager < handle
                 'Callback',@(src,event) removeModel(this));  
             this.gui.tab.SelectedTab.UIContextMenu = cmenu;  
         end
-        
-        % Update tree
-        function this = updateTree(this, ~, event)
-            % get the tree
-            root = this.gui.tree.Root;
-            % check the type of update: insert or delete
-            if strcmp(event.Action, 'Add')
-                % search the parent node
-                parentNode = TreeManager.searchNode(root, event.Parent);
-                copy(event.Data, parentNode);
-                % update
-                updateFilePopup(this);
-                updateResultTable(this);
-            elseif strcmp(event.Action, 'Delete')
-                % search the node to delete
-                for k = 1:numel(event.Data)
-                    % search the node
-                    node = TreeManager.searchNode(root, event.Data(k));                    
-                    delete(node);
-                end
-                % update
-                updateFilePopup(this);
-                updateResultTable(this);
-            elseif strcmp(event.Action,'ReOrder')
-                % reorder children
-                node = TreeManager.searchNode(root, event.Data(1));  
-                TreeManager.stackNodes(node.Parent.Children, event.NewOrder, []);
-            elseif strcmp(event.Action, 'DragDrop')
-                % get old parent node
-                oldParent = TreeManager.searchNode(root, event.OldParent);  
-                % get new parent node
-                newParent = TreeManager.searchNode(root, event.Parent);
-                % deparent the corresponding node
-                tf = strcmp(get(oldParent.Children,'Name'), event.Data.Name);
-                hNode = oldParent(tf).Children;
-                hNode.Parent = [];
-                TreeManager.stackNodes(newParent.Children, event.NewOrder, hNode); 
-                % delete old parent if no more children
-                if isempty(oldParent.Children)
-                    delete(oldParent)
-                end
-            elseif strcmp(event.Action, 'UpdateName')
-                % search the parent nodes
-                hParent = TreeManager.searchNode(root, event.Parent); 
-                % find the modified nodes
-                tf = strcmp(get(hParent.Children,'Name'),event.OldName);
-                hParent.Children(tf).Name = event.NewName;
-            elseif strcmp(event.Action, 'UpdateIcon')
-                % search the node
-                hNode = TreeManager.searchNode(root, event.Parent); 
-                % reset icon
-                setIcon(hNode, event.Data);
-            end
-        end %updateTree
         
         % Select Model
         function this = selectModel(this)
