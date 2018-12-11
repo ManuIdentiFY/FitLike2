@@ -49,8 +49,8 @@ classdef ProcessingManager < handle
                 @(src, event) this.FitLike.runProcess());
             
             % Add listener to the FileManager tree
-            addlistener(this.FitLike.FileManager.gui.tree,...
-                'TreeUpdate',@(src, event) updateTree(this, src, event));
+%             addlistener(this.FitLike.FileManager.gui.tree,...
+%                 'TreeUpdate',@(src, event) updateTree(this, src, event));
         end %ProcessingManager
         
         % Destructor
