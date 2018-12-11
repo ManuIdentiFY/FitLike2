@@ -605,6 +605,11 @@ classdef FitLike < handle
             [c, fileID, displayName, idx] = getDataID(this.DisplayManager.gui.tab.SelectedTab.Children);
         end
         
+        % Wrapper to get legend (avoid fit)
+        function leg = getLegend(this)
+             leg = getLegend(this.DisplayManager.gui.tab.SelectedTab.Children);
+        end
+        
         % Mask data
         function setMask(~, ~, event)
             if strcmp(event.Action,'SetMask')

@@ -817,6 +817,18 @@ classdef DispersionTab < EmptyTab
                                'Action', 'ResetMask');
             setMask(this.FitLike, this, eventdata);
         end % resetMaskData
+        
+        % get legend: avoid fit
+        function leg = getLegend(this)
+            % get the data plotted
+            hData = findobj(this.axe.Children,'Type','ErrorBar');
+            
+            if isempty(hData)
+                leg = []; return
+            else
+                leg = {hData.DisplayName}; 
+            end
+        end %getLegend
     end
 end
 
