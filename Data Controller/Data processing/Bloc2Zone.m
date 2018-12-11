@@ -98,9 +98,6 @@ classdef Bloc2Zone < ProcessDataUnit
                     'sequence',repmat({bloc.sequence},size(celldz)),...
                     'dataset',repmat({bloc.dataset},size(celldz)),...
                     'label',repmat({bloc.label},size(celldz)));
-
-                % link the children and parent objects
-                %[bloc,zone] = link(bloc,zone);
             elseif length(bloc.children) < Nzone
                 % case when the new processing function produces more
                 % outputs than the previous one. In that case we replace
@@ -119,8 +116,6 @@ classdef Bloc2Zone < ProcessDataUnit
                     'sequence',repmat({bloc.sequence},size(index)),...
                     'dataset',repmat({bloc.dataset},size(index)),...
                     'label',repmat({bloc.label},size(index)));
-                % link the children and parent objects
-                %[bloc,~] = link(bloc,zone);
                 % add the other zone objects to return them all
                 zone = bloc.children;
             else
@@ -131,7 +126,7 @@ classdef Bloc2Zone < ProcessDataUnit
                     'x',x,'xLabel',labelX,...
                     'y',cellz,'dy',celldz,'yLabel',labelY,...
                     'parameter',params,'legendTag',legendTag);
-                remove(bloc.children(Nzone+1:end));
+                remove(bloc.children, Nzone+1:numel(bloc.children));
                 zone = bloc.children;
             end
         end

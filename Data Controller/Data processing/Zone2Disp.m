@@ -94,10 +94,7 @@ classdef Zone2Disp < ProcessDataUnit
                     'sequence',repmat({zone.sequence},size(cellz)),...
                     'dataset',repmat({zone.dataset},size(cellz)),...
                     'label',repmat({zone.label},size(cellz)));
-
-                % link the children and parent objects
-                [zone,dispersion] = link(zone,dispersion);
-            elseif length(zone.children) < length(cellz)
+            elseif length(zone.children) < Nzone
                 % case when the new processing function produces more
                 % outputs than the previous one. In that case we replace
                 % when can be replaced and create new zone objects
@@ -115,8 +112,6 @@ classdef Zone2Disp < ProcessDataUnit
                     'sequence',repmat({zone.sequence},size(index)),...
                     'dataset',repmat({zone.dataset},size(index)),...
                     'label',repmat({zone.label},size(index)));
-                % link the children and parent objects
-                %[zone,~] = link(zone,zone);
                 % add the other zone objects to return them all
                 dispersion = zone.children;
             else
@@ -127,7 +122,7 @@ classdef Zone2Disp < ProcessDataUnit
                     'x',x,'xLabel',labelX,...
                     'y',cellz,'dy',celldz,'yLabel',labelY,...
                     'parameter',params,'legendTag',legendTag);
-                remove(zone.children(Nzone+1:end));
+                remove(zone.children, Nzone+1:numel(zone.children));
                 dispersion = zone.children;
             end
         end
