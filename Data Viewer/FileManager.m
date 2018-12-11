@@ -278,7 +278,7 @@ classdef FileManager  < handle
                        filename, this.FileIcon, 'filename');
                    hFile.UserData = fileID;
                    % add relaxObj
-                   addRelaxObj(this, hFile, icon, datainfo.(fld{tf}))
+                   addRelaxObj(this, hFile, icon, datainfo.(fld{tf}));
                else
                    % check if the file exists
                    hFile = root.Children;
@@ -301,14 +301,14 @@ classdef FileManager  < handle
                        % remove or add some relaxObj
                        if nOldRelax > nNewRelax
                            % remove some relaxObj
-                           delete(hRelaxObj(nNewRelax+1:end))
+                           delete(hRelaxObj(nNewRelax+1:end));
                            hRelaxObj(nNewRelax+1:end) = []; %clear
                            %hRelaxObj = hRelaxObj(1:nOldRelax); %clear
                        elseif nOldRelax < nNewRelax
                            name = datainfo.(fld{tf});
                            name{1} = name{1}(1:nNewRelax-nOldRelax);
                            % add some relaxObj
-                           addRelaxObj(this, hFile, icon, name)
+                           addRelaxObj(this, hFile, icon, name);
                        end
                        % set new name
                        [hRelaxObj.Name] = datainfo.(fld{tf}){1}{:};
