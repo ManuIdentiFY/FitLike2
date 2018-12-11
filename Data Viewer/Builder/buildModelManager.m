@@ -80,7 +80,7 @@ hbox_result.Widths = [80 -1];
 % add treetable
 container = uicontainer( 'Parent', box_result);
 
-header = {'M','M','Parameter','Best','Error'};
+header = {'Model','Model','Parameter','Best','Error'};
 type = {'char','char','char','',''};
 editable = {false,false,false,false,false};
 dummy_data = {'','','',0,0};
@@ -92,7 +92,7 @@ warning on
 javaMethodEDT('addGroupColumn',jtable.getModel.getActualModel,1);
 javaMethodEDT('groupAndRefresh',jtable.getModel.getActualModel);   
 % store handle to the data and remove the dummy row   
-%jtable = jtable;
+cellRenderer = jtable.getDefaultCellRenderer();
 javaMethodEDT('removeRow',jtable.getModel.getActualModel.getActualModel,0); 
 
 box_result.Heights = [25 -1];
