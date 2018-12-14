@@ -1079,9 +1079,9 @@ classdef Tree < hgsetget
             value = round(value * dpi / 72);
             
             % Create a new Java font
-%             jFont = javax.swing.plaf.FontUIResource(jFont.getName(),...
-%                 java.awt.Font.PLAIN, value);
-            jFont = java.awt.Font(jFont.getName(), java.awt.Font.PLAIN, value);
+            jFont = javax.swing.plaf.FontUIResource(jFont.getName(),...
+                java.awt.Font.PLAIN, value);
+            %jFont = java.awt.Font(jFont.getName(), java.awt.Font.PLAIN, value);
             
             % Set the font size (in pixels)
             tObj.jTree.setFont(jFont);
