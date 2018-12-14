@@ -1,17 +1,26 @@
 classdef RelaxObj < handle
-    % This class manage Stelar data from the SPINMASTER relaxometer. It is
-    % also the Model according to the MVP model.
+    % This class manage Stelar data from the SPINMASTER relaxometer.
     %
     % See also DATAUNIT, BLOC, ZONE, DISPERSION
     
-    properties (SetAccess = public)
-        filename % array of string of the filenames
-        sequence % array of string of the sequences
-        label % array of string of the labels
-        data % array of DataUnit containing data
-        parameters % array of cell containing parameter structures
-        FitLike % store the Presenter in the Model (MVP)
+    % file properties
+    properties (Access = public)
+        label@char = '';        % label of the file ('control','tumour',...)
+        filename@char = '';            % name of the file ('file1.sdf')
+        sequence@char = '';            % name of the sequence ('IRCPMG')
+        dataset@char = 'myDataset';    % name of the dataset('ISMRM2018')
     end
+    
+    properties (Hidden)
+        fileID@char;   % generate unique ID 
+        subRelaxObj@RelaxObj
+    end
+    
+    % data properties
+    properties (Access = public)
+        data@DataUnit
+        parameter@ParamObj = ParamObj();  
+    end  
     
     methods
         % Constructor: RelaxObj()
@@ -30,46 +39,40 @@ classdef RelaxObj < handle
                     error(['Wrong argument ''' varargin{ind} ''' or invalid value/attribute associated.'])
                 end                           
             end 
-            % set the presenter
-            obj.FitLike = FitLike;
+            % add fileID
+            obj.fileID = char(java.util.UUID.randomUUID);
         end %RelaxObj         
         
-        % Data processing: processFile()
-        function obj = processFile(obj,idx,method,model)
-            % check input 
-            if ~isa(obj,'RelaxObj')
-                return
-            end
-            % apply getzone()
-
-            % apply getdisp()
-          
-            % store the method and model in the DataUnit array
-        end %processFile
-        
         % Data formating: mergeFile()
-        function obj = mergeFile(obj,idx)
+        function obj = merge(obj_list)
             % check input
-            if ~isa(obj,'RelaxObj') || length(idx) < 2
+            if numel(obj_list) < 2
                 return
             end
-            % check if files already merged by looking at the parent
-            % DataUnit size
-
-            % merge the data
-            
-            % create new DataUnit
-
+            % check if files are already merged
+            switch isMerged(obj_list)
+                case 0
+                    % merge data and parameter
+                    merged_data = merge([obj_list.data]);
+                    merged_parameter = merge([obj_list.parameter]);
+                    % create merged object from first object list
+                    obj_list(1).data = merged_data;
+                    obj_list(1).parameter = merged_parameter;
+                    obj_list(1).subRelaxObj = obj_list;
+                    obj = obj_list(1);
+                case 1
+                    % unmerge data and parameter
+                    unmerged_data = merge([obj_list.data]);
+                    unmerged_parameter = merge([obj_list.parameter]);
+                    % create unmerged object
+%                     obj_list(1).data = merged_data;
+%                     obj_list(1).parameter = merged_parameter;
+%                     obj = obj_list.subRelaxObj;
+                otherwise
+                    % mix of merged and unmerged files
+                    return
+            end
         end %mergeFile
-        
-        % Data formating: unmergeFile()
-        function obj = unmergeFile(obj,idx)
-        end %unmergeFile
-        
-        % Data processing: averageFile()
-        function obj = averageFile(obj,idx)
-        end %averageFile       
-        
     end
 end
 
