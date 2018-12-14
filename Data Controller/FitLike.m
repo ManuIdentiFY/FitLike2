@@ -320,6 +320,8 @@ classdef FitLike < handle
             this.RelaxData = remove(this.RelaxData, idx);
             % update FileManager
             deleteFile(this.FileManager)
+            % throw message
+            dispMsg(this, [num2str(numel(idx)),' files have been removed \n']);
         end %remove
         
         % Export function: allow to export data (dispersion, model)
@@ -533,8 +535,8 @@ classdef FitLike < handle
                     [~, plotFlag, ~] = addPlot(this.DisplayManager, hData, idx(k));
                     if ~plotFlag
                         % uncheck this node
-                        dispMsg(this, sprintf(['Cannot plot %s:'...
-                            'the data type doesnt fit with the current tab!'], hData.filename));
+                        dispMsg(this, ['Cannot plot ',hData.filename,...
+                            ': the data type doesnt fit with the current tab!\n']);
                         hNode(k).Checked = 0;
                     end
                     pause(0.005)
