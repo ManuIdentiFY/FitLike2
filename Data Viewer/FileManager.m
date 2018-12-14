@@ -341,15 +341,17 @@ classdef FileManager  < handle
             % be sure to get the file
             hFile = TreeManager.getEndChild(event.CheckedNodes);
             % add or remove data
-            src.Enable = 'off';
+            %src.Enable = 'off';
             if all([hFile.Checked] == 0)
                % fire event
                for k = 1:numel(hFile)
                    hData = search(this.SelectedTree, hFile(k).UserData);
-                   legendTag = {hData.Children.Name};
-                   removeData(this.FitLike, this.SelectedTree.Tag,...
-                          repmat({hData.UserData},1,numel(legendTag)),...
-                          legendTag, repelem(NaN, 1, numel(legendTag)));
+                   if ~isempty(hData)
+                       legendTag = {hData.Children.Name};
+                       removeData(this.FitLike, this.SelectedTree.Tag,...
+                              repmat({hData.UserData},1,numel(legendTag)),...
+                              legendTag, repelem(NaN, 1, numel(legendTag)));
+                   end
                end
                % remove data from the data panel
                removeData(this, {hFile.UserData});
@@ -358,7 +360,7 @@ classdef FileManager  < handle
                addData(this, hFile);
             end
             drawnow nocallbacks
-            src.Enable = 'on';
+            %src.Enable = 'on';
         end %selectFile
         
         function this = editFile(this, ~, event)
@@ -378,7 +380,7 @@ classdef FileManager  < handle
             % get the selected data
             [hData, fileID, legendTag, idx] = getSelectedData(this, event.CheckedNodes);
             % fire event
-            src.Enable = 'off';
+            %src.Enable = 'off';
             if all([hData.Checked] == 0)
                    removeData(this.FitLike, this.SelectedTree.Tag,...
                         fileID, legendTag, idx);
@@ -388,7 +390,7 @@ classdef FileManager  < handle
             end
             % notify
             notify(this.SelectedTree, 'TreeHasChanged');
-            src.Enable = 'on';
+            %src.Enable = 'on';
             drawnow nocallbacks
         end %selectData
        
