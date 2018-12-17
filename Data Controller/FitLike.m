@@ -319,7 +319,7 @@ classdef FitLike < handle
             [~,idx,~] = intersect({this.RelaxData.fileID}, fileID);
             this.RelaxData = remove(this.RelaxData, idx);
             % update FileManager
-            deleteFile(this.FileManager)
+            deleteFile(this.FileManager);
             % throw message
             dispMsg(this, [num2str(numel(idx)),' files have been removed \n']);
         end %remove

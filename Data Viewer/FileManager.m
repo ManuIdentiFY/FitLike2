@@ -138,12 +138,14 @@ classdef FileManager  < handle
            hFile = TreeManager.getEndChild(hNodes);
            removeData(this, {hFile.UserData});
            % root
-           if isempty(hNodes.Parent)
-               delete(hNodes.Children);
-               this.gui.treefile.Root.Checked = 0;
-           else
-               delete(hNodes);
-           end     
+           for k = 1:numel(hNodes)
+               if isempty(hNodes(k).Parent)
+                   delete(hNodes(k).Children);
+                   this.gui.treefile.Root.Checked = 0;
+               else
+                   delete(hNodes(k));
+               end   
+           end
        end %deleteFile
        
        % check file.
@@ -337,7 +339,7 @@ classdef FileManager  < handle
     
     % Tree methods: Data and File access
     methods       
-        function this = selectFile(this, src, event)
+        function this = selectFile(this, ~, event)
             % be sure to get the file
             hFile = TreeManager.getEndChild(event.CheckedNodes);
             % add or remove data
@@ -376,7 +378,7 @@ classdef FileManager  < handle
             end  
         end %editFile
         
-        function this = selectData(this, src, event)
+        function this = selectData(this, ~, event)
             % get the selected data
             [hData, fileID, legendTag, idx] = getSelectedData(this, event.CheckedNodes);
             % fire event

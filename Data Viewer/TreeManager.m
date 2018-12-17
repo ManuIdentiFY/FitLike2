@@ -209,14 +209,22 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
         
         % get all deepest child (root is automaticaly removed)
         function hChildren = getEndChild(hParent)
-            % init
-            if isempty(hParent.Children)
-                hChildren = hParent; 
-            else
-                % search recursively along the tree
-                [hChildren, ~] = visit(hParent, [], hParent);
+            % loop over the input
+            if isempty(hParent)
+                return
             end
-                       
+            % init
+            for k = numel(hParent):-1:1
+                if isempty(hParent(k).Children)
+                    hChildren{k} = hParent(k); 
+                else
+                    % search recursively along the tree
+                    [hChildren{k}, ~] = visit(hParent(k), [], hParent(k));
+                end
+            end       
+            % uncell
+            hChildren = [hChildren{:}];
+            
             %%% ---- Nested function ----- %%%
             function [hChild, currentNode] = visit(currentNode, hChild, hStop)
                 % check the currentNode
