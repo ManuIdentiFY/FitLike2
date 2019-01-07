@@ -11,6 +11,10 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
         FitLike
     end
     
+    properties (Hidden)
+        valid_target % define the valid target for each source
+    end
+    
     events
        TreeHasChanged        
     end
@@ -28,6 +32,104 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                  set(this,'NodeDroppedCallback', @(s,e) DragDrop(this, s,e));
             end
         end %TreeManager
+        
+        % this function determines if the dragged target is valid or not
+        % and drop the object.
+        % VALID_TARGET input defines if the target is valid according
+        % to the source (can be empty). The property Value is used to do
+        % the comparison.
+        % VALID_TARGET is a Nx2 cell array if non empty where the first
+        % column if the source and the second, a cell array,
+        % the single or multiple target(s).
+        function DropOk = DragDrop(this, ~, event)
+            % Is this the drag or drop part?
+            DoDrop = ~(nargout); % The drag callback expects an output, drop does not
+
+            % get source and target
+            src = event.Source;
+            target = event.Target;
+            
+            % check if the target is valid according to the source selected
+            if ~isempty(this.valid_target)
+                % find which source is activated
+                tf = strcmp(src.Value, this.valid_target(:,1));
+                
+                if all(tf == 0)
+                    error('Source is unknown!');
+                end
+                
+                % check if the current target is one of the possible valid target
+                if ~all(strcmp(target.Value, this.valid_target{tf,2}) == 0)
+                    DropOk = true;
+                else
+                    DropOk = false;
+                end
+            else
+                DropOk = true;
+            end
+
+            % If drop is allowed
+            if DoDrop && strcmpi(event.DropAction,'move')
+                % Get list of children in target container
+                hChildren = [target.Parent.Children];
+                % Get index or source and target
+                idxTarget = find(hChildren == target);
+                idxSource = find(hChildren == src);
+                isChecked = logical(src.Checked);
+                % check if we change the parent node
+                if src.Parent ~= target.Parent
+                    % store parent handle for updating
+                    hParent = src.Parent;                    
+                    % set the new order
+                    new_order = [1:(idxTarget-1) NaN idxTarget:numel(hChildren)];
+                    
+                    % check if duplicate
+                    tf = strcmp({hChildren.Name}, src.Name);
+                    if ~all(tf == 0)
+                        % throw warning
+                        msg = sprintf(['You can not drop your %s as is in this %s '...
+                            'because it already contains the same %s: %s.'],src.Value,...
+                            hParent.Value, src.Value, src.Name);
+                        dispMsg(this.FitLike, msg);
+                        return
+                    else
+                        % update data
+                        nodes = TreeManager.getEndChild(src);
+                        target_node = target;
+                        while ~isempty(target_node.Parent.Parent)
+                            target_node = target_node.Parent;
+                            editFile(this.FitLike, {nodes.UserData},...
+                                target_node.Value, target_node.Name);   
+                        end
+                    end
+                    
+                    % De-parent
+                    src.Parent = [];
+                    % reorder children
+                    this.Visible = 'off';
+                    TreeManager.stackNodes(hChildren, new_order, src);
+                    this.Visible = 'on';
+                    % delete old parent if no more children
+                    if isempty(hParent.Children)
+                        delete(hParent)
+                    end
+                else                 
+                    % prepare re-ordering
+                    new_order = 1:numel(hChildren);
+                    new_order(idxTarget) = idxSource; 
+                    new_order(idxSource) = idxTarget;
+                    % reorder children
+                    this.Visible = 'off';
+                    TreeManager.stackNodes(hChildren, new_order, []);
+                    this.Visible = 'on';
+                end
+                
+                % re-check node if needed
+                if isChecked
+                   src.Checked = 1; 
+                end
+            end
+        end %DragDrop 
         
         % Search node based on its tag (userdata). Stop at the first node!
         function hNode = search(this, tag)
