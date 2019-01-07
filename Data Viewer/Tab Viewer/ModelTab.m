@@ -6,8 +6,7 @@ classdef ModelTab < uix.Container & handle
     properties (Access = public)
         FitLike % Presenter
         jtable % treetable 
-        container % container for treetable
-        TabTitle % tab title        
+        container % container for treetable      
         ModelArray % list of the model
     end
     
@@ -17,15 +16,13 @@ classdef ModelTab < uix.Container & handle
             % Call superclass constructor
             this@uix.Container();
             this.FitLike = FitLike;
-            % set Title
-            this.TabTitle = TabTitle;
             % Create the grid in the parent tab
             grid = uix.Grid('Parent',this,'Spacing', 2); 
             % Create vertical box
             box = uix.VBox( 'Parent', grid, 'Padding', 2);
             % set the Parent 
             this.Parent = tab;
-            this.Parent.Title = this.TabTitle;            
+            this.Parent.Title = TabTitle;            
            
             % add treetable
             this.container = uicontainer( 'Parent', box);

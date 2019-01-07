@@ -338,7 +338,7 @@ classdef FitLike < handle
                     tf = strcmp({this.RelaxData.fileID}, fileID{k});
                     % check if dispersion
                     if ~isa(this.RelaxData(tf), 'Dispersion')
-                        continue
+                        dispMsg(this, [sprintf('Cannot export this file...%d/%d',k,numel(fileID)),'\n']);
                     else
                         export_data(this.RelaxData(tf), path);
                     end
@@ -756,7 +756,7 @@ classdef FitLike < handle
                     % apply the process
                     processData(this.RelaxData(tf)); 
                     % update model name
-                    this.RelaxData(tf).processingMethod.model.modelName = tab.TabTitle;
+                    this.RelaxData(tf).processingMethod.model.modelName = tab.Parent.Title;
                     % notify
                     notify(this.RelaxData(tf), 'DataHasChanged', EventData(NaN)) 
                     dispMsg(this, [sprintf('%d/%d',k,numel(fileID)),'\n']);
