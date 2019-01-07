@@ -141,9 +141,28 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 drawnow;
             end
         end
+        
+                function set.FontSize(tObj, value)
+            
+            % Get the current font
+            jFont = tObj.jTree.getFont();
+            
+            % Convert value from points to pixels
+            dpi = java.awt.Toolkit.getDefaultToolkit.getScreenResolution();
+            value = round(value * dpi / 72);
+            
+            % Create a new Java font
+            %jFont = javax.swing.plaf.FontUIResource(jFont.getName(),...
+                %java.awt.Font.PLAIN, value);
+            jFont = java.awt.Font(jFont.getName(), java.awt.Font.PLAIN, value);
+            
+            % Set the font size (in pixels)
+            tObj.jTree.setFont(jFont);
+            %tObj.jTree.repaint()
+        end % set.FontSize
     end
     
-    methods (Static)
+     methods (Static)         
          % Function from http://undocumentedmatlab.com/ website.
          % Modified to handle multiple callbacks call (here edit and
          % check).
@@ -269,8 +288,8 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
         
         % This function allow to reorder nodes. A new node can also be
         % insert at the position indicates by 'NaN'.
-        % Example: hNodes = stackNodes(hNodes,[1 3 2]);
-        %          hNodes = stackNodes(hNodes,[1 3 NaN 4),newNode);
+        % Example: hNodes = stackNodes(tree, hNodes,[1 3 2]);
+        %          hNodes = stackNodes(tree, hNodes,[1 3 NaN 4),newNode);
         function hNodes = stackNodes(hNodes, new_order, newNode)
             % check if a new node need to be inserted
             if isempty(newNode) && numel(hNodes) == numel(new_order)
