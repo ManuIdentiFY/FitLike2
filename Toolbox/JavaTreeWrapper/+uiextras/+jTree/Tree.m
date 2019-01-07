@@ -577,7 +577,7 @@ classdef Tree < hgsetget
         
         function onCollapse(tObj,e)
             % Occurs when a node is collapsed
-            
+
             % Is there a custom NodeCollapsedCallback?
             if callbacksEnabled(tObj) && ~isempty(tObj.NodeCollapsedCallback)
                 

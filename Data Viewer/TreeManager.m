@@ -28,8 +28,8 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             this.FitLike = FitLike;
             % add callback if possible
             if this.DndEnabled
-                 set(this,'NodeDraggedCallback',@(s,e) DragDrop(this, s,e));
-                 set(this,'NodeDroppedCallback', @(s,e) DragDrop(this, s,e));
+                 set(this,'NodeDraggedCallback',@(s,e) DragDrop(this,s,e));
+                 set(this,'NodeDroppedCallback', @(s,e) DragDrop(this,s,e));
             end
         end %TreeManager
         
@@ -123,7 +123,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                     TreeManager.stackNodes(hChildren, new_order, []);
                     this.Visible = 'on';
                 end
-                
+
                 % re-check node if needed
                 if isChecked
                    src.Checked = 1; 
