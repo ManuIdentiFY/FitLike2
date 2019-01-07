@@ -575,6 +575,17 @@ classdef FitLike < handle
              if strcmp(propname, 'filename')
                 notify(this.RelaxData(indx), 'FileHasChanged', EventFile(oldName, newValue)); 
              end
+             
+             % send message
+             listDuplicate = arrayfun(@(x) sprintf(['%s\t'...
+                            '(Sequence: %s)'], x.filename, x.sequence),...
+                            bloc(idx),'UniformOutput',0);
+                        % display message
+                        msg = sprintf(['The following files are modified:\n '...
+                            'are already stored in FitLike:\n\n%s'],...
+                            sprintf('%s \n',fileID{:}));
+             fprintf('The file %s is modified...\n',fileID)
+             fprintf('The property %s has changed: from %s to %s\n', propname, oldName, newValue)
         end %editFile
         
         % Wrapper to throw message
