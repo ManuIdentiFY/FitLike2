@@ -467,23 +467,6 @@ classdef FitLike < handle
     end      
     %% --------------------- FileManager Callback ---------------------- %%  
     methods (Access = public)                
-        % Callback to update data when using DragDrop method
-        function editDragDropFile(this, oldFileID, newFileID)
-            PROP_LIST = {'dataset','sequence','filename','displayName'};
-            % get the corresponding object
-            oldFileID = strsplit(oldFileID,'@');
-            tf = true(size(this.RelaxData));
-            for k = 1:numel(oldFileID)
-                tf = tf & strcmp({this.RelaxData.(PROP_LIST{k})},...
-                    oldFileID{k});
-            end
-            % update their properties
-            newFileID = strsplit(newFileID,'@');
-            for k = 1:numel(newFileID)-1
-                [this.RelaxData(tf).(PROP_LIST{k})] = deal(newFileID{k});
-            end
-        end %editDragDropFile
-
         % Get datafile info: WILL CHANGED SOON! DUMMY FUNCTION
         function datainfo = getFileInfo(this, fileID)
             % get the corresponding data(s)
