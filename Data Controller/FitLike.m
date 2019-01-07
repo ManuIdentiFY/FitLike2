@@ -357,6 +357,43 @@ classdef FitLike < handle
         end %save
 
         %%% Edit Menu
+        % Add label
+        function this = addLabel(this, src)
+            % check if files are selected
+            fileID = getSelectedFile(this.FileManager);
+            if isempty(fileID)
+                dispMsg(this,'You need to select files to define labels!\n')
+            end
+            
+            % check if new label or not
+            if strcmp(src.Label,'Add Label')
+                % ask user
+                answer = inputdlg({'Enter a label:'},'Label',[1 40],{'0'});
+                if isempty(answer{1})
+                    return
+                else
+                    label = answer{1};
+                end
+
+                % add this label to the list
+                [~, icon] = addLabelItem(this.FitLikeView, label);
+                
+                if isempty(icon)
+                    dispMsg('You have reach the maximal number of label!\n');
+                    return
+                end
+            else
+                label = src.Label;
+                icon = src.UserData;
+            end
+            
+            % update selected files
+            [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
+            [this.RelaxData(indx).label] = deal(label);
+            
+            % update FileManager
+            addLabel(this.FileManager, icon);
+        end %addLabel
         % Move function: allow to move files to another sequence, dataset
         function this = move(this)
             

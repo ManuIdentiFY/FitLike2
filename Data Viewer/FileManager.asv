@@ -19,7 +19,8 @@ classdef FileManager  < handle
         FileIcon = fullfile(matlabroot,'toolbox','matlab','icons','HDF_filenew.gif');
         RelaxObjIcon = {fullfile(matlabroot,'toolbox','matlab','icons','unknownicon.gif'),...
                         fullfile(matlabroot,'toolbox','matlab','icons','HDF_object01.gif'),...
-                        fullfile(matlabroot,'toolbox','matlab','icons','HDF_object02.gif')};          
+                        fullfile(matlabroot,'toolbox','matlab','icons','HDF_object02.gif')};
+        LabelIcon = '...\Data Viewer\icons\';            
     end
     
     methods (Access = public)
@@ -340,15 +341,14 @@ classdef FileManager  < handle
        end %resetFileTree
        
        % add label to the selected nodes
-       function this = addLabel(this, icon)
+       function this = addLabel(this, n)
            % get the selected nodes (files)
-           hFile = TreeManager.getEndChild(this.gui.treefile.CheckedNodes);
+           hFile = TreeManager.getEndChild(event.CheckedNodes);
            
            if ~isempty(hFile)
                % set label
                for k = 1:numel(hFile)
-                   setIcon(hFile(k), icon);
-               end
+                   setIcon(hFile(k),
            end
        end %addLabel
     end

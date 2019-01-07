@@ -114,17 +114,11 @@ classdef FitLikeView < handle
             uimenu( this.gui.LabelList,...
                 'Label', new_label,'UserData',icon,...
                 'Callback',@(src,event) this.FitLike.addLabel(src));
-            drawnow;
-            
-            % add java icon - close and open menu to prevent errors
-            % See http://undocumentedmatlab.com/blog/customizing-menu-items-part-2/#dynamic           
-            jMenuLabel = findjobj(this.gui.LabelList);
-            
-            jMenuLabel.doClick(); % open the File menu
-            jMenuLabel.doClick(); % close the menu           
-            pause(0.001); %EDT
-            
-            jLabel = jMenuLabel.getMenuComponent(n);
+            pause(0.1); drawnow;
+            % get the Java Frame handle and add the icon
+            jMenu = findjobj(this.gui.LabelList);
+            jLabel = javaMethodEDT('getMenuComponent',jMenu,n);
+            jLabel = jMenu.getMenuComponent(n);
             jLabel.setIcon(javax.swing.ImageIcon(icon));
         end %addLabelItem
     end
