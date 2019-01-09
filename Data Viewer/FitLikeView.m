@@ -141,7 +141,7 @@ classdef FitLikeView < handle
             % See http://undocumentedmatlab.com/blog/customizing-menu-items-part-2/#dynamic           
             jMenuLabel = findjobj(this.gui.LabelList);
             
-            jMenuLabel.doClick(); pause(0.001); % open the File menu
+            jMenuLabel.doClick(); pause(0.005); % open the File menu
             jMenuLabel.doClick(); pause(0.005); % close the menu           
             
             jLabel = jMenuLabel.getMenuComponent(n);
