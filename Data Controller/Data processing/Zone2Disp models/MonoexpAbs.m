@@ -26,7 +26,7 @@ classdef MonoexpAbs < Zone2Disp
                                  2*c(4).^2); %exponential model with Gaussian noise
             
             opts = statset('nlinfit');
-            opts.Robust = 'on';
+            opts.Robust = 'off';
             opts.Display = 'off';
             opts.MaxFunEvals = 1e8;
             opts.MaxIter = 3e4;
