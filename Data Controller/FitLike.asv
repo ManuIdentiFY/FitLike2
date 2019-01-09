@@ -358,27 +358,76 @@ classdef FitLike < handle
 
         %%% Edit Menu
         % Add label
-        function this = addLabel(this)
+        function this = addLabel(this, src)
             % check if files are selected
             fileID = getSelectedFile(this.FileManager);
             if isempty(fileID)
-                dispMsg(this,'You need to select files to define labels!\n')
+                dispMsg(this,'You need to select files to define labels!\n');
+                return
             end
             
-            % ask user
-            answer = inputdlg({'Enter a label:'},'Label',[1 40],{'0'});
-            if isempty(answer{1}); return; end
+            % check if new label or not
+            if strcmp(src.Label,'Add Label')
+                % ask user
+                answer = inputdlg({'Enter a label:'},'Label',[1 40],{'0'});
+                if isempty(answer{1})
+                    return
+                else
+                    % check if duplicate
+                    label = answer{1};
+                end
+
+                % add this label to the list
+                [~, icon] = addLabelItem(this.FitLikeView, label);
+                
+                if isempty(icon)
+                    dispMsg(this, 'You have reached the maximal number of label!\n');
+                    return
+                end
+            else
+                label = src.Label;
+                icon = src.UserData;
+            end
             
-            % check if it is a new label or not
-            tf = strcmp({this.RelaxData.label}, answer{1});
-            if all(tf == 0); 
             % update selected files
             [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
-            [this.RelaxData(indx).label] = deal(answer{1});
+            [this.RelaxData(indx).label] = deal(label);
             
             % update FileManager
-            addLabel(this.FileManager,);
+            addLabel(this.FileManager, icon);
         end %addLabel
+        
+        % Remove label
+        function this = removeLabel(this, src)
+            % get the list of label
+            hLabel = src.Parent.Children;
+            
+            if numel(hLabel) < 3
+                dispMsg(this, 'Error: No label to delete!')
+            end
+            
+            % ask user which item to delete
+            indx = listdlg('PromptString','Select a label to delete:',...
+                           'SelectionMode','single',...
+                           'ListString',{hLabel(1:end-2).Label});
+                       
+            if isempty(indx); return; end
+            
+            % check if files are labeled
+            tf = strcmp({this.RelaxData.label}, hLabel(indx).Label);
+            
+            if ~all(tf == 0)
+                % reset their label
+                [this.RelaxData(tf).label] = deal('');
+                
+                % update FileManager
+                removeLabel(this.FileManager, {this.RelaxData(tf).fileID});
+            end
+                        
+            % delete the label
+            removeLabel(this.FitLikeView, hLabel(indx).Label);
+        end %removeLabel
+        
         % Move function: allow to move files to another sequence, dataset
         function this = move(this)
             

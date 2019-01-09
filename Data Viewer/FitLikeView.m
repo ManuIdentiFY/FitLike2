@@ -8,6 +8,11 @@ classdef FitLikeView < handle
         FitLike % Presenter
     end
     
+    properties
+        color = get(groot,'defaultAxesColorOrder'); %list of available color for label
+        file_icon = fullfile(matlabroot,'toolbox','matlab','icons','HDF_filenew.gif');
+    end
+    
     methods
         % Constructor
         function this = FitLikeView(FitLike)
@@ -41,8 +46,11 @@ classdef FitLikeView < handle
                 @(src, event) this.FitLike.closeWindowPressed()); 
             %% Edit Menu
             % Add label function
-            set(this.gui.Label, 'callback', ...
+            set(this.gui.addLabel, 'callback', ...
                 @(src, event) this.FitLike.addLabel(src)); 
+            % Remove label function
+            set(this.gui.removeLabel, 'callback', ...
+                @(src, event) this.FitLike.removeLabel(src)); 
             % Move function
             
             % Copy function
@@ -105,14 +113,27 @@ classdef FitLikeView < handle
         % Add label items to the label list
         function [this, icon] = addLabelItem(this, new_label)
             % check the length of the list
-            n = numel(this.gui.LabelList.Children);
+            hLabel = this.gui.LabelList.Children;
+            n = numel(hLabel);
             
-            if n > 6; icon = []; return; end
+            % check if we reach the icon list limit
+            if n > size(this.color,1) + 1
+                icon = []; 
+                return; 
+            elseif n == 2
+                idx = 1;
+            else
+                % get the existing icons
+                icon_list = vertcat(hLabel(1:end-2).UserData);
+                % get the first missing icon
+                [~,idx] = setdiff(this.color, icon_list, 'rows', 'stable');
+            end
+            
             % get the icon
-            icon = [pwd,'\Data Viewer\icons\',num2str(n),'.png'];
+            icon = [pwd,'\Data Viewer\icons\',num2str(idx(1)),'.gif'];
             % add the icon
             uimenu( this.gui.LabelList,...
-                'Label', new_label,'UserData',icon,...
+                'Label', new_label,'UserData',this.color(idx(1),:),...
                 'Callback',@(src,event) this.FitLike.addLabel(src));
             drawnow;
             
@@ -120,13 +141,53 @@ classdef FitLikeView < handle
             % See http://undocumentedmatlab.com/blog/customizing-menu-items-part-2/#dynamic           
             jMenuLabel = findjobj(this.gui.LabelList);
             
-            jMenuLabel.doClick(); % open the File menu
-            jMenuLabel.doClick(); % close the menu           
-            pause(0.001); %EDT
+            jMenuLabel.doClick(); pause(0.001); % open the File menu
+            jMenuLabel.doClick(); pause(0.005); % close the menu           
             
             jLabel = jMenuLabel.getMenuComponent(n);
             jLabel.setIcon(javax.swing.ImageIcon(icon));
-        end %addLabelItem
+        end %addLabelItem  
+        
+        % Remove label
+        function this = removeLabel(this, label)
+            % find the corresponding item
+            hLabel = this.gui.LabelList.Children;
+ 
+            % delete the item
+            tf = strcmp({hLabel(1:end-2).Label}, label);
+            delete(hLabel(tf));
+        end
+        
+        % This function can create a colored version of the new_file icon.
+        % Icons are stored in Data Viewer/icons
+        function colorIcon(this, color, icon_name)
+            % get the new_file icon
+            [X, map]=imread(this.file_icon); 
+            % store the background pixels
+            tf = X == X(1,1);
+            
+            % convert the icon in grayscale image
+            im = ind2rgb(X,map);
+            im = rgb2gray(im);
+            
+            % multiply the grayscale image by the wanted color
+            im_color = zeros([size(im), 3]);
+            for i = size(im,1):-1:1
+                for j = size(im,2):-1:1
+                    im_color(i,j,:) = im(i,j).*color;
+                end
+            end
+            
+            % remove the background pixels
+            [X,map] = rgb2ind(im_color, 64);
+            map(end+1,:) = [1 1 1];
+            X(tf) = size(map,1);
+            
+            % store the new icon
+            warning off
+            imwrite(X, map, icon_name);
+            warning on
+        end
     end
     
 end

@@ -351,6 +351,15 @@ classdef FileManager  < handle
                end
            end
        end %addLabel
+       
+       % remove label
+       function this = removeLabel(this, fileID) 
+           % reset their icon
+           for k = 1:numel(fileID)
+               hFile = search(this.gui.treefile, fileID{k});
+               setIcon(hFile, this.FileIcon);
+           end
+       end %remove Label
     end
     
     % Tree methods: Data and File access

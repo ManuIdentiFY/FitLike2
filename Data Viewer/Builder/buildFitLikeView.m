@@ -23,7 +23,8 @@ uimenu( fileMenu, 'Label', 'Exit','Accelerator','Q','Tag','Quit');
 % + Edit menu
 editMenu = uimenu( fig, 'Label', 'Edit' );
 labelMenu = uimenu( editMenu, 'Label', 'Label...','Tag','LabelList');
-uimenu( labelMenu, 'Label', 'Add Label','Tag','Label');
+uimenu( labelMenu, 'Label', 'Add Label','Tag','addLabel');
+uimenu( labelMenu, 'Label', 'Remove Label','Tag','removeLabel');
 % uimenu( editMenu, 'Label', 'Move','Tag','Move');
 % uimenu( editMenu, 'Label', 'Copy','Tag','Copy');
 % sortEdit = uimenu( editMenu, 'Label', 'Sort');

@@ -338,7 +338,7 @@ classdef FitLike < handle
                     tf = strcmp({this.RelaxData.fileID}, fileID{k});
                     % check if dispersion
                     if ~isa(this.RelaxData(tf), 'Dispersion')
-                        dispMsg(this, [sprintf('Cannot export this file...%d/%d',k,numel(fileID)),'\n']);
+                        dispMsg(this, [sprintf('Error: Cannot export this file...%d/%d',k,numel(fileID)),'\n']);
                     else
                         export_data(this.RelaxData(tf), path);
                     end
@@ -362,7 +362,8 @@ classdef FitLike < handle
             % check if files are selected
             fileID = getSelectedFile(this.FileManager);
             if isempty(fileID)
-                dispMsg(this,'You need to select files to define labels!\n')
+                dispMsg(this,'Error: You need to select files to define labels!\n');
+                return
             end
             
             % check if new label or not
@@ -372,6 +373,17 @@ classdef FitLike < handle
                 if isempty(answer{1})
                     return
                 else
+                    % check if duplicate
+                    hLabel = src.Parent.Children;
+                    
+                    if numel(hLabel) > 2
+                        tf = strcmp({hLabel(1:end-2).Label}, answer{1});
+                        
+                        if ~all(tf == 0)
+                            dispMsg(this,'Error: This label already exists!\n');
+                            return
+                        end
+                    end
                     label = answer{1};
                 end
 
@@ -379,7 +391,7 @@ classdef FitLike < handle
                 [~, icon] = addLabelItem(this.FitLikeView, label);
                 
                 if isempty(icon)
-                    dispMsg('You have reach the maximal number of label!\n');
+                    dispMsg(this, 'Error: You have reached the maximal number of label!\n');
                     return
                 end
             else
@@ -394,6 +406,38 @@ classdef FitLike < handle
             % update FileManager
             addLabel(this.FileManager, icon);
         end %addLabel
+        
+        % Remove label
+        function this = removeLabel(this, src)
+            % get the list of label
+            hLabel = src.Parent.Children;
+            
+            if numel(hLabel) < 3
+                dispMsg(this, 'Error: No label to delete!')
+            end
+            
+            % ask user which item to delete
+            indx = listdlg('PromptString','Select a label to delete:',...
+                           'SelectionMode','single',...
+                           'ListString',{hLabel(1:end-2).Label});
+                       
+            if isempty(indx); return; end
+            
+            % check if files are labeled
+            tf = strcmp({this.RelaxData.label}, hLabel(indx).Label);
+            
+            if ~all(tf == 0)
+                % reset their label
+                [this.RelaxData(tf).label] = deal('');
+                
+                % update FileManager
+                removeLabel(this.FileManager, {this.RelaxData(tf).fileID});
+            end
+                        
+            % delete the label
+            removeLabel(this.FitLikeView, hLabel(indx).Label);
+        end %removeLabel
+        
         % Move function: allow to move files to another sequence, dataset
         function this = move(this)
             
