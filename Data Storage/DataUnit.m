@@ -117,6 +117,14 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             resetmask(obj);
         end %DataUnit    
         
+        % Destructor
+        function delete(this)
+            delete(this.parent);
+            this.children(:) = [];
+            this.parent(:) = [];
+            notify(this, 'FileDeletion');
+        end
+        
         % assign a processing function to the data object
         function self = assignProcessingFunction(self,processObj)
             self = arrayfun(@(s)setfield(s,'processingMethod',processObj),self,'UniformOutput',0); %#ok<*SFLD>
@@ -213,18 +221,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         end
     end % methods
     
-    methods (Access = public, Sealed = true)        
-        % other removal method to be used in arrays of objects (array =
-        % remove(array,indexes);
-        function self = delete(self,ind)
-            if nargin == 1
-                ind = 1:length(self);
-            end
-            notify(self(ind), 'FileDeletion');
-            unlink(self(ind));
-            self(ind) = [];
-        end        
-        
+    methods (Access = public, Sealed = true)                
         % Fill or adapt the mask to the "y" field 
         function obj = resetmask(obj)
             % check if input is array of struct or just struct

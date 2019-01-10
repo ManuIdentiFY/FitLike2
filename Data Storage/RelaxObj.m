@@ -75,11 +75,9 @@ classdef RelaxObj < handle
         function delete(this)
            % call to the data 
            delete(this.data);
-           % clear pointer
-           this.data = [];
            % notify destruction
            notify(this,'FileIsDeleted');
-        end
+        end %delete
     end
     
     methods (Access = public)
