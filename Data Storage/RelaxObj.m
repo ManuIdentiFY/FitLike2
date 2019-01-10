@@ -118,31 +118,7 @@ classdef RelaxObj < handle
                            'data', datamerge,... 
                            'parameter',merge(arrayfun(@(x) x.parameter,obj_list)));
             
-            
-            
-%             % check if files are already merged
-%             switch isMerged(obj_list)
-%                 case 0
-%                     % merge data and parameter
-%                     merged_data = merge([obj_list.data]);
-%                     merged_parameter = merge([obj_list.parameter]);
-%                     % create merged object from first object list
-%                     obj_list(1).data = merged_data;
-%                     obj_list(1).parameter = merged_parameter;
-%                     obj_list(1).subRelaxObj = obj_list;
-%                     obj = obj_list(1);
-%                 case 1
-%                     % unmerge data and parameter
-%                     unmerged_data = merge([obj_list.data]);
-%                     unmerged_parameter = merge([obj_list.parameter]);
-%                     % create unmerged object
-% %                     obj_list(1).data = merged_data;
-% %                     obj_list(1).parameter = merged_parameter;
-% %                     obj = obj_list.subRelaxObj;
-%                 otherwise
-%                     % mix of merged and unmerged files
-%                     return
-%             end
+           
         end %mergeFile
     end
     
