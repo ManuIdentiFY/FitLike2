@@ -850,8 +850,6 @@ classdef FitLike < handle
         
         % Check ID integrity of the new bloc. Change ID if needed.
         function bloc = checkID(this, bloc)
-            % check if UUID
-            bloc = checkUUID(bloc);
             % check if data
             if isempty(this.RelaxData)
                 return
@@ -864,27 +862,10 @@ classdef FitLike < handle
                 for k = 1:numel(idx)
                     bloc(idx).fileID = char(java.util.UUID.randomUUID);
                 end
+                % redo
                 bloc = checkID(this, bloc);
             end           
         end %checkID
-        
-        % check if UUID is used (old fileID contains '@' and length is
-        % variable).
-        % UUID format is 32 hexadecimal digits, displayed in five
-        % groups separated by hyphens, in the form 8-4-4-4-12.
-        function bloc = checkUUID(bloc)           
-            % loop over the input
-            for k = 1:numel(bloc)
-                % check format and size
-                s = strsplit(bloc(k).fileID,'-');
-                n = cellfun(@numel,s);
-                
-                % generate UUID if needed
-                if numel(n) ~= 5 || ~isequal(n, [8 4 4 4 12])
-                    bloc(k).fileID = char(java.util.UUID.randomUUID);
-                end
-            end
-        end
         
         % Get data from fileID: TO CHANGE
         function data = getData(this, fileID, type)
