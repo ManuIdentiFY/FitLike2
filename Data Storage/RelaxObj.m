@@ -40,7 +40,7 @@ classdef RelaxObj < handle
         % obj = RelaxObj('filename',filename); % array of structure
         % obj = RelaxObj('filename',[filename{:}]) % structure
         %
-        function obj = RelaxObj(varargin)           
+        function this = RelaxObj(varargin)           
             % check input, must be non empty and have always field/val
             % couple
             if nargin == 0 || mod(nargin,2) 
@@ -52,10 +52,10 @@ classdef RelaxObj < handle
             if ~iscell(varargin{2})                
                 % fill the structure
                 for ind = 1:2:nargin
-                    obj.(varargin{ind}) = varargin{ind+1};
+                    this.(varargin{ind}) = varargin{ind+1};
                 end 
                 % add fileID
-                obj.fileID = char(java.util.UUID.randomUUID);
+                this.fileID = char(java.util.UUID.randomUUID);
             else
                 % array of struct
                 % check for cell sizes
@@ -63,18 +63,23 @@ classdef RelaxObj < handle
                 for k = n:-1:1
                     % fill arguments
                     for ind = 1:2:nargin
-                        [obj(k).(varargin{ind})] = varargin{ind+1}{k};
+                        [this(k).(varargin{ind})] = varargin{ind+1}{k};
                     end
                     % add fileID
-                    obj(k).fileID = char(java.util.UUID.randomUUID);
+                    this(k).fileID = char(java.util.UUID.randomUUID);
                 end
             end
         end %RelaxObj
         
         % Destructor
-        function this = delete(this)
-            
-        end %delete
+        function delete(this)
+           % call to the data 
+           remove(this.data);
+           % clear pointer
+           this.data = [];
+           % notify destruction
+           notify(this,'FileIsDeleted');
+        end
     end
     
     methods (Access = public)
