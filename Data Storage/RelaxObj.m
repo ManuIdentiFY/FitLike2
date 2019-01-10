@@ -74,7 +74,7 @@ classdef RelaxObj < handle
         % Destructor
         function delete(this)
            % call to the data 
-           remove(this.data);
+           delete(this.data);
            % clear pointer
            this.data = [];
            % notify destruction

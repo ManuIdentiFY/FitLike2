@@ -212,7 +212,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     methods (Access = public, Sealed = true)        
         % other removal method to be used in arrays of objects (array =
         % remove(array,indexes);
-        function self = remove(self,ind)
+        function self = delete(self,ind)
             if nargin == 1
                 ind = 1:length(self);
             end
