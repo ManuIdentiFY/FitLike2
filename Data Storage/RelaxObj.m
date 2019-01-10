@@ -60,13 +60,17 @@ classdef RelaxObj < handle
                 % array of struct
                 % check for cell sizes
                 n = length(varargin{2});
-                for k = n:-1:1
-                    % fill arguments
-                    for ind = 1:2:nargin
-                        [this(k).(varargin{ind})] = varargin{ind+1}{k};
+                if ~all(cellfun(@length,varargin(2:2:end)) == n)
+                    error('Size input is not consistent for array of struct.')
+                else
+                    for k = n:-1:1
+                        % fill arguments
+                        for ind = 1:2:nargin
+                            [this(k).(varargin{ind})] = varargin{ind+1}{k};
+                        end
+                        % add fileID
+                        this(k).fileID = char(java.util.UUID.randomUUID);
                     end
-                    % add fileID
-                    this(k).fileID = char(java.util.UUID.randomUUID);
                 end
             end
         end %RelaxObj
@@ -122,7 +126,7 @@ classdef RelaxObj < handle
     
     % Data access functions
     methods (Access = public)
-        % This function to get DataUnit object from the RelaxObj.
+        % This function extract DataUnit object(s) from the RelaxObj.
         %
         % Optionnal input: 
         % - 'class': char between {'Dispersion','Zone','Bloc'}
