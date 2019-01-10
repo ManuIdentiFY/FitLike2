@@ -44,34 +44,65 @@ classdef RelaxObj < handle
         end %RelaxObj         
         
         % Data formating: mergeFile()
-        function obj = merge(obj_list)
+        % merge several objects, considering only the DataUnit at the level
+        % provided (Bloc, Zone or Dispersion)
+        function obj = merge(obj_list,level)
             % check input
             if numel(obj_list) < 2
                 return
             end
-            % check if files are already merged
-            switch isMerged(obj_list)
-                case 0
-                    % merge data and parameter
-                    merged_data = merge([obj_list.data]);
-                    merged_parameter = merge([obj_list.parameter]);
-                    % create merged object from first object list
-                    obj_list(1).data = merged_data;
-                    obj_list(1).parameter = merged_parameter;
-                    obj_list(1).subRelaxObj = obj_list;
-                    obj = obj_list(1);
-                case 1
-                    % unmerge data and parameter
-                    unmerged_data = merge([obj_list.data]);
-                    unmerged_parameter = merge([obj_list.parameter]);
-                    % create unmerged object
+            if nargin == 1
+                level = 'Bloc'; % default level for merging the two objects
+            end
+            % check that the data from the list of object is compatible at
+            % the level provided (same number of objects, and same type of 
+            % process performed)
+            list = arrayfun(@(x) getData(x, level),obj_list,'UniformOutput',0);
+            
+            % check for consitency in the type of data to be merged (TO BE IMPROVED, NEED TO CHECK PROCESSING TYPE)
+            nunit = cellfun(@(x) length(x),list);
+            if ~prod(nunit == nunit(1))
+                error('The objects selected contain a different number of data units. They may have been processed differently.')
+            end
+            
+            % find the objects to be merged
+            for ind = 1:length(list(1))
+                datamerge(ind) = merge(cellfun(@(x) x(ind),list)); %#ok<AGROW,NASGU>
+            end
+            
+            % Generate the empty object that will contain the merged data
+            obj = RelaxObj('label',obj_list(1).label,...
+                           'filename',obj_list(1).filename, ...
+                           'sequence',obj_list(1).sequence, ...
+                           'dataset', obj_list(1).dataset,...
+                           'data', datamerge,... 
+                           'parameter',merge(arrayfun(@(x) x.parameter,obj_list)));
+            
+            
+            
+%             % check if files are already merged
+%             switch isMerged(obj_list)
+%                 case 0
+%                     % merge data and parameter
+%                     merged_data = merge([obj_list.data]);
+%                     merged_parameter = merge([obj_list.parameter]);
+%                     % create merged object from first object list
 %                     obj_list(1).data = merged_data;
 %                     obj_list(1).parameter = merged_parameter;
-%                     obj = obj_list.subRelaxObj;
-                otherwise
-                    % mix of merged and unmerged files
-                    return
-            end
+%                     obj_list(1).subRelaxObj = obj_list;
+%                     obj = obj_list(1);
+%                 case 1
+%                     % unmerge data and parameter
+%                     unmerged_data = merge([obj_list.data]);
+%                     unmerged_parameter = merge([obj_list.parameter]);
+%                     % create unmerged object
+% %                     obj_list(1).data = merged_data;
+% %                     obj_list(1).parameter = merged_parameter;
+% %                     obj = obj_list.subRelaxObj;
+%                 otherwise
+%                     % mix of merged and unmerged files
+%                     return
+%             end
         end %mergeFile
     end
     
