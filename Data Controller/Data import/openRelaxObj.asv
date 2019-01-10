@@ -1,4 +1,4 @@
-function relaxlist = openRelaxObj(file,path,dataset)
+function relaxlist = openRelaxObj(filename,dataset)
 
 % creates a relaxobj instance with the data imported from the file
 % provided.
@@ -21,12 +21,21 @@ if nargin == 0
         case 3
             ext = 'mat';
     end
-elseif nargin == 1 
-    [path,file,ext] = fileparts(file);
-    if isempty(path)
-        path = cd;
+else 
+    if iscell(filename) % case when the use provides a list of file names
+        for ind = 1:length(filename)
+            [path{ind},file{ind},ext{ind}] = fileparts(filename{ind});
+        end
+    elseif ischar(filename)
+        [path{1},file{1},ext{1}] = fileparts(filename);
+    else
+        error('Wrong type of input. First input must a file name or an array of file names')
     end
+end
+
+if nargin < 2
     dataset = 'Default dataset';
+end
 else
     [pathfromfile,~,ext] = fileparts(file);
     if (nargin < 3) && (isempty(pathfromfile))
@@ -53,6 +62,10 @@ end
 %% create the bloc object
 bloc = [];
 % switch depending on the type of file
+
+    if isempty(path)
+        path = cd;
+    end
 switch ext
     case '.sdf'
         % loop over the files
@@ -86,7 +99,7 @@ switch ext
             % create the metadata object associated with this acquisition
             relax = RelaxObj('label','Default data',...                     % defines the category of data (user defined)
                              'filename',fullfile(path,file{i}),...             % store the data file name
-                             'sequence',getfield(parameter,'EXP','ForceCellOutput','True'),...   % name of the sequence
+                             'sequence',sequence{1},...   % name of the sequence
                              'dataset',dataset,...                          % dataset associated 
                              'data',new_bloc,...
                              'parameter', parameter);  
@@ -107,7 +120,7 @@ switch ext
                 'filename',file{i},'sequence','Unknown');
             % create the metadata object associated with this acquisition
             relax = RelaxObj('label','Default data',...                     % defines the category of data (user defined)
-                             'filename',fullfile(path,file),...             % store the data file name
+                             'filename',fullfile(path,file{i}),...             % store the data file name
                              'sequence','Unknown',...   % name of the sequence
                              'dataset',dataset,...                          % dataset associated 
                              'data',new_bloc,...
