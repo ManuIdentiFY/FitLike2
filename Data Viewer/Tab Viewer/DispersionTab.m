@@ -54,10 +54,10 @@ classdef DispersionTab < EmptyTab
         function this = DispersionTab(FitLike, tab)
             % call the superclass constructor and set the Presenter
             this = this@EmptyTab(FitLike, tab);
-            % set the name of the subtab and init accumColor
+            % set the name of the subtab
             this.Parent.Title = 'Dispersion';
             this.inputType = 'Dispersion';
-            % change the main axis into a subplot (residuals plot)
+            % change the main axis into a subplot
             this.axe = axes('Parent',uicontainer('Parent',this.box),...
                         'FontSize',8,...
                         'ActivePositionProperty', 'outerposition',...
