@@ -81,7 +81,7 @@ classdef RelaxObj < handle
         %
         % Optionnal input: 
         % - 'class': char between {'Dispersion','Zone','Bloc'}
-        % - 'name': char (corresponding to the legendTag property in DataUnit
+        % - 'name': char (corresponding to the displayName property in DataUnit
         %
         % Example:
         % data = getData(this); % Get all the data in RelaxObj
@@ -113,12 +113,18 @@ classdef RelaxObj < handle
                 
                 % check result
                 if ~strcmp(class(obj), varargin{1})
-                    error('This class does not exist in DataUnit obj')
+                    error('No object was found with this class!')
                 end
                 
                 % check if we need to find a particular named obj
                 if nargin > 2
+                    tf = strcmp({obj.displayName}, varargin{2});
                     
+                    if all(tf == 0)
+                        error('No object was found with this name!')
+                    else
+                        data = obj(tf);
+                    end
                 else
                     data = obj;
                 end
