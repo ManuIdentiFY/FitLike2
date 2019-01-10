@@ -171,8 +171,14 @@ classdef ModelManager < handle
             end
             % get the file selected
             fileID = this.gui.FileSelectionPopup.UserData{this.gui.FileSelectionPopup.Value};
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % check if multiple dispersion data
             dispersion = getData(this.FitLike, fileID, 'Dispersion');
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % How to handle files with multiple dispersion data? [Manu]
             % get model data
             if numel(dispersion)
                 % compare the string in the file popup
@@ -181,7 +187,9 @@ classdef ModelManager < handle
                 tf = contains({dispersion.displayName}, str);
                 dispersion = dispersion(tf);
             end
-            model = dispersion.processingMethod;
+            model = dispersion.processingMethod; % replace by a wrapper? [Manu]
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
             % remove previous results
             nRow = this.gui.jtable.getRowCount();
             for k = 1:nRow
@@ -212,8 +220,12 @@ classdef ModelManager < handle
         
         % File checked in tree callback
         function this = updateFilePopup(this)
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % get the selected fileID;
             [leg, fileID] = getLegend(this.FitLike);
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
             % get the corresponding data
             if ~isempty(leg)
                 if numel(leg) < this.gui.FileSelectionPopup.Value
