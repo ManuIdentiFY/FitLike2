@@ -60,7 +60,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % x = num2cell(ones(10,1)); % array of cell
         % obj = DataUnit('x',x); % array of structure
         % obj = DataUnit('x',[x{:}]) % structure
-        function obj = DataUnit(varargin)
+        function this = DataUnit(varargin)
             % check input, must be non empty and have always field/val
             % couple
             if nargin == 0 || mod(nargin,2) 
@@ -72,15 +72,15 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             if ~iscell(varargin{2})
                 % struct
                 for ind = 1:2:nargin
-                    obj.(varargin{ind}) = varargin{ind+1};                         
+                    this.(varargin{ind}) = varargin{ind+1};                         
                 end 
                 % parent explicitely the object if needed
-                if ~isempty(obj.parent)
-                    link(obj.parent, obj);
-                    obj.fileID = obj.parent.fileID;
+                if ~isempty(this.parent)
+                    link(this.parent, this);
+                    this.fileID = this.parent.fileID;
                 else
                     % add ID
-                    obj.fileID = char(java.util.UUID.randomUUID);
+                    this.fileID = char(java.util.UUID.randomUUID);
                 end
             else
                 % array of struct
@@ -89,32 +89,32 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 if ~all(cellfun(@length,varargin(2:2:end)) == n)
                     error('Size input is not consistent for array of struct.')
                 else
-                    fh = str2func(class(obj));
+                    fh = str2func(class(this));
                     % initialise explicitely the array of object (required
                     % for heterogeneous array)
                     % for loop required to create unique handle.
                     for k = n:-1:1
-                        % initialisation required to create unique handle!
-                        obj(1,k) = fh();
+                        % initialisation required to create unique handle
+                        this(1,k) = fh();
                         % fill arguments
                         for ind = 1:2:nargin 
-                            [obj(k).(varargin{ind})] = varargin{ind+1}{k};                          
+                            [this(k).(varargin{ind})] = varargin{ind+1}{k};                          
                         end
                         % parent explicitely the object if needed
-                        if ~isempty(obj(k).parent)
-                            link(obj(k).parent, obj(k));
-                            obj(k).fileID = obj(k).parent.fileID;
+                        if ~isempty(this(k).parent)
+                            link(this(k).parent, this(k));
+                            this(k).fileID = this(k).parent.fileID;
                         else
                             % add ID
-                            obj(k).fileID = char(java.util.UUID.randomUUID);
+                            this(k).fileID = char(java.util.UUID.randomUUID);
                         end
                     end
                 end
             end   
             % set displayName
-            setDisplayName(obj);
+            setDisplayName(this);
             % generate mask if missing
-            resetmask(obj);
+            resetmask(this);
         end %DataUnit    
         
         % Destructor
@@ -124,7 +124,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             this.parent(:) = [];
             notify(this, 'FileDeletion');
         end
-        
+    end
+    
+    methods (Access = public)
         % assign a processing function to the data object
         function self = assignProcessingFunction(self,processObj)
             self = arrayfun(@(s)setfield(s,'processingMethod',processObj),self,'UniformOutput',0); %#ok<*SFLD>
@@ -201,7 +203,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % reverse operation 
         function dataList = unMerge(self)
             dataList = self.subUnitList;
-            remove(self.subUnitList);
+            delete(self.subUnitList);
         end
 
         % removal from the parent object list for clean deletion

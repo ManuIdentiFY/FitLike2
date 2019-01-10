@@ -317,7 +317,7 @@ classdef FitLike < handle
             fileID = getSelectedFile(this.FileManager);
             % remove files in RelaxData 
             [~,idx,~] = intersect({this.RelaxData.fileID}, fileID);
-            delete(this.RelaxData(idx)); this.RelaxData(idx) = [];
+            delete(this.RelaxData(idx));
             % update FileManager
             deleteFile(this.FileManager);
             % throw message
@@ -744,7 +744,7 @@ classdef FitLike < handle
                         warning on
                     end   
                     % replace the new relaxObj in the main array
-                    delete(this.RelaxData(indx)); this.RelaxData(indx) = [];
+                    delete(this.RelaxData(indx));
                     this.RelaxData = [this.RelaxData, relaxObj];
                     drawnow; %EDT
                     % replace the new relaxObj in the main array
