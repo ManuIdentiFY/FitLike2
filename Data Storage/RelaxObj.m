@@ -11,19 +11,35 @@ classdef RelaxObj < handle
         dataset@char = 'myDataset';    % name of the dataset('ISMRM2018')
     end
     
-    properties (Hidden)
-        fileID@char;                   % generate unique ID 
-        subRelaxObj@RelaxObj
-    end
-    
     % data properties
     properties (Access = public)
         data@DataUnit
         parameter@ParamObj = ParamObj();  
     end  
     
+    % ID and subfiles
+    properties (Hidden)
+        fileID@char;
+        subRelaxObj@RelaxObj
+    end
+    
+    
+    events
+        FileHasChanged
+        FileIsDeleted
+    end
+    
+    % Constructor/Destructor
     methods
-        % Constructor: RelaxObj()
+        % Constructor: obj = RelaxObj('field1',val1,'field2','val2',...)
+        % RelaxObj can build structure or array of structure depending on
+        % the input:
+        %
+        % Example:
+        % filename = {'file1','file2','file3'}; % cell array
+        % obj = RelaxObj('filename',filename); % array of structure
+        % obj = RelaxObj('filename',[filename{:}]) % structure
+        %
         function obj = RelaxObj(varargin)           
             % check input, must be non empty and have always field/val
             % couple
@@ -31,18 +47,37 @@ classdef RelaxObj < handle
                 % default value
                 return
             end
-            % fill the structure
-            for ind = 1:2:nargin
-                try 
+            
+            % check if array of struct
+            if ~iscell(varargin{2})                
+                % fill the structure
+                for ind = 1:2:nargin
                     obj.(varargin{ind}) = varargin{ind+1};
-                catch ME
-                    error(['Wrong argument ''' varargin{ind} ''' or invalid value/attribute associated.'])
-                end                           
-            end 
-            % add fileID
-            obj.fileID = char(java.util.UUID.randomUUID);
-        end %RelaxObj         
+                end 
+                % add fileID
+                obj.fileID = char(java.util.UUID.randomUUID);
+            else
+                % array of struct
+                % check for cell sizes
+                n = length(varargin{2});
+                for k = n:-1:1
+                    % fill arguments
+                    for ind = 1:2:nargin
+                        [obj(k).(varargin{ind})] = varargin{ind+1}{k};
+                    end
+                    % add fileID
+                    obj(k).fileID = char(java.util.UUID.randomUUID);
+                end
+            end
+        end %RelaxObj
         
+        % Destructor
+        function this = delete(this)
+            
+        end %delete
+    end
+    
+    methods (Access = public)
         % Data formating: mergeFile()
         % merge several objects, considering only the DataUnit at the level
         % provided (Bloc, Zone or Dispersion)
@@ -128,23 +163,17 @@ classdef RelaxObj < handle
                 data = []; return;
             end
             
-            % start by finding the deepest object: Bloc object
             obj = this.data;
-            
-            while ~isempty(obj(1).parent)
-                obj = obj(1).parent;
-            end
-            
             % check if we need to find a particular type of object
-            if nargin > 1
-                % find all the object corresponding to this class
-                while ~strcmp(class(obj), varargin{1}) || isempty(obj(1).children)
-                    obj = [obj.children];
-                end
-                
-                % check result
-                if ~strcmp(class(obj), varargin{1})
-                    error('No object was found with this class!')
+            if nargin > 1                
+                % find all the object corresponding to this class  || isempty(obj(1).children)
+                while ~strcmpi(class(obj), varargin{1})
+                    % check if parent are available
+                    if  isempty(obj(1).parent)
+                       error('No object was found with this class!') 
+                    end
+                    % get parent and remove duplicates
+                    obj = unique([obj.parent]);
                 end
                 
                 % check if we need to find a particular named obj
@@ -162,8 +191,8 @@ classdef RelaxObj < handle
             else
                 data = obj;
                 % get all the object
-                while ~isempty(obj(1).children)
-                    obj = [obj.children];
+                while ~isempty(obj(1).parent)
+                    obj = unique([obj.parent]);
                     data = [data, obj]; %#ok<AGROW>
                 end
             end
