@@ -29,9 +29,17 @@ classdef RelaxObj < handle
         FileIsDeleted
     end
     
-    
+    % Constructor/Destructor
     methods
-        % Constructor: RelaxObj()
+        % Constructor: obj = RelaxObj('field1',val1,'field2','val2',...)
+        % RelaxObj can build structure or array of structure depending on
+        % the input:
+        %
+        % Example:
+        % filename = {'file1','file2','file3'}; % cell array
+        % obj = RelaxObj('filename',filename); % array of structure
+        % obj = RelaxObj('filename',[filename{:}]) % structure
+        %
         function obj = RelaxObj(varargin)           
             % check input, must be non empty and have always field/val
             % couple
@@ -39,18 +47,37 @@ classdef RelaxObj < handle
                 % default value
                 return
             end
-            % fill the structure
-            for ind = 1:2:nargin
-                try 
+            
+            % check if array of struct
+            if ~iscell(varargin{2})                
+                % fill the structure
+                for ind = 1:2:nargin
                     obj.(varargin{ind}) = varargin{ind+1};
-                catch ME
-                    error(['Wrong argument ''' varargin{ind} ''' or invalid value/attribute associated.'])
-                end                           
-            end 
-            % add fileID
-            obj.fileID = char(java.util.UUID.randomUUID);
-        end %RelaxObj         
+                end 
+                % add fileID
+                obj.fileID = char(java.util.UUID.randomUUID);
+            else
+                % array of struct
+                % check for cell sizes
+                n = length(varargin{2});
+                for k = n:-1:1
+                    % fill arguments
+                    for ind = 1:2:nargin
+                        [obj(k).(varargin{ind})] = varargin{ind+1}{k};
+                    end
+                    % add fileID
+                    obj(k).fileID = char(java.util.UUID.randomUUID);
+                end
+            end
+        end %RelaxObj
         
+        % Destructor
+        function this = delete(this)
+            
+        end %delete
+    end
+    
+    methods (Access = public)
         % Data formating: mergeFile()
         function obj = merge(obj_list)
             % check input
