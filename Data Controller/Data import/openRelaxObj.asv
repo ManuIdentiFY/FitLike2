@@ -86,7 +86,7 @@ switch ext
             % create the metadata object associated with this acquisition
             relax = RelaxObj('label','Default data',...                     % defines the category of data (user defined)
                              'filename',fullfile(path,file{i}),...             % store the data file name
-                             'sequence',sequence{1},...   % name of the sequence
+                             'sequence',getfield(parameter,'EXP','ForceCellOutput','True'),...   % name of the sequence
                              'dataset',dataset,...                          % dataset associated 
                              'data',new_bloc,...
                              'parameter', parameter);  
@@ -107,7 +107,7 @@ switch ext
                 'filename',file{i},'sequence','Unknown');
             % create the metadata object associated with this acquisition
             relax = RelaxObj('label','Default data',...                     % defines the category of data (user defined)
-                             'filename',fullfile(path,file{i}),...             % store the data file name
+                             'filename',fullfile(path,file),...             % store the data file name
                              'sequence','Unknown',...   % name of the sequence
                              'dataset',dataset,...                          % dataset associated 
                              'data',new_bloc,...
