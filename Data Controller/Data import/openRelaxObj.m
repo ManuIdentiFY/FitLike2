@@ -6,6 +6,7 @@ function relaxlist = openRelaxObj(filename,dataset)
 
 %% open data file
 relaxlist = [];
+
 if nargin == 0
     % open interface to select files
     [file, path, indx] = uigetfile({'*.sdf','Stelar Raw Files (*.sdf)';...
@@ -28,6 +29,17 @@ else
         end
     elseif ischar(filename)
         [path{1},file{1},ext{1}] = fileparts(filename);
+    elseif isobject(filename)
+        if nargin < 2
+            dataset = 'Default dataset';
+        end
+        relaxlist = RelaxObj('label','Default data',...                     % defines the category of data (user defined)
+                         'filename','Manual entry',...             % store the data file name
+                         'sequence','Unknown',...   % name of the sequence
+                         'dataset',dataset,...                          % dataset associated 
+                         'data',filename,...
+                         'parameter', ParamV1);  
+        return
     else
         error('Wrong type of input. First input must a file name or an array of file names')
     end
