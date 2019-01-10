@@ -105,23 +105,17 @@ classdef RelaxObj < handle
                 data = []; return;
             end
             
-            % start by finding the deepest object: Bloc object
             obj = this.data;
-            
-            while ~isempty(obj(1).parent)
-                obj = obj(1).parent;
-            end
-            
             % check if we need to find a particular type of object
-            if nargin > 1
-                % find all the object corresponding to this class
-                while ~strcmp(class(obj), varargin{1}) || isempty(obj(1).children)
-                    obj = [obj.children];
-                end
-                
-                % check result
-                if ~strcmp(class(obj), varargin{1})
-                    error('No object was found with this class!')
+            if nargin > 1                
+                % find all the object corresponding to this class  || isempty(obj(1).children)
+                while ~strcmpi(class(obj), varargin{1})
+                    % check if parent are available
+                    if  isempty(obj(1).parent)
+                       error('No object was found with this class!') 
+                    end
+                    % get parent and remove duplicates
+                    obj = unique([obj.parent]);
                 end
                 
                 % check if we need to find a particular named obj
@@ -139,8 +133,8 @@ classdef RelaxObj < handle
             else
                 data = obj;
                 % get all the object
-                while ~isempty(obj(1).children)
-                    obj = [obj.children];
+                while ~isempty(obj(1).parent)
+                    obj = unique([obj.parent]);
                     data = [data, obj]; %#ok<AGROW>
                 end
             end

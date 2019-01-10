@@ -1,4 +1,4 @@
-classdef RelaxObj < handle & matlab.mixin.Heterogeneous
+classdef RelaxObj < handle
     % This class manage Stelar data from the SPINMASTER relaxometer.
     %
     % See also DATAUNIT, BLOC, ZONE, DISPERSION
@@ -17,15 +17,18 @@ classdef RelaxObj < handle & matlab.mixin.Heterogeneous
         parameter@ParamObj = ParamObj();  
     end  
     
+    % ID and subfiles
     properties (Hidden)
-        fileID@char;                   % generate unique ID 
+        fileID@char;
         subRelaxObj@RelaxObj
     end
+    
     
     events
         FileHasChanged
         FileIsDeleted
     end
+    
     
     methods
         % Constructor: RelaxObj()
@@ -102,18 +105,17 @@ classdef RelaxObj < handle & matlab.mixin.Heterogeneous
                 data = []; return;
             end
             
-            % start by finding the deepest object: Bloc object
-            obj = this.data;
-            
-            while ~isempty(obj(1).parent)
-                obj = obj(1).parent;
-            end
-            
             % check if we need to find a particular type of object
             if nargin > 1
-                % find all the object corresponding to this class
-                while ~strcmp(class(obj), varargin{1}) || isempty(obj(1).children)
-                    obj = [obj.children];
+                obj = this.data;
+                % find all the object corresponding to this class  || isempty(obj(1).children)
+                while ~strcmp(class(obj), varargin{1})
+                    % get parent and remove duplicates
+                    obj = unique([obj.parent]);
+                    % check if parent are available
+                    if  isempty(obj(1).parent)
+                       er 
+                    end
                 end
                 
                 % check result
