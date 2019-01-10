@@ -21,7 +21,7 @@ classdef BiexponentialT1Abs < Zone2Disp
                                   2*c(6).^2); %exponential model
 
             opts = statset('nlinfit');
-            opts.Robust = 'on';
+            opts.Robust = 'off';
             opts.Display = 'off';
             opts.MaxFunEvals = 1e8;
             opts.MaxIter = 3e4;
