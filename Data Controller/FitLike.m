@@ -851,7 +851,7 @@ classdef FitLike < handle
         % Check ID integrity of the new bloc. Change ID if needed.
         function bloc = checkID(this, bloc)
             % check if UUID
-            bloc = checkUUID(bloc);
+            bloc = FitLike.checkUUID(bloc);
             % check if data
             if isempty(this.RelaxData)
                 return
@@ -868,6 +868,23 @@ classdef FitLike < handle
             end           
         end %checkID
         
+        % Get data from fileID: TO CHANGE
+        function data = getData(this, fileID, type)
+            % get the fileID list
+            tf = strcmp({this.RelaxData.fileID}, fileID);
+            % check if type is correct
+            data = this.RelaxData(tf);
+            while ~strcmp(class(data), type)
+                if isempty(data(1).parent)
+                    data = []; return
+                else
+                    data = [data.parent];
+                end
+            end
+        end %getData
+    end
+    
+    methods (Static)
         % check if UUID is used (old fileID contains '@' and length is
         % variable).
         % UUID format is 32 hexadecimal digits, displayed in five
@@ -885,21 +902,6 @@ classdef FitLike < handle
                 end
             end
         end
-        
-        % Get data from fileID: TO CHANGE
-        function data = getData(this, fileID, type)
-            % get the fileID list
-            tf = strcmp({this.RelaxData.fileID}, fileID);
-            % check if type is correct
-            data = this.RelaxData(tf);
-            while ~strcmp(class(data), type)
-                if isempty(data(1).parent)
-                    data = []; return
-                else
-                    data = [data.parent];
-                end
-            end
-        end %getData
     end
 end
 
