@@ -1,4 +1,4 @@
-classdef RelaxObj < handle & matlab.mixin.Heterogeneous
+classdef RelaxObj < handle
     % This class manage Stelar data from the SPINMASTER relaxometer.
     %
     % See also DATAUNIT, BLOC, ZONE, DISPERSION
