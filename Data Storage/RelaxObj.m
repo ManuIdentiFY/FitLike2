@@ -11,16 +11,24 @@ classdef RelaxObj < handle & matlab.mixin.Heterogeneous
         dataset@char = 'myDataset';    % name of the dataset('ISMRM2018')
     end
     
-    properties (Hidden)
-        fileID@char;                   % generate unique ID 
-        subRelaxObj@RelaxObj
-    end
-    
     % data properties
     properties (Access = public)
         data@DataUnit
         parameter@ParamObj = ParamObj();  
     end  
+    
+    % ID and subfiles
+    properties (Hidden)
+        fileID@char;
+        subRelaxObj@RelaxObj
+    end
+    
+    
+    events
+        FileHasChanged
+        FileIsDeleted
+    end
+    
     
     methods
         % Constructor: RelaxObj()

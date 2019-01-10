@@ -1,4 +1,4 @@
-classdef RelaxObj < handle
+classdef RelaxObj < handle & matlab.mixin.Heterogeneous
     % This class manage Stelar data from the SPINMASTER relaxometer.
     %
     % See also DATAUNIT, BLOC, ZONE, DISPERSION
@@ -11,16 +11,21 @@ classdef RelaxObj < handle
         dataset@char = 'myDataset';    % name of the dataset('ISMRM2018')
     end
     
-    properties (Hidden)
-        fileID@char;                   % generate unique ID 
-        subRelaxObj@RelaxObj
-    end
-    
     % data properties
     properties (Access = public)
         data@DataUnit
         parameter@ParamObj = ParamObj();  
     end  
+    
+    properties (Hidden)
+        fileID@char;                   % generate unique ID 
+        subRelaxObj@RelaxObj
+    end
+    
+    events
+        FileHasChanged
+        FileIsDeleted
+    end
     
     methods
         % Constructor: RelaxObj()
@@ -81,7 +86,7 @@ classdef RelaxObj < handle
         %
         % Optionnal input: 
         % - 'class': char between {'Dispersion','Zone','Bloc'}
-        % - 'name': char (corresponding to the legendTag property in DataUnit
+        % - 'name': char (corresponding to the displayName property in DataUnit
         %
         % Example:
         % data = getData(this); % Get all the data in RelaxObj
@@ -105,26 +110,35 @@ classdef RelaxObj < handle
             end
             
             % check if we need to find a particular type of object
-            tf = strcmpi(varargin,'class');
-            
-            if ~all(tf == 0)
+            if nargin > 1
                 % find all the object corresponding to this class
- 
-                while ~strcmp(class(obj), varargin{1})
+                while ~strcmp(class(obj), varargin{1}) || isempty(obj(1).children)
                     obj = [obj.children];
                 end
                 
-                % check if we need to find a particular named obj
-                tf = strcmpi(varargin,'name');
+                % check result
+                if ~strcmp(class(obj), varargin{1})
+                    error('No object was found with this class!')
+                end
                 
-                if ~all(tf == 0)
+                % check if we need to find a particular named obj
+                if nargin > 2
+                    tf = strcmp({obj.displayName}, varargin{2});
                     
+                    if all(tf == 0)
+                        error('No object was found with this name!')
+                    else
+                        data = obj(tf);
+                    end
+                else
+                    data = obj;
+                end
             else
                 data = obj;
                 % get all the object
                 while ~isempty(obj(1).children)
                     obj = [obj.children];
-                    data = [data, obj];
+                    data = [data, obj]; %#ok<AGROW>
                 end
             end
         end %getData
