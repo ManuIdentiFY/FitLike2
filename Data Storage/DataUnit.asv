@@ -122,7 +122,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             % notify the deletion
             notify(this, 'FileDeletion');
             
-            % delete the parent and clear children/parent
+            % delete the parent and 
             delete(this.parent);
             this.children(:) = [];
             this.parent(:) = [];
