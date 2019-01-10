@@ -108,8 +108,10 @@ classdef FitLikeView < handle
             delete(this.gui.menu);
             %clear out the pointer to the figure - prevents memory leaks
             this.gui = [];
-        end
-        
+        end %deleteWindow
+    end
+    
+    methods (Access = public)
         % Add label items to the label list
         function [this, icon] = addLabelItem(this, new_label)
             % check the length of the list
@@ -159,7 +161,7 @@ classdef FitLikeView < handle
         end
         
         % This function can create a colored version of the new_file icon.
-        % Icons are stored in Data Viewer/icons
+        % Icons are stored in Data Viewer/icons (.gif format).
         function colorIcon(this, color, icon_name)
             % get the new_file icon
             [X, map]=imread(this.file_icon); 
