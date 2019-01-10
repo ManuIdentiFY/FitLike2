@@ -1,4 +1,4 @@
-function relaxlist = openRelaxObj(file,path,dataset)
+function relaxlist = openRelaxObj(filename,dataset)
 
 % creates a relaxobj instance with the data imported from the file
 % provided.
@@ -21,27 +21,24 @@ if nargin == 0
         case 3
             ext = 'mat';
     end
-elseif nargin == 1 
-    [path,file,ext] = fileparts(file);
-    if isempty(path)
-        path = cd;
-    end
-    dataset = 'Default dataset';
-else
-    [pathfromfile,~,ext] = fileparts(file);
-    if (nargin < 3) && (isempty(pathfromfile))
-        dataset = 'Default dataset';
-    elseif (nargin < 3) % the user provides the path attached to the file name, second argument must be the dataset name
-        dataset = path;
-        path = pathfromfile;
-    end
-    % check dataset output
-    if isempty(dataset)
-        return
-    elseif ischar(dataset)
-        dataset = {dataset};
+else 
+    if iscell(filename) % case when the use provides a list of file names
+        for ind = 1:length(filename)
+            [path{ind},file{ind},ext{ind}] = fileparts(filename{ind});
+        end
+    elseif ischar(filename)
+        [path{1},file{1},ext{1}] = fileparts(filename);
+    else
+        error('Wrong type of input. First input must a file name or an array of file names')
     end
 end
+
+if nargin < 2
+    for ind = 1:length(file)
+        dataset{ind} = 'Default dataset';
+    end
+end
+
 % check inputs
 if isequal(file,0)
     % user canceled
@@ -51,13 +48,16 @@ elseif ischar(file)
 end
 
 %% create the bloc object
-bloc = [];
-% switch depending on the type of file
-switch ext
-    case '.sdf'
-        % loop over the files
-        for i = 1:length(file)
-            filename = fullfile(path,[file{i} ext]);
+
+% loop over the files
+for i = 1:length(file)
+    if isempty(path{i})
+        path{i} = cd;
+    end
+    % switch depending on the type of file
+    switch ext{i}
+        case '.sdf'
+            filename = fullfile(path{i},[file{i} ext{i}]);
             % check version and select the correct reader
             try
                 ver = checkversion(filename);
@@ -82,23 +82,21 @@ switch ext
                 'parameter',num2cell(parameter),...
                 'filename',name,'sequence',sequence);  
             new_bloc = checkBloc(new_bloc);
-            
+
             % create the metadata object associated with this acquisition
             relax = RelaxObj('label','Default data',...                     % defines the category of data (user defined)
-                             'filename',fullfile(path,file{i}),...             % store the data file name
+                             'filename',filename,...             % store the data file name
                              'sequence',sequence{1},...   % name of the sequence
-                             'dataset',dataset,...                          % dataset associated 
+                             'dataset',dataset{i},...                          % dataset associated 
                              'data',new_bloc,...
                              'parameter', parameter);  
 
-           
+
             % append them to the current data
             relaxlist = [relaxlist relax]; %#ok<AGROW>
-        end
-    case '.sef'
-        % loop over the files
-        for i = 1:length(file)
-            filename = fullfile(path,[file{i} ext]);
+        case '.sef'
+            % loop over the files
+            filename = fullfile(path{i},[file{i} ext{i}]);
             % read the file
             [x,y,dy] = readsef(filename);
             % format the output
@@ -107,27 +105,28 @@ switch ext
                 'filename',file{i},'sequence','Unknown');
             % create the metadata object associated with this acquisition
             relax = RelaxObj('label','Default data',...                     % defines the category of data (user defined)
-                             'filename',fullfile(path,file{i}),...             % store the data file name
+                             'filename',filename,...             % store the data file name
                              'sequence','Unknown',...   % name of the sequence
-                             'dataset',dataset,...                          % dataset associated 
+                             'dataset',dataset{i},...                          % dataset associated 
                              'data',new_bloc,...
                              'parameter', ParamV1);  
             % append them to the current data
             relaxlist = [relaxlist relax]; %#ok<AGROW>
-        end
-    case '.mat'
-        for i = 1:length(file)
-            filename = fullfile(path,[file{i} ext]);
-            % read the .mat file
-            obj = load(filename);
-            if ~isequal(class(obj),'RelaxObj')
-                return
+        case '.mat'
+            for i = 1:length(file)
+                filename = fullfile(path,[file{i} ext]);
+                % read the .mat file
+                obj = load(filename);
+                if ~isequal(class(obj),'RelaxObj')
+                    return
+                end
+                % append them to the current data
+                relaxlist = [relaxlist obj]; %#ok<AGROW>
             end
-            % append them to the current data
-            relaxlist = [relaxlist obj]; %#ok<AGROW>
-        end
+    end
 end            
             
+    
 
 % link the relaxobj and bloc data
 
