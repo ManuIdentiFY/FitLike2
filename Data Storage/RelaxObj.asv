@@ -105,29 +105,26 @@ classdef RelaxObj < handle
             end
             
             % check if we need to find a particular type of object
-            if nargin > 1
+            tf = strcmpi(varargin,'class');
+            
+            if ~all(tf == 0)
                 % find all the object corresponding to this class
-                while ~strcmp(class(obj), varargin{1}) || isempty(obj(1).children)
+ 
+                while ~strcmp(class(obj), varargin{1})
                     obj = [obj.children];
                 end
                 
-                % check result
-                if ~strcmp(class(obj), varargin{1})
-                    error('This class does not exist in DataUnit obj')
-                end
-                
                 % check if we need to find a particular named obj
-                if nargin > 2
+                tf = strcmpi(varargin,'name');
+                
+                if ~all(tf == 0)
                     
-                else
-                    data = obj;
-                end
             else
                 data = obj;
                 % get all the object
                 while ~isempty(obj(1).children)
                     obj = [obj.children];
-                    data = [data, obj]; %#ok<AGROW>
+                    data = [data, obj];
                 end
             end
         end %getData
