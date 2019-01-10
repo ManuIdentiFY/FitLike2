@@ -84,7 +84,28 @@ classdef RelaxObj < handle
         end %delete
     end
     
+    % Data formating functions
     methods (Access = public)
+        % Search for duplicates in array of RelaxObj.
+        % This function check the unicity of the triplet (dataset, sequence, filename)
+        % If duplicates are found, the concerned RelaxObj's
+        % filename are modified as:
+        % RelaxObj(i).filename = [RelaxObj(i).filename (n)]
+        % with n the index of the duplicated files.
+        function this = check(this)
+            % check if bloc are uniques
+            [~,~,X] = unique(strcat({this.dataset},{this.sequence},...
+                {this.filename}));
+            Y = hist(X,unique(X));
+            idx = find(Y > 1);
+            for k = 1:numel(idx)
+                obj = this(X == idx(k));
+                new_filename = cellfun(@(x) [obj(1).filename,' (',num2str(x),')'],...
+                    num2cell(1:numel(obj)), 'Uniform',0);
+                [this(X == idx(k)).filename] = new_filename{:};
+            end
+        end %check
+        
         % Data formating: mergeFile()
         % merge several objects, considering only the DataUnit at the level
         % provided (Bloc, Zone or Dispersion)
@@ -149,7 +170,7 @@ classdef RelaxObj < handle
             obj = this.data;
             % check if we need to find a particular type of object
             if nargin > 1                
-                % find all the object corresponding to this class  || isempty(obj(1).children)
+                % find all the object corresponding to this class
                 while ~strcmpi(class(obj), varargin{1})
                     % check if parent are available
                     if  isempty(obj(1).parent)
@@ -180,6 +201,47 @@ classdef RelaxObj < handle
                 end
             end
         end %getData
+        
+        % This function extract the DataUnit meta-data from the RelaxObj.
+        % Any DataUnit is defined by its displayName property, returned by
+        % this function.
+        % Output is a struct where fieldname are the class and value are
+        % the displayName(s) found.
+        %
+        % Optionnal input:
+        % - 'class': char between {'Dispersion','Zone','Bloc'};
+        %
+        % Example!
+        % name = getDataInfo(this); % Get all the displayName in RelaxObj
+        % 
+        % name = getDataInfo(this, 'Dispersion'); % get all the displayName
+        % of dispersion object in RelaxObj.
+        function displayName = getDataInfo(this, varargin)
+            % get the data object wanted
+            obj = getData(this,varargin{:});
+            
+            % get their class
+            c = arrayfun(@class, obj, 'Uniform', 0); % because heterogeneous array
+            cc = unique(c,'stable');
+            
+            % loop over the class
+            for k = 1:numel(cc)
+                tf = strcmp(c, cc{k});
+                displayName.(cc{k}) = {obj(tf).displayName};
+            end            
+        end %getDataInfo
+        
+        % Wrapper to the ParamObj setfield/getfield methods. See ParamObj
+        % for more details.
+        % Syntax: val = getfield(self, 'field')
+        %         val = getfield(self, 'field', 'ForceCellOutput', 'True')
+        function val = getfield(this, fld, varargin)
+            val = getfield(this.parameter, fld, varargin);
+        end %getfield
+        
+        function this = setfield(this, field, val)
+            this.parameter = setfield(this.parameter, field, val); %#ok<SFLD>
+        end %setfield
     end
 end
 
