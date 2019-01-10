@@ -205,6 +205,10 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                     ind = arrayfun(@(o)isequal(o,self),self.parent(i).children);
                     self.parent(i).children(ind) = [];
                 end
+                for i = 1:length([self.children])
+                    ind = arrayfun(@(o)isequal(o,self),self.children(i).parent);
+                    self.children(i).parent(ind) = [];
+                end
             end
         end
     end % methods
