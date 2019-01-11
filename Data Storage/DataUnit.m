@@ -66,6 +66,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 % parent explicitely the object if needed
                 if ~isempty(this.parent)
                     link(this.parent, this);
+                    this.relaxObj = this.parent.relaxObj;
                 end
             else
                 % array of struct
@@ -88,6 +89,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         % parent explicitely the object if needed
                         if ~isempty(this(k).parent)
                             link(this(k).parent, this(k));
+                            this(k).relaxObj = this(k).parent.relaxObj;
                         end
                     end
                 end
@@ -208,7 +210,25 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 
     end % methods
     
-    methods (Access = public, Sealed = true)                
+    methods (Access = public, Sealed = true)   
+        % Wrapper to get RelaxObj property from DataUnit
+        function val = getRelaxProp(this, prop)
+            % check if RelaxObj exists
+            if isempty(this.relaxObj)
+                val = []; return;
+            end
+            
+            % get the prop if possible
+            fld = fieldnames(this.relaxObj);
+            tf = strcmpi(fieldnames(this.relaxObj), prop);
+            
+            if all(tf ==0)
+                error('getRelaxProp: Unknown property')
+            else
+                val = this.relaxObj.(fld{tf});
+            end
+        end %get.meta
+        
         % Fill or adapt the mask to the "y" field 
         % Could be simplify ? --> consider always array of struct [Manu] 
         function this = resetmask(this)
