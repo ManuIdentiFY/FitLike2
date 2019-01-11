@@ -56,6 +56,10 @@ classdef RelaxObj < handle
                 end 
                 % add fileID
                 this.fileID = char(java.util.UUID.randomUUID);
+                % if data, add RelaxObj handle
+                if ~isempty(this.data)
+                    set(this.data,'relaxObj',this);
+                end
             else
                 % array of struct
                 % check for cell sizes
@@ -70,6 +74,10 @@ classdef RelaxObj < handle
                         end
                         % add fileID
                         this(k).fileID = char(java.util.UUID.randomUUID);
+                        % if data, add RelaxObj handle
+                        if ~isempty(this(k).data)
+                            set(this(k).data,'relaxObj',this(k));
+                        end
                     end
                 end
             end
@@ -77,7 +85,7 @@ classdef RelaxObj < handle
         
         % Destructor
         function delete(this)
-           % call to the data 
+           % delete data handle
            delete(this.data);
         end %delete
     end
