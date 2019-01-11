@@ -6,7 +6,7 @@ classdef ParamObj < matlab.mixin.Heterogeneous
     
     methods 
          
-        function self = ParamObj(paramStruct)           
+        function this = ParamObj(paramStruct)           
             % check input, must be non empty and have always field/val
             % couple
             if nargin == 0
@@ -16,48 +16,48 @@ classdef ParamObj < matlab.mixin.Heterogeneous
             
             % check if array of struct
             if ~iscell(paramStruct)
-                self.paramList = paramStruct;
+                this.paramList = paramStruct;
             else
                 % initialise explicitely the array of object (required
                 % for heterogeneous array)
-                fh = str2func(class(self));
+                fh = str2func(class(this));
                 % for loop required to create unique handle.
                 for k = numel(paramStruct):-1:1
-                    self(1,k) = fh();
-                    self(k).paramList = paramStruct{k};
+                    this(1,k) = fh();
+                    this(k).paramList = paramStruct{k};
                 end
             end   
-        end
+        end %ParamObj
         
         % reshape the data in all fields according to the template provided
-        function self = reshape(self,dim)
-            fname = fields(self.paramList);
+        function this = reshape(this,dim)
+            fname = fields(this.paramList);
             for ind = 1:length(fname)
-                val = getfield(self.paramList,fname{ind});
+                val = getfield(this.paramList,fname{ind});
                 if iscell(val) || isnumeric(val)
                     if (size(val,1)==dim(1) && size(val,2)==dim(2) && size(val,3)==dim(3))
                         val = reshape(val,dim);
                     end
                 end
-                self.paramList = setfield(self.paramList,fname{ind},val);
+                this.paramList = setfield(this.paramList,fname{ind},val);
             end
-        end
+        end %reshape
         
         % Syntax: val = getfield(self, 'field')
         %         val = getfield(self, 'field', 'ForceCellOutput', 'True')
-        function value = getfield(self, field, varargin)
+        function val = getfield(this, fld, varargin)
             % check if the field exist in all the parameter structures
-            isfld = arrayfun(@(x) isfield(x.paramList,field), self);
+            isfld = arrayfun(@(x) isfield(x.paramList,fld), this);
             % check input size
-            if length(self) > 1
+            if length(this) > 1
                 if all( isfld == 1) 
                     % get value
-                    value = arrayfun(@(x) x.paramList.(field), self, 'UniformOutput',0);
+                    val = arrayfun(@(x) x.paramList.(fld), this, 'UniformOutput',0);
                 else
                     % initialise empty cell array
-                    value = cell(1,length(self));
+                    val = cell(1,length(this));
                     % fill what you can
-                    value(isfld) = arrayfun(@(x) x.paramList.(field), self, 'UniformOutput',0);
+                    val(isfld) = arrayfun(@(x) x.paramList.(fld), this, 'UniformOutput',0);
                     % throw a warning
                     warning('getfield:MissingField',['One or more structure(s)'...
                                         ' miss the field required'])
@@ -70,34 +70,34 @@ classdef ParamObj < matlab.mixin.Heterogeneous
                     if nargin > 2
                         if strcmp(varargin{1},'ForceCellOutput') &&...
                                 strcmpi(varargin{2},'true')
-                            value = {self.paramList.(field)};
+                            val = {this.paramList.(fld)};
                         elseif strcmpi(varargin{2},'false')
-                            value = self.paramList.(field);
+                            val = this.paramList.(fld);
                         else
                             error('getfield:ForceCellOutput',['Wrong optional argument'...
                                           ' or value associated'])
                         end
                     else                           
-                        value = self.paramList.(field);
+                        val = this.paramList.(fld);
                     end
                 end
             end
         end %getfield
 
         
-        function other = copy(self)
-            fh = str2func(class(self));
+        function other = copy(this)
+            fh = str2func(class(this));
             other = fh();
-            other.paramList = self.paramList;
-        end
+            other.paramList = this.paramList;
+        end %copy
         
         
-        function self = setfield(self, field, value)
-            if length(self) > 1 
+        function this = setfield(this, fld, val)
+            if length(this) > 1 
                 % check if the field exist in all the parameter structures
-                isfld = arrayfun(@(x) isfield(x.paramList,field), self);
+                isfld = arrayfun(@(x) isfield(x.paramList,fld), this);
                 % check the size of value
-                if ~iscell(value) || length(value) ~= length(self)
+                if ~iscell(val) || length(val) ~= length(this)
                     error('setfield:WrongSizeInput',['The size of the value input'...
                         ' does not fit with the size of the array OR value input'...
                         'is not a cell'])
@@ -107,43 +107,43 @@ classdef ParamObj < matlab.mixin.Heterogeneous
                 if all(isfld ~= 1)
                     warning('setfield:MissingField',['One or more structure(s)'...
                                     ' miss the field required'])
-                    self = self(isfld);
-                    value = value(isfld);
+                    this = this(isfld);
+                    val = val(isfld);
                 end
                 % loop
-                for i = 1:length(self)
-                    self(i).paramList.(field) = value{i};
+                for i = 1:length(this)
+                    this(i).paramList.(fld) = val{i};
                 end
             else
                 % check if the field exist
-                if ~isfield(self.paramList,field)
+                if ~isfield(this.paramList,fld)
                     error('setfield:MissingField',['The field required does'...
                                           ' not exist'])
                 else
-                    self.paramList.(field) = value;
+                    this.paramList.(fld) = val;
                 end
             end
         end %setfield
         
-        function self = changeFieldName(self,old,new)
-            for i = 1:length(self)
-                self(i).paramList  = setfield(self(i).paramList ,new,getfield(self(i),old));
-                self(i).paramList = rmfield(self(i).paramList,old);
+        function this = changeFieldName(this,old,new)
+            for i = 1:length(this)
+                this(i).paramList  = setfield(this(i).paramList ,new,getfield(this(i),old));
+                this(i).paramList = rmfield(this(i).paramList,old);
             end
-        end
+        end %changeFieldName
         
         % merging two parameter files. This is a complex operation and the
         % function below may be largely optimised.
-        function new = merge(self)
-            f2 = fieldnames(self(2).paramList);
-            new = copy(self(1));
+        function new = merge(this)
+            f2 = fieldnames(this(2).paramList);
+            new = copy(this(1));
             
             % place the exeptions here
             
             % check the consistency of TAU values
             if sum(strcmp(f2,'TAU')) % if there is a TAU field, then check
                 try
-                    tau = arrayfun(@(s)s.paramList.TAU,self,'UniformOutput',0);
+                    tau = arrayfun(@(s)s.paramList.TAU,this,'UniformOutput',0);
                     if ~isequal(tau{:})
                         new.paramList.TAU = tau;
 %                         warning('TAU values differ between acquisitions, the results may be meaningless.')
@@ -161,7 +161,7 @@ classdef ParamObj < matlab.mixin.Heterogeneous
             for indfname = 1:length(f2)
                 fname = f2(indfname);
                 fname = fname{1};
-                val2 = getfield(self(2),fname);
+                val2 = getfield(this(2),fname);
                 if isfield(new.paramList,fname)
                     val1 = getfield(new.paramList,fname);
                     try
@@ -180,42 +180,42 @@ classdef ParamObj < matlab.mixin.Heterogeneous
                 end
             end
             % treat additional items to merge recursively
-            if length(self)>2
-                new = merge([new, self(3:end)]);
+            if length(this)>2
+                new = merge([new, this(3:end)]);
             end            
-        end
+        end %merge
         
         % replace the field values with the new ones
-        function new = replace(self)
-            for numobj = 2:length(self)
-                f2 = fieldnames(self(numobj).paramList);
+        function new = replace(this)
+            for numobj = 2:length(this)
+                f2 = fieldnames(this(numobj).paramList);
                 for ind = 1:length(f2)
-                    if isfield(self(1).paramList,f2{ind})
-                        self(1).paramList.(f2{ind}) = [];
+                    if isfield(this(1).paramList,f2{ind})
+                        this(1).paramList.(f2{ind}) = [];
                     end
                 end
             end
-            new = merge(self);
-        end
+            new = merge(this);
+        end %replace
                 
-        function x = struct2cell(self)
-            x = struct2cell(self.paramList);
-        end
+        function x = struct2cell(this)
+            x = struct2cell(this.paramList);
+        end %struct2cell
 
         % GETDISPAXIS(SELF) get the magnetic fields
         % The input can not be an array of object, instead call GETDISPAXIS
         % with the following syntax:
         % brlx = arrayfun(@(x) getDispAxis(x), self, 'UniformOutput', 0);
-        function BRLX = getDispAxis(self)
+        function BRLX = getDispAxis(this)
             % check input
-            if length(self) > 1
+            if length(this) > 1
                 error('GetDispAxis:InputSize',['It seems that the input is'...
                     ' an array of object. Use the following syntax instead: '...
                     'arrayfun(@(x) getDispAxis(x), self, ''UniformOutput'', 0);'])
             else
-                BRLX = self.paramList.BRLX(:);
+                BRLX = this.paramList.BRLX(:);
             end
-        end
+        end %getDispAxis
         
     end
 end

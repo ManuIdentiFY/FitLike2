@@ -14,199 +14,142 @@ classdef Zone < DataUnit
         % equivalent to DataUnit: 
         % cell(s) input: array of structure
         % other: structure
-        function obj = Zone(varargin)
-            obj = obj@DataUnit(varargin{:});
+        function this = Zone(varargin)
+            this = this@DataUnit(varargin{:});
         end %Zone
         
-        function x = getDispAxis(self)
-            x = arrayfun(@(x) getDispAxis(x.parameter),self,'UniformOutput',0);
+        function x = getDispAxis(this)
+            x = arrayfun(@(x) getDispAxis(x.parameter),this,'UniformOutput',0);
         end
         
-        % merge two datasets together
-        function selfMerged = merge(self)
-            n = ndims(self(1).x); % always concatenate over the last dimension (evolution fields), the others should have the same number of inputs
-            selfMerged = copy(self(1));
-            selfMerged.x = cat(n,self(1).x, self(2).x);
-            selfMerged.y = cat(n,self(1).y, self(2).y);
-            selfMerged.dy = cat(n,self(1).dy, self(2).dy);
-            selfMerged.mask = cat(n,self(1).mask, self(2).mask);
-            selfMerged.parameter = merge(self(1).parameter,self(2).parameter);
-            if length(self) > 2
-                selfMerged = merge([selfMerged self(3:end)]);
-            end
-        end
+%         % merge two datasets together
+%         function selfMerged = merge(self)
+%             n = ndims(self(1).x); % always concatenate over the last dimension (evolution fields), the others should have the same number of inputs
+%             selfMerged = copy(self(1));
+%             selfMerged.x = cat(n,self(1).x, self(2).x);
+%             selfMerged.y = cat(n,self(1).y, self(2).y);
+%             selfMerged.dy = cat(n,self(1).dy, self(2).dy);
+%             selfMerged.mask = cat(n,self(1).mask, self(2).mask);
+%             selfMerged.parameter = merge(self(1).parameter,self(2).parameter);
+%             if length(self) > 2
+%                 selfMerged = merge([selfMerged self(3:end)]);
+%             end
+%         end
                        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Need to be simplify to get fitting data from processing method
+        % instead of parameter! [Manu]
+        % Need to modify the Zone2Disp storage pipeline! [Manu]
         % evaluate the fit function if present, for display purposes
-        function y = evaluate(self, zoneIndex, x)
-            model = self.parameter.paramList.modelHandle{zoneIndex};
-            y = model(self.parameter.paramList.coeff(zoneIndex,:), x);
+        function y = evaluate(this, zoneIndex, x)
+            model = this.parameter.paramList.modelHandle{zoneIndex};
+            y = model(this.parameter.paramList.coeff(zoneIndex,:), x);
         end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Can be simplify by using smart dimension indexing! [Manu]
+        % These functions should be set in DataUnit whereas only dimension
+        % access should be set here!
         
         % Set mask according to a [x,y] range. the new mask is added to the
         % current mask. Can be called with only two input to reset the mask.
-        function obj = setMask(obj, idxZone, xrange, yrange)
+        function this = setMask(this, idxZone, xrange, yrange)
             % check input
             if isnan(idxZone)
                 if nargin > 3
-                    obj.mask = obj.mask &...
-                        ~((xrange(1) < obj.x & obj.x < xrange(2))&...
-                          (yrange(1) < obj.y & obj.y < yrange(2)));
+                    this.mask = this.mask &...
+                        ~((xrange(1) < this.x & this.x < xrange(2))&...
+                          (yrange(1) < this.y & this.y < yrange(2)));
                 else
-                    obj.mask = true(size(obj.mask));
+                    this.mask = true(size(this.mask));
                 end
             else
                 if nargin > 3
-                    obj.mask(:,idxZone) = obj.mask(:,idxZone) &...
-                        ~((xrange(1) < obj.x(:,idxZone) & obj.x(:,idxZone) < xrange(2))&...
-                          (yrange(1) < obj.y(:,idxZone) & obj.y(:,idxZone) < yrange(2)));
+                    this.mask(:,idxZone) = this.mask(:,idxZone) &...
+                        ~((xrange(1) < this.x(:,idxZone) & this.x(:,idxZone) < xrange(2))&...
+                          (yrange(1) < this.y(:,idxZone) & this.y(:,idxZone) < yrange(2)));
                 else
-                    obj.mask(:,idxZone) = true(size(obj.mask(:,idxZone)));
+                    this.mask(:,idxZone) = true(size(this.mask(:,idxZone)));
                 end
             end
         end %setMask
         
         % get the dispersion data
-        function [x,y,dy,mask] = getData(obj, idxZone)
+        function [x,y,dy,mask] = getData(this, idxZone)
             % check input
             if ~isnan(idxZone)
-               x = obj.x(:,idxZone); y = obj.y(:,idxZone);
-               dy = obj.dy(:,idxZone); mask = obj.mask(:,idxZone);
+               x = this.x(:,idxZone); y = this.y(:,idxZone);
+               dy = this.dy(:,idxZone); mask = this.mask(:,idxZone);
             else
                % error ?
             end
         end %getData
         
         % get the dispersion fit data
-        function [xfit, yfit] = getFit(obj, idxZone, xfit)
+        function [xfit, yfit] = getFit(this, idxZone, xfit)
             % check if fitobj
-            if isempty(obj.processingMethod)
+            if isempty(this.processingMethod)
                 xfit = []; yfit = [];
                 return
             end
             % check input
             if ~isnan(idxZone)
                 if isempty(xfit)
-                    x = sort(obj.x(obj.mask(:,idxZone),idxZone));
+                    x = sort(this.x(this.mask(:,idxZone),idxZone));
                     % get the interval between x pts
                     x_add = diff(x/2);
                     x = sort([x; x(1:end-1)+x_add]); %add it
                     x_add = diff(x/2); % get the interval between x pts
                     xfit = sort([x; x(1:end-1)+x_add]); %add it
                 end
-                yfit = evaluate(obj, idxZone, xfit);
+                yfit = evaluate(this, idxZone, xfit);
             else
                 % error ?
             end
         end %getFit
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Need to be modify to get filename from RelaxObj wrapper! [Manu]
+        % Can probably be simplify to set getLegend in RelaxObj directly!
         
         % get the legend for dispersion data. 
         % plotType: {'Data','Mask','...}
         % extend is a logical to generate an extended version of the legend
         % included the displayName (filename (displayName)). Can be useful
         % when several plot coming from the same file are displayed.
-        function leg = getLegend(obj, idxZone, plotType, extend)
+        function leg = getLegend(this, idxZone, plotType, extend)
             % switch according to the input
             switch plotType
                 case 'Data'
                     if isnan(idxZone)
                         % error ?
                     else
-                        leg = sprintf('Zone %d: %s', idxZone, obj.filename);
+                        leg = sprintf('Zone %d: %s', idxZone, this.filename);
                     end
                     
                     if extend
-                        leg = [leg,' (',obj.displayName,')'];
+                        leg = [leg,' (',this.displayName,')'];
                     end
                 case 'Fit'
-                    leg = sprintf('%s', obj.processingMethod.functionName);
+                    leg = sprintf('%s', this.processingMethod.functionName);
                     
                     if isnan(idxZone)
                         % error ?
                     else
                         leg = sprintf('%s  (r² = %.3f)',leg,...
-                            obj.parameter.paramList.gof{idxZone}.rsquare);
+                            this.parameter.paramList.gof{idxZone}.rsquare);
                                                                                      
                         if extend                        
-                            leg = sprintf('%s: Zone %d - %s', leg, idxZone, obj.filename);
+                            leg = sprintf('%s: Zone %d - %s', leg, idxZone, this.filename);
                         end
                     end
                 case 'Mask'
                     leg = [];
             end
         end %getLegend
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     end % methods
-   
-    methods % plotting methods
-%          % plot dispersion data
-%         % varargin: color, style, marker, markersize
-%         function h = plotData(obj, zoneIndex, axe, color, style, mrk, mrksize)
-%             % plot
-%             h = errorbar(axe,...
-%                     obj.x(obj.mask(:, zoneIndex), zoneIndex),...
-%                     obj.y(obj.mask(:, zoneIndex), zoneIndex),...
-%                     [],...
-%                     'DisplayName', obj.filename,...
-%                     'Color',color,...
-%                     'LineStyle',style,...
-%                     'Marker',mrk,...
-%                     'MarkerSize',mrksize,...
-%                     'MarkerFaceColor','auto',...
-%                     'Tag',[obj.fileID,'@',num2str(zoneIndex)]); 
-%         end %plotData
-%         
-%         % Add error to an existing errorbar. If multiple, should be in the
-%         % same order.
-%         function h = addError(obj, zoneIndex, h)
-%              set(h,...
-%                  'YNegativeDelta',-obj.dy(obj.mask(:, zoneIndex), zoneIndex),...
-%                  'YPositiveDelta',obj.dy(obj.mask(:, zoneIndex), zoneIndex));
-%         end %addError
-%         
-%         % Plot Masked data
-%         % varargin: color, marker, markersize
-%         function h = plotMaskedData(obj, zoneIndex, axe, color, mrk, mrksize)
-%             % check if data to plot
-%             if ~isempty(obj.y(~obj.mask))
-%                 % plot
-%                 h = scatter(axe,...
-%                     obj.x(~obj.mask(:, zoneIndex), zoneIndex),...
-%                     obj.y(~obj.mask(:, zoneIndex), zoneIndex),...
-%                     'MarkerEdgeColor', color,...
-%                     'Marker', mrk,...
-%                     'SizeData',mrksize,...
-%                     'MarkerFaceColor','auto',...
-%                     'Tag',[obj.fileID,'@',num2str(zoneIndex)]);
-%                 % remove this plot from legend
-%                 set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-%             end
-%         end
-%         
-%         % Plot Fit
-%         % varargin: color, style, marker
-%         function plotFit(obj, zoneIndex, axe, color, style, mrk)
-%             % check if possible to plot fit
-%             if ~isempty(obj.processingMethod)
-%                 % get x-values and increase its  number
-%                 x = sort(obj.x(obj.mask(:, zoneIndex), zoneIndex));
-%                 x_add = diff(x/2); % get the interval between x pts
-%                 x_fit = sort([x; x(1:end-1)+x_add]); %add it
-% 
-%                 % get y-values
-%                 y_fit = evaluate(obj, zoneIndex, x_fit);
-% 
-%                 % change the displayed name and add the rsquare
-%                 fitName = sprintf('%s: %s (R^2 = %.3f)',...
-%                     obj.processingMethod.functionName, obj.filename,...
-%                     obj.parameter.paramList.gof{zoneIndex}.rsquare);
-% 
-%                 % plot
-%                 plot(axe, x_fit, y_fit,...
-%                     'DisplayName', fitName,...
-%                     'Color', color,...
-%                     'LineStyle', style,...
-%                     'Marker', mrk,...
-%                     'Tag',[obj.fileID,'@',num2str(zoneIndex)]); 
-%             end
-%         end 
-    end
 end

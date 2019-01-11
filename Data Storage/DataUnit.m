@@ -17,28 +17,18 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         dy@double = [];         % error bars on Y
         yLabel@char = '';       % name of the variable Y ('R1','fid',...)
         mask@logical = true(0);           % mask the X and Y arrays
-        subUnitList@DataUnit;          % stores DataUnits of the same type to merge data sets while keeping unmerge capabilities
     end   
-    
-    % file parameters
-    properties (Access = public)
-        parameter@ParamObj = ParamObj();       % list of parameters associated with the data
-    end
     
     % file processing
     properties (Access = public)
         processingMethod@ProcessDataUnit; % stores the processing objects that are associated with the data unit
     end
     
-    % file properties
+    % meta-data
     properties (Access = public)
         legendTag@char = '';
-        label@char = '';        % label of the file ('control','tumour',...)
-        displayName@char = '';         % char array to place in the legend associated with the data
-        filename@char = '';            % name of the file ('file1.sdf')
-        sequence@char = '';            % name of the sequence ('IRCPMG')
-        dataset@char = 'myDataset';    % name of the dataset('ISMRM2018')
-        fileID@char;                % generate unique ID 
+        displayName@char = '';  % char array to place in the legend associated with the data
+        relaxObj@RelaxObj       %handle to the meta-data
     end
     
     % other properties
@@ -48,9 +38,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     end
     
     events
-        FileDeletion
-        FileHasChanged
-        DataHasChanged
+        DataDeletion
+        DataUpdate
     end
     
     methods 
@@ -77,10 +66,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 % parent explicitely the object if needed
                 if ~isempty(this.parent)
                     link(this.parent, this);
-                    this.fileID = this.parent.fileID;
-                else
-                    % add ID
-                    this.fileID = char(java.util.UUID.randomUUID);
                 end
             else
                 % array of struct
@@ -103,16 +88,12 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         % parent explicitely the object if needed
                         if ~isempty(this(k).parent)
                             link(this(k).parent, this(k));
-                            this(k).fileID = this(k).parent.fileID;
-                        else
-                            % add ID
-                            this(k).fileID = char(java.util.UUID.randomUUID);
                         end
                     end
                 end
             end   
             % set displayName
-            setDisplayName(this);
+            setname(this);
             % generate mask if missing
             resetmask(this);
         end %DataUnit    
@@ -120,7 +101,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % Destructor
         function delete(this)
             % notify the deletion
-            notify(this, 'FileDeletion');
+            notify(this, 'DataDeletion');
             
             % delete the parent and clear children/parent
             delete(this.parent);
@@ -131,10 +112,10 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     
     methods (Access = public)
         % assign a processing function to the data object
-        function self = assignProcessingFunction(self,processObj)
-            self = arrayfun(@(s)setfield(s,'processingMethod',processObj),self,'UniformOutput',0); %#ok<*SFLD>
-            self = [self{:}];
-        end
+        function this = assignProcessingFunction(this,processObj)
+            this = arrayfun(@(s)setfield(s,'processingMethod',processObj),this,'UniformOutput',0); %#ok<*SFLD>
+            this = [this{:}];
+        end %assignProcessingFunction
 
         % link parent and children units
         function [parentObj,childrenObj] = link(parentObj,childrenObj)
@@ -152,153 +133,153 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                     end
                 end
             end         
-        end
+        end %link
+        
+        % removal from the parent object list for clean deletion
+        function unlink(this)
+            if length(this)>1
+                arrayfun(@(o)unlink(o),this,'UniformOutput',0)
+            else
+                for i = 1:length([this.parent])
+                    ind = arrayfun(@(o)isequal(o,this),this.parent(i).children);
+                    this.parent(i).children(ind) = [];
+                end
+                for i = 1:length([this.children])
+                    ind = arrayfun(@(o)isequal(o,this),this.children(i).parent);
+                    this.children(i).parent(ind) = [];
+                end
+            end
+        end %unlink
         
         % wrapper function to start the processing of the data unit
-        function [newDataUnit,self] = processData(self)
-            if sum(arrayfun(@(s)isempty(s.processingMethod),self))
+        function [newDataUnit,this] = processData(this)
+            if sum(arrayfun(@(s)isempty(s.processingMethod),this))
                 error('One or more data object are not assigned to a processing function.')
             end
-            newDataUnit = arrayfun(@(o)processData(o.processingMethod,o),self,'UniformOutput',0);
+            newDataUnit = arrayfun(@(o)processData(o.processingMethod,o),this,'UniformOutput',0);
             newDataUnit = [newDataUnit{:}];
         end        
         
         % collect the display names from all the parents in order to get
         % the entire history of the processing chain, for precise legends
-        function legendStr = collectLegend(self)
-            legendStr = self.legendTag;
-            if ~isempty(self.parent)
-                legendStr = [legendStr ', ' collectLegend(self.parent)];
+        function legendStr = collectLegend(this)
+            legendStr = this.legendTag;
+            if ~isempty(this.parent)
+                legendStr = [legendStr ', ' collectLegend(this.parent)];
             end
-        end
+        end %collectLegend
         
         % make a copy of an object
-        function other = copy(self)
-            fh = str2func(class(self));
+        function other = copy(this)
+            fh = str2func(class(this));
             other = fh();
-            fld = fields(self);
+            fld = fields(this);
             for ind = 1:length(fld)
-                other.(fld{ind}) = self.(fld{ind});
+                other.(fld{ind}) = this.(fld{ind});
             end
-        end
+        end %copy
 
-        % merging function, merges a list of the same data object type
-        function mergedUnit = merge(selfList)
-            % check that object are homonegeous
-            fh = str2func(class(selfList));
-            if strcmp(fh, 'DataUnit')
-                mergedUnit = [];
-                return
-            else
-                % call constructor with the first merged filename (avoid
-                % returning null object)
-                mergedUnit = fh('filename',[selfList(1).filename,' (merged)'],...
-                                'sequence',selfList(1).sequence,'dataset',...
-                                selfList(1).dataset, 'displayName',...
-                                selfList(1).displayName,'legendTag',...
-                                selfList(1).legendTag,'xLabel',...
-                                selfList(1).xLabel,'yLabel',...
-                                selfList(1).yLabel);
-                mergedUnit.subUnitList = selfList;
-            end
-        end
+%         % merging function, merges a list of the same data object type
+%         function mergedUnit = merge(selfList)
+%             % check that object are homonegeous
+%             fh = str2func(class(selfList));
+%             if strcmp(fh, 'DataUnit')
+%                 mergedUnit = [];
+%                 return
+%             else
+%                 % call constructor with the first merged filename (avoid
+%                 % returning null object)
+%                 mergedUnit = fh('filename',[selfList(1).filename,' (merged)'],...
+%                                 'sequence',selfList(1).sequence,'dataset',...
+%                                 selfList(1).dataset, 'displayName',...
+%                                 selfList(1).displayName,'legendTag',...
+%                                 selfList(1).legendTag,'xLabel',...
+%                                 selfList(1).xLabel,'yLabel',...
+%                                 selfList(1).yLabel);
+%                 mergedUnit.subUnitList = selfList;
+%             end
+%         end
 
-        % reverse operation 
-        function dataList = unMerge(self)
-            dataList = self.subUnitList;
-            delete(self.subUnitList);
-        end
+%         % reverse operation 
+%         function dataList = unMerge(self)
+%             dataList = self.subUnitList;
+%             delete(self.subUnitList);
+%         end
 
-        % removal from the parent object list for clean deletion
-        function unlink(self)
-            if length(self)>1
-                arrayfun(@(o)unlink(o),self,'UniformOutput',0)
-            else
-                for i = 1:length([self.parent])
-                    ind = arrayfun(@(o)isequal(o,self),self.parent(i).children);
-                    self.parent(i).children(ind) = [];
-                end
-                for i = 1:length([self.children])
-                    ind = arrayfun(@(o)isequal(o,self),self.children(i).parent);
-                    self.children(i).parent(ind) = [];
-                end
-            end
-        end
     end % methods
     
     methods (Access = public, Sealed = true)                
         % Fill or adapt the mask to the "y" field 
-        function obj = resetmask(obj)
+        % Could be simplify ? --> consider always array of struct [Manu] 
+        function this = resetmask(this)
             % check if input is array of struct or just struct
-            if length(obj) > 1 
+            if length(this) > 1 
                 % array of struct
-                idx = ~arrayfun(@(x) isequal(size(x.mask),size(x.y)), obj);
+                idx = ~arrayfun(@(x) isequal(size(x.mask),size(x.y)), this);
                 % reset mask
-                new_mask = arrayfun(@(x) true(size(x.y)),obj(idx),'UniformOutput',0);
+                new_mask = arrayfun(@(x) true(size(x.y)),this(idx),'UniformOutput',0);
                 % set new mask
-                [obj(idx).mask] = new_mask{:};
+                [this(idx).mask] = new_mask{:};
             else
                 % struct
-                if ~isequal(size(obj.mask),size(obj.y))
+                if ~isequal(size(this.mask),size(this.y))
                     % reset mask
-                    obj.mask = true(size(obj.y));
+                    this.mask = true(size(this.y));
                 end
             end
         end %resetmask
         
         % update an existing data set with new properties
-        function self = updateProperties(self,varargin)
+        function this = updateProperties(this,varargin)
             fieldName = varargin(1:2:end);
             value = varargin(2:2:end);
-            selfcell = mat2cell(self(:)',1,ones(1,length(self)));
+            selfcell = mat2cell(this(:)',1,ones(1,length(this)));
             for nf = 1:length(fieldName)
                 if ~iscell(value{nf})
-                    value{nf} = repmat(value(nf),1,length(self));
+                    value{nf} = repmat(value(nf),1,length(this));
                 elseif length(value{nf}) == 1
-                    value{nf} = repmat(value{nf},1,length(self));
+                    value{nf} = repmat(value{nf},1,length(this));
                 end
                 selfcell = cellfun(@(obj,value) setfield(obj,fieldName{nf},value),selfcell,value{nf},'UniformOutput',0);
             end
-            self = [selfcell{:}];
-        end
+            this = [selfcell{:}];
+        end %updateProperties
         
         % set displayName following this rule:
         % [class(obj) obj.legendTag (obj.parent.legendTag,
         % obj.parent.parent.legendTag, ...)]
-        function obj = setDisplayName(obj)
+        function this = setname(this)
             % loop if multiple file
-            for k = 1:numel(obj)
+            for k = 1:numel(this)
                 % check if existing displayName
-                if ~isempty(obj(k).displayName)
+                if ~isempty(this(k).displayName)
                     continue
                 end
                 % init
-                if isempty(obj(k).legendTag)
-                    obj(k).displayName = class(obj(k));
+                if isempty(this(k).legendTag)
+                    this(k).displayName = class(this(k));
                 else
-                    obj(k).displayName = [class(obj(k)),' ',obj(k).legendTag];
+                    this(k).displayName = [class(this(k)),' ',this(k).legendTag];
                 end
                 % loop over the parent to get additional information
-                if ~isempty(obj(k).parent)
-                    if ~isempty(obj(k).parent.legendTag)
-                        parentTag = collectLegend(obj(k).parent);
-                        obj(k).displayName = [obj(k).displayName,' (',...
+                if ~isempty(this(k).parent)
+                    if ~isempty(this(k).parent.legendTag)
+                        parentTag = collectLegend(this(k).parent);
+                        this(k).displayName = [this(k).displayName,' (',...
                                                 parentTag(1:end-2),')'];
                     end
                 end     
             end
-        end %setDisplayName
+        end %setname
         
-        
-        %%% ------------------- PLOT ------------------- %%%
-        % Note: This part will be moved to an external object soon.
-        % [M.Petit]
+        % Should be modify to handle plot options without GUI [Manu]
+        % Need to be simplify by using varargin for optional input [Manu]
         % plot data function
-        function h = plotData(obj, idxZone, plotID, axe, color, style, mrk, mrksize)
+        function h = plotData(this, idxZone, plotID, axe, color, style, mrk, mrksize)
             % get data
-            [xp,yp,~,maskp] = getData(obj, idxZone);
+            [xp,yp,~,maskp] = getData(this, idxZone);
             % get legend
-            leg = getLegend(obj, idxZone, 'Data', 0);
+            leg = getLegend(this, idxZone, 'Data', 0);
             % plot
             h = errorbar(xp(maskp),...
                     yp(maskp),...
@@ -314,17 +295,19 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotData
          
          % Add error to an existing errorbar. 
-         function h = addError(obj, idxZone, h)
+         function h = addError(this, idxZone, h)
              % get data
-             [~,~,dyp, maskp] = getData(obj, idxZone);
+             [~,~,dyp, maskp] = getData(this, idxZone);
              % plot
              set(h, 'YNegativeDelta',-dyp(maskp), 'YPositiveDelta',dyp(maskp));
          end %addError
          
+         % Should be modify to handle plot options without GUI [Manu]
+         % Need to be simplify by using varargin for optional input [Manu]
          % Plot Masked data
-         function h = plotMaskedData(obj, idxZone, plotID, axe, color, mrk, mrksize)
+         function h = plotMaskedData(this, idxZone, plotID, axe, color, mrk, mrksize)
              % get data
-             [xp,yp,~,maskp] = getData(obj, idxZone);
+             [xp,yp,~,maskp] = getData(this, idxZone);
              % check if data to plot
              if ~isempty(yp(~maskp))
                  % plot
@@ -342,14 +325,15 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotMaskedData
          
          % Plot Fit
-         % varargin: color, style, marker
-         function h = plotFit(obj, idxZone, plotID, axe, color, style, mrk)
+         % Should be modify to handle plot options without GUI [Manu]
+         % Need to be simplify by using varargin for optional input [Manu]
+         function h = plotFit(this, idxZone, plotID, axe, color, style, mrk)
              % get data
-             [xfit, yfit] = getFit(obj, idxZone, []);
+             [xfit, yfit] = getFit(this, idxZone, []);
              % check if possible to plot fit
              if ~isempty(yfit)
                  % get legend
-                 leg = getLegend(obj, idxZone, 'Fit', 0);
+                 leg = getLegend(this, idxZone, 'Fit', 0);
                  % plot
                  h = plot(axe, xfit, yfit,...
                      'DisplayName', leg,...
@@ -361,10 +345,12 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotFit
          
          % Plot Residual
-         function h = plotResidual(obj, idxZone, plotID, axe, color, style, mrk, mrksize)
+         % Should be modify to handle plot options without GUI [Manu]
+         % Need to be simplify by using varargin for optional input [Manu]
+         function h = plotResidual(this, idxZone, plotID, axe, color, style, mrk, mrksize)
               % get data
-              [xr,yr,~,maskr] = getData(obj, idxZone);
-              [~, yfit] = getFit(obj, idxZone, xr(maskr));
+              [xr,yr,~,maskr] = getData(this, idxZone);
+              [~, yfit] = getFit(this, idxZone, xr(maskr));
              % check if possible to plot fit
              if ~isempty(yfit) && ~isempty(yr)
                  h = plot(axe, xr(maskr), yr(maskr) - yfit,...
@@ -379,133 +365,133 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         %%% -------------------------------------------- %%%
     end %methods
     
-    % The methods described below are used to enable the merge capabilities
-    % of the DataUnit object. They work by re-directing any quiry for the
-    % x, y, dy and mask fields towards the list of sub-objects. Any
-    % modification in here must take care to avoid recursive calls and to
-    % limit the processing time, as these fields are used extensively
-    % during processing.
-    % LB 20/08/2018
-    methods
-        % check that new objects added to the list are of the same type as
-        % the main object
-        function self = set.subUnitList(self,objArray) %#ok<*MCSV,*MCHC,*MCHV2>
-            test = arrayfun(@(o)isa(o,class(self)),objArray);
-            if ~prod(test) % all the objects must have the correct type
-                error('Merged objects must be of the same type as the object container.')
-            end
-            self.subUnitList = objArray;
-        end
-        
-        % function that gathers the data from the sub-units and place them
-        % in the correct field. Always concatenate over the last
-        % significant dimension (dispersions)
-        function value = gatherSubData(self,fieldName)
-            sze = size(self.subUnitList(1).(fieldName));
-            n = ndims(self.subUnitList(1).(fieldName));
-            if (n == 2) && (sze(2)==1)
-                n = 1;
-            end                
-            value = cat(n,self.subUnitList.(fieldName));
-%             self.(fieldName) = value;
-        end
-        
-        % function that spreads the data from the contained object to the
-        % sub-units
-        function self = distributeSubData(self,fieldName,value)
-            % list the number of element needed in each sub-object
-            lengthList = arrayfun(@(o)length(o.(fieldName)),self.subUnitList);
-            endList = cumsum(lengthList);
-            startList = [1 endList(1:end-1)+1];
-            s = arrayfun(@(o,s,e)setfield(o,fieldName,value(s:e)),self.subUnitList,startList,endList,'UniformOutput',0); 
-            self.subUnitList = [s{:}];
-        end
-        
-        % functions used to make sure that merged objects behave
-        % consistently with their own object type. (see Matlab help on
-        % 'Modify Property Values with Access Methods')
-        function self = set.x(self,value)
-            if ~isempty(self.subUnitList)
-                % distribute the values to the sub-units
-                self = distributeSubData(self,'x',value);
-            end
-            self.x = value;
-        end
-        
-        function x = get.x(self)
-            if ~isempty(self.subUnitList)
-                x = gatherSubData(self,'x');
-            else
-                x = self.x;
-            end
-        end
-        
-        function self = set.y(self,value)
-            if ~isempty(self.subUnitList)
-                % distribute the values to the sub-units
-                self = distributeSubData(self,'y',value);
-            end
-            self.y = value;
-        end
-        
-        function y = get.y(self)
-            if ~isempty(self.subUnitList)
-                y = gatherSubData(self,'y');
-            else
-                y = self.y;
-            end
-        end
-        
-        function self = set.dy(self,value)
-            if ~isempty(self.subUnitList)
-                % distribute the values to the sub-units
-                self = distributeSubData(self,'dy',value);
-            end
-            self.dy = value;
-        end
-        
-        function dy = get.dy(self)
-            if ~isempty(self.subUnitList)
-                dy = gatherSubData(self,'dy');
-            else
-                dy = self.dy;
-            end
-        end
-        
-        function self = set.mask(self,value)
-            if ~isempty(self.subUnitList) %#ok<*MCSUP>
-                % distribute the values to the sub-units
-                self = distributeSubData(self,'mask',value);
-            end
-            self.mask = value;
-        end
-        
-        function mask = get.mask(self)            
-            if ~isempty(self.subUnitList)
-                mask = gatherSubData(self,'mask');
-            else
-                mask = self.mask;
-            end
-        end
-        
-        function param = get.parameter(self)
-            if ~isempty(self.subUnitList)
-                param = merge([self.subUnitList.parameter]);
-            else
-                param = self.parameter;
-            end
-        end
-        
-        function self = set.parameter(self,value)
-            if ~isempty(self.subUnitList)
-                % TO DO
-                warning('Assignement of parameters not yet implemented for merged objects. See DataUnit.m, function set.parameter.')
-                self.subUnitList(1).parameter = value;
-            else
-                self.parameter = value;
-            end
-        end
-    end
+%     % The methods described below are used to enable the merge capabilities
+%     % of the DataUnit object. They work by re-directing any quiry for the
+%     % x, y, dy and mask fields towards the list of sub-objects. Any
+%     % modification in here must take care to avoid recursive calls and to
+%     % limit the processing time, as these fields are used extensively
+%     % during processing.
+%     % LB 20/08/2018
+%     methods
+%         % check that new objects added to the list are of the same type as
+%         % the main object
+%         function self = set.subUnitList(self,objArray) %#ok<*MCSV,*MCHC,*MCHV2>
+%             test = arrayfun(@(o)isa(o,class(self)),objArray);
+%             if ~prod(test) % all the objects must have the correct type
+%                 error('Merged objects must be of the same type as the object container.')
+%             end
+%             self.subUnitList = objArray;
+%         end
+%         
+%         % function that gathers the data from the sub-units and place them
+%         % in the correct field. Always concatenate over the last
+%         % significant dimension (dispersions)
+%         function value = gatherSubData(self,fieldName)
+%             sze = size(self.subUnitList(1).(fieldName));
+%             n = ndims(self.subUnitList(1).(fieldName));
+%             if (n == 2) && (sze(2)==1)
+%                 n = 1;
+%             end                
+%             value = cat(n,self.subUnitList.(fieldName));
+% %             self.(fieldName) = value;
+%         end
+%         
+%         % function that spreads the data from the contained object to the
+%         % sub-units
+%         function self = distributeSubData(self,fieldName,value)
+%             % list the number of element needed in each sub-object
+%             lengthList = arrayfun(@(o)length(o.(fieldName)),self.subUnitList);
+%             endList = cumsum(lengthList);
+%             startList = [1 endList(1:end-1)+1];
+%             s = arrayfun(@(o,s,e)setfield(o,fieldName,value(s:e)),self.subUnitList,startList,endList,'UniformOutput',0); 
+%             self.subUnitList = [s{:}];
+%         end
+%         
+%         % functions used to make sure that merged objects behave
+%         % consistently with their own object type. (see Matlab help on
+%         % 'Modify Property Values with Access Methods')
+%         function self = set.x(self,value)
+%             if ~isempty(self.subUnitList)
+%                 % distribute the values to the sub-units
+%                 self = distributeSubData(self,'x',value);
+%             end
+%             self.x = value;
+%         end
+%         
+%         function x = get.x(self)
+%             if ~isempty(self.subUnitList)
+%                 x = gatherSubData(self,'x');
+%             else
+%                 x = self.x;
+%             end
+%         end
+%         
+%         function self = set.y(self,value)
+%             if ~isempty(self.subUnitList)
+%                 % distribute the values to the sub-units
+%                 self = distributeSubData(self,'y',value);
+%             end
+%             self.y = value;
+%         end
+%         
+%         function y = get.y(self)
+%             if ~isempty(self.subUnitList)
+%                 y = gatherSubData(self,'y');
+%             else
+%                 y = self.y;
+%             end
+%         end
+%         
+%         function self = set.dy(self,value)
+%             if ~isempty(self.subUnitList)
+%                 % distribute the values to the sub-units
+%                 self = distributeSubData(self,'dy',value);
+%             end
+%             self.dy = value;
+%         end
+%         
+%         function dy = get.dy(self)
+%             if ~isempty(self.subUnitList)
+%                 dy = gatherSubData(self,'dy');
+%             else
+%                 dy = self.dy;
+%             end
+%         end
+%         
+%         function self = set.mask(self,value)
+%             if ~isempty(self.subUnitList) %#ok<*MCSUP>
+%                 % distribute the values to the sub-units
+%                 self = distributeSubData(self,'mask',value);
+%             end
+%             self.mask = value;
+%         end
+%         
+%         function mask = get.mask(self)            
+%             if ~isempty(self.subUnitList)
+%                 mask = gatherSubData(self,'mask');
+%             else
+%                 mask = self.mask;
+%             end
+%         end
+%         
+%         function param = get.parameter(self)
+%             if ~isempty(self.subUnitList)
+%                 param = merge([self.subUnitList.parameter]);
+%             else
+%                 param = self.parameter;
+%             end
+%         end
+%         
+%         function self = set.parameter(self,value)
+%             if ~isempty(self.subUnitList)
+%                 % TO DO
+%                 warning('Assignement of parameters not yet implemented for merged objects. See DataUnit.m, function set.parameter.')
+%                 self.subUnitList(1).parameter = value;
+%             else
+%                 self.parameter = value;
+%             end
+%         end
+%     end
      
 end
 

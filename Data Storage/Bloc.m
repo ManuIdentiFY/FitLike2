@@ -15,19 +15,19 @@ classdef Bloc < DataUnit
     
     methods (Access = public)
         % Constructor
-        function obj = Bloc(varargin)
+        function this = Bloc(varargin)
             % call superclass constructor
-            obj = obj@DataUnit(varargin{:});
+            this = this@DataUnit(varargin{:});
             % set xLabel and yLabel
-            [obj.xLabel] = deal('Time');
-            [obj.yLabel] = deal('Signal');
+            [this.xLabel] = deal('Time');
+            [this.yLabel] = deal('Signal');
         end %Bloc
     end
     
     methods (Access = public)
         % get the inversion time (x-values for zone(s) axis)
-        function x = getZoneAxis(self)
-            x = arrayfun(@(x) getZoneAxis(x.parameter),self,'UniformOutput',0);
+        function x = getZoneAxis(this)
+            x = arrayfun(@(x) getZoneAxis(x.parameter),this,'UniformOutput',0);
         end
     end
     
