@@ -79,8 +79,6 @@ classdef RelaxObj < handle
         function delete(this)
            % call to the data 
            delete(this.data);
-           % notify destruction
-           notify(this,'FileIsDeleted');
         end %delete
     end
     

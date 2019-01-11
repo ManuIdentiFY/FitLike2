@@ -8,6 +8,5 @@ addpath(genpath('Toolbox'));
 
 % Create application
 this = FitLike();
-
 end % launcher
 
