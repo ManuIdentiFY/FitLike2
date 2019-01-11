@@ -249,5 +249,21 @@ classdef RelaxObj < handle
             this.parameter = setfield(this.parameter, field, val); %#ok<SFLD>
         end %setfield
     end
+    
+    % set/get
+    methods
+        
+        function val = get.filename(this)
+            val = this.filename;
+        end
+        
+        % No idea why warning [Manu]
+        function this = set.filename(this, val)
+            % notify that filename has changed
+            notify(this, 'FileHasChanged', EventFile(this.filename, val));
+            % set the new value
+            this.filename = val;
+        end
+    end
 end
 
