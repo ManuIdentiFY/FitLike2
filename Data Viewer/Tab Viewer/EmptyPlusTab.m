@@ -10,9 +10,9 @@ classdef EmptyPlusTab < EmptyTab
     
     methods
         % Constructor
-        function this = EmptyPlusTab(FitLike, tab)
+        function this = EmptyPlusTab(DisplayManager, tab)
             % call the superclass constructor
-            this = this@EmptyTab(FitLike, tab);
+            this = this@EmptyTab(DisplayManager, tab);
             % set the name of the subtab 
             this.Parent.Title = '+';
         end %EmptyPlusTab

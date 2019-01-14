@@ -200,7 +200,7 @@ classdef DisplayManager < handle
         
         % Wrapper to set mask
         function this = setMask(this, src, event)
-            setMask(this.FitLike, src, event);
+            
         end %setMask
         
         % mouse move

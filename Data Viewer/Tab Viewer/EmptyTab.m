@@ -15,16 +15,16 @@ classdef EmptyTab < uix.Container & handle
     
     % list of the components
     properties (Access = public)
-        FitLike % Presenter
+        DisplayManager % Presenter
         box % handle to box
     end
         
     methods (Access = public)
         % Constructor
-        function this = EmptyTab(FitLike, tab)
+        function this = EmptyTab(DisplayManager, tab)
             % Call superclass constructor
             this@uix.Container();
-            this.FitLike = FitLike;
+            this.DisplayManager = DisplayManager;
             % Create the container in the parent tab
             grid = uix.Grid('Parent',this,'Spacing', 5); 
             this.box = uix.VBox( 'Parent', grid, 'Padding', 5);

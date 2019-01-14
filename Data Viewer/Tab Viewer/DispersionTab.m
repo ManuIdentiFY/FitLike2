@@ -51,14 +51,14 @@ classdef DispersionTab < EmptyTab
     
     methods (Access = public)
         % Constructor
-        function this = DispersionTab(FitLike, tab)
+        function this = DispersionTab(DisplayManager, tab)
             % call the superclass constructor and set the Presenter
-            this = this@EmptyTab(FitLike, tab);
+            this = this@EmptyTab(DisplayManager, tab);
             % set the name of the subtab
             this.Parent.Title = 'Dispersion';
             this.inputType = 'Dispersion';
             % change the main axis into a subplot
-            this.axe = axes('Parent',uicontainer('Parent',this.box),...
+            this.axe = axes('Parent', uicontainer('Parent',this.box),...
                         'FontSize',8,...
                         'ActivePositionProperty', 'outerposition',...
                         'Position',[0.09 0.09 0.86 0.86],...
@@ -732,12 +732,14 @@ classdef DispersionTab < EmptyTab
                 % check if the same or not
                 xName = this.axe.XLabel.String;
                 if ~strcmp(xName, hData.xLabel)
-%                     warndlg('Not the same xLabel!')
+                    txt = 'Warning: A new label for x-axis is detected!\n';
+                    throwWrapMessage(this.DisplayManager, txt)
                 end
                 
                 yName = this.axe.YLabel.String;
                 if ~strcmp(yName, hData.yLabel)
-%                     warndlg('Not the same xLabel!')
+                    txt = 'Warning: A new label for y-axis is detected!\n';
+                    throwWrapMessage(this.DisplayManager, txt)
                 end               
             end
         end %setLabel
@@ -777,7 +779,8 @@ classdef DispersionTab < EmptyTab
         function maskData(this)
             % check if data are displayed
             if ~this.optsButton.DataCheckButton.Value || isempty(this.hData)
-%                 warning('Show or import data to mask them!')
+                txt = 'Warning: Show or import data to mask them!\n';
+                throwWrapMessage(this.DisplayManager, txt)
                 return
             end
             
@@ -803,14 +806,15 @@ classdef DispersionTab < EmptyTab
                                'idxZone', this.idxZone,...
                                'Action', 'SetMask',...
                                'XRange',xrange,'YRange',yrange);
-            setMask(this.FitLike, this, eventdata);
+            setMask(this.DisplayManager, this, eventdata);
         end % maskData
         
         % Reset mask data
         function resetMaskData(this)
             % check if data are displayed
             if ~this.optsButton.DataCheckButton.Value || isempty(this.hData)
-%                 warning('Show or import data to reset mask!')
+                txt = 'Warning: Show or import data to mask them!\n';
+                throwWrapMessage(this.DisplayManager, txt)
                 return
             end
             
@@ -818,7 +822,7 @@ classdef DispersionTab < EmptyTab
             eventdata = struct('Data',this.hData,...
                                'idxZone', this.idxZone,...
                                'Action', 'ResetMask');
-            setMask(this.FitLike, this, eventdata);
+            setMask(this.DisplayManager, this, eventdata);
         end % resetMaskData
         
         % get legend: avoid fit
@@ -830,7 +834,7 @@ classdef DispersionTab < EmptyTab
                 leg = []; relaxObj = []; return
             else
                 leg = {hData.DisplayName}; 
-                relaxObj = {hData.relaxObj};
+                relaxObj = [hData.relaxObj];
             end
         end %getLegend
     end
