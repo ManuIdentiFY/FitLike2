@@ -22,10 +22,7 @@ classdef DisplayManager < handle
     methods (Access = public)
         % Constructor
         function this = DisplayManager(FitLike)
-            %%--------------------------BUILDER--------------------------%%
-            % Store a reference to the presenter
-            this.FitLike = FitLike;
-                      
+            %%--------------------------BUILDER--------------------------%%  
             % Build GUI        
             gui = buildDisplayManager(this,...
                 this.ToggleToolList, this.PushToolList);
@@ -33,11 +30,6 @@ classdef DisplayManager < handle
             
             % Set the wrapper to the selected tab
             this.SelectedTab = this.gui.tab.SelectedTab;
-            
-            %%-------------------------CALLBACK--------------------------%%
-            % Replace the close function by setting the visibility to off
-            set(this.gui.fig,  'closerequestfcn', ...
-                @(src, event) this.FitLike.hideWindowPressed(src));  
             
             % Set SelectionChangedFcn calback for tab
             set(this.gui.tab, 'SelectionChangedFcn',...
@@ -50,6 +42,19 @@ classdef DisplayManager < handle
             % reset tab
             setUIMenu(this);
             drawnow;
+            
+            % Check if presenter is available
+            if isa(FitLike,'FitLike')
+                % Store a reference to the presenter
+                this.FitLike = FitLike;                
+
+                % Replace the close function by setting the visibility to off
+                set(this.gui.fig,  'closerequestfcn', ...
+                    @(src, event) this.FitLike.hideWindowPressed(src));  
+            else
+                % set the window visible
+                set(this.gui.fig,'Visible','on')
+            end
         end %DisplayManager
         
         % Destructor
@@ -199,7 +204,31 @@ classdef DisplayManager < handle
         
         % Wrapper to set mask
         function this = setMask(this, src, event)
-            setMask(this.FitLike, src, event);
+            % check if FitLike is available
+            if isa(this.FitLike,'FitLike')
+                setMask(this.FitLike, src, event);
+            else
+                % Apply the mask on the data in DisplayManager
+                if strcmp(event.Action,'SetMask')
+                    % get boundaries
+                    xmin = event.XRange(1); xmax = event.XRange(2);
+                    ymin = event.YRange(1); ymax = event.YRange(2);
+                    % define mask
+                    for k = 1:numel(event.Data)
+                        event.Data(k) = setMask(event.Data(k), event.idxZone(k),...
+                            [xmin xmax], [ymin ymax]);
+                        % notify
+                        notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))
+                    end
+                elseif strcmp(event.Action,'ResetMask')
+                    % reset mask
+                    for k = 1:numel(event.Data)
+                        event.Data(k) = setMask(event.Data(k), event.idxZone(k));
+                        % notify
+                        notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))
+                    end
+                end
+            end
         end %setMask
         
         % mouse move

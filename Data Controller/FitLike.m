@@ -726,17 +726,17 @@ classdef FitLike < handle
                 ymin = event.YRange(1); ymax = event.YRange(2);
                 % define mask
                 for k = 1:numel(event.Data)
-                   event.Data(k) = setMask(event.Data(k), event.idxZone(k),...
-                                        [xmin xmax], [ymin ymax]);
+                    event.Data(k) = setMask(event.Data(k), event.idxZone(k),...
+                        [xmin xmax], [ymin ymax]);
                     % notify
-                    notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))                 
+                    notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))
                 end
             elseif strcmp(event.Action,'ResetMask')
                 % reset mask
                 for k = 1:numel(event.Data)
-                   event.Data(k) = setMask(event.Data(k), event.idxZone(k));
-                   % notify
-                   notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k))) 
+                    event.Data(k) = setMask(event.Data(k), event.idxZone(k));
+                    % notify
+                    notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))
                 end
             end
         end % setMask
