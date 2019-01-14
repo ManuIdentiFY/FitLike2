@@ -98,8 +98,11 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                         target_node = target;
                         while ~isempty(target_node.Parent.Parent)
                             target_node = target_node.Parent;
+                            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                            % to change [Manu]
                             editFile(this.FitLike, {nodes.UserData},...
                                 target_node.Value, target_node.Name);   
+                            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                         end
                     end
                     
@@ -141,13 +144,13 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 % check the currentNode
                 if isempty(currentNode)
                     return
-                elseif strcmp(currentNode.UserData, tag)
+                elseif isequal(currentNode.UserData, tag)
                     return
                 else
                     % check if children
                     while ~isempty(currentNode.Children)
                         currentNode = currentNode.Children(1);
-                        if strcmp(currentNode.UserData, tag)
+                        if isequal(currentNode.UserData, tag)
                             return
                         end
                     end
@@ -288,7 +291,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
         end
                  
         % add new nodes. Pass to children nodes if duplicates.
-        function hChildren = addNode(hParent, name, icon, type)
+        function hChildren = addNode(hParent, name, icon, type, varargin)
             % check if children
             if ~isempty(hParent.Children)
                 % check if the wanted name corresponds to a children in the
@@ -303,7 +306,8 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             hChildren = uiextras.jTree.CheckboxTreeNode('Parent', hParent,...
                                          'Checked',0,...
                                          'Name', name,...
-                                         'Value', type);
+                                         'Value', type,...
+                                         varargin{:});
             if ~isempty(icon)
                 setIcon(hChildren, icon);
             end
