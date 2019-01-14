@@ -68,6 +68,12 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                     link(this.parent, this);
                     this.relaxObj = this.parent.relaxObj;
                 end
+                % check mask
+                if isempty(this.mask) || ~isequal(size(this.mask), size(this.y))
+                    this.mask = true(size(this.y));
+                end
+                % set displayName
+                setname(this);
             else
                 % array of struct
                 % check for cell sizes
@@ -91,13 +97,16 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                             link(this(k).parent, this(k));
                             this(k).relaxObj = this(k).parent.relaxObj;
                         end
+                        % check mask
+                        if isempty(this(k).mask) ||...
+                                ~isequal(size(this(k).mask), size(this(k).y))
+                            this(k).mask = true(size(this(k).y));
+                        end
+                        % set displayName
+                        setname(this(k));
                     end
                 end
             end   
-            % set displayName
-            setname(this);
-            % generate mask if missing
-            resetmask(this);
         end %DataUnit    
         
         % Destructor
@@ -229,25 +238,25 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             end
         end %get.meta
         
-        % Fill or adapt the mask to the "y" field 
-        % Could be simplify ? --> consider always array of struct [Manu] 
-        function this = resetmask(this)
-            % check if input is array of struct or just struct
-            if length(this) > 1 
-                % array of struct
-                idx = ~arrayfun(@(x) isequal(size(x.mask),size(x.y)), this);
-                % reset mask
-                new_mask = arrayfun(@(x) true(size(x.y)),this(idx),'UniformOutput',0);
-                % set new mask
-                [this(idx).mask] = new_mask{:};
-            else
-                % struct
-                if ~isequal(size(this.mask),size(this.y))
-                    % reset mask
-                    this.mask = true(size(this.y));
-                end
-            end
-        end %resetmask
+%         % Fill or adapt the mask to the "y" field 
+%         % Could be simplify ? --> consider always array of struct [Manu] 
+%         function this = resetmask(this)
+%             % check if input is array of struct or just struct
+%             if length(this) > 1 
+%                 % array of struct
+%                 idx = ~arrayfun(@(x) isequal(size(x.mask),size(x.y)), this);
+%                 % reset mask
+%                 new_mask = arrayfun(@(x) true(size(x.y)),this(idx),'UniformOutput',0);
+%                 % set new mask
+%                 [this(idx).mask] = new_mask{:};
+%             else
+%                 % struct
+%                 if ~isequal(size(this.mask),size(this.y))
+%                     % reset mask
+%                     this.mask = true(size(this.y));
+%                 end
+%             end
+%         end %resetmask
         
         % update an existing data set with new properties
         function this = updateProperties(this,varargin)
@@ -269,27 +278,24 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % [class(obj) obj.legendTag (obj.parent.legendTag,
         % obj.parent.parent.legendTag, ...)]
         function this = setname(this)
-            % loop if multiple file
-            for k = 1:numel(this)
-                % check if existing displayName
-                if ~isempty(this(k).displayName)
-                    continue
-                end
-                % init
-                if isempty(this(k).legendTag)
-                    this(k).displayName = class(this(k));
-                else
-                    this(k).displayName = [class(this(k)),' ',this(k).legendTag];
-                end
-                % loop over the parent to get additional information
-                if ~isempty(this(k).parent)
-                    if ~isempty(this(k).parent.legendTag)
-                        parentTag = collectLegend(this(k).parent);
-                        this(k).displayName = [this(k).displayName,' (',...
-                                                parentTag(1:end-2),')'];
-                    end
-                end     
+            % check if existing displayName
+            if ~isempty(this.displayName); return; end
+
+            % init
+            if isempty(this.legendTag)
+                this.displayName = class(this);
+            else
+                this.displayName = [class(this),' ',this.legendTag];
             end
+            
+            % loop over the parent to get additional information
+            if ~isempty(this.parent)
+                if ~isempty(this.parent.legendTag)
+                    parentTag = collectLegend(this.parent);
+                    this.displayName = [this.displayName,' (',...
+                                            parentTag(1:end-2),')'];
+                end
+            end     
         end %setname
         
         % Should be modify to handle plot options without GUI [Manu]
