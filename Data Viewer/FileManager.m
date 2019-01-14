@@ -25,7 +25,6 @@ classdef FileManager  < handle
     events
         DataSelected
         FileEdited
-        UpdateTab
     end
     
     methods (Access = public)
@@ -361,20 +360,19 @@ classdef FileManager  < handle
        end %updateData
        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
        
-       % reset file tree: unchecked all nodes. OK [14/01/19]
-       function this = resetFileTree(this)
+       % reset tree: unchecked all nodes. OK [14/01/19]
+       function this = reset(this)
           % get the file tree
           hNodes = this.gui.treefile.CheckedNodes;
           % reset
           if ~isempty(hNodes)
                [hNodes.Checked] = deal(false);
           end
-          % delete all data nodes
-          for k = 1:numel(this.gui.treedata)
-              delete(this.gui.treedata(k).Root.Children);
-              this.gui.treedata(k).Root.Checked = 0;
-          end                  
-       end %resetFileTree
+          % clear data tree
+          if ~isempty(this.SelectedTree.Root)
+              delete(this.SelectedTree.Root.Children);
+          end
+       end %reset
        
        % add label to the selected nodes. OK [14/01/19]
        function this = addLabel(this, icon)
@@ -493,7 +491,7 @@ classdef FileManager  < handle
         end %selectData
        
        % set the selected tree  OK [14/01/19]
-       function this = setSelectedTree(this, type)
+       function this = setTree(this, type)
            % check if different
            if strcmpi(this.SelectedTree.Tag, type)
                return
@@ -510,7 +508,7 @@ classdef FileManager  < handle
                this.gui.tab.SelectedTab = this.gui.tab.Children(tf);
                changeTree(this, this.gui.tab, struct('NewValue', this.gui.tab.SelectedTab));
            end
-       end %setSelectedTree
+       end %setTree
        
        % callback when selected tree is modified  OK [14/01/19]
        function this = changeTree(this, s, e)

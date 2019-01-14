@@ -683,7 +683,7 @@ classdef FitLike < handle
         function selectTab(this, src)
             % get the selected tab
             hTab = src.SelectedTab.Children;
-            resetFileTree(this.FileManager);
+            reset(this.FileManager);
             if isa(hTab,'EmptyPlusTab')
                 % add new tab
                 addTab(this.DisplayManager);
@@ -735,9 +735,9 @@ classdef FitLike < handle
         % Run process
         function this = runProcess(this)
             % check if data are selected
-            fileID = getSelectedFile(this.FileManager);
+            relaxObj = getSelectedFile(this.FileManager);
             % according to the mode process, run it
-            if isempty(fileID)
+            if isempty(relaxObj)
                 dispMsg(this, 'Warning: You need to select data to run process!\n');
                 return
             elseif this.ProcessingManager.gui.BatchRadioButton.Value
@@ -751,10 +751,10 @@ classdef FitLike < handle
                 ProcessArray = flip(tab.ProcessArray);
                 dispMsg(this, 'Starting to process file...\n');
                 % loop over the file
-                for k = 1:numel(fileID)
+                for k = 1:numel(relaxObj)
                     dispMsg(this, 'Processing...');
                     % get data
-                    tf = strcmp({this.RelaxData.fileID}, fileID{k});
+                    tf = strcmp({this.RelaxData.fileID}, relaxObj(k).fileID);
                     data = getData(this.RelaxData(tf), 'Bloc');
  
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -784,7 +784,7 @@ classdef FitLike < handle
                     for j = 1:numel(ProcessArray) 
                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                         % check if new process or not
-                        if strcmp(data_copy(1).processingMethod, ProcessArray(j))
+                        if isequal(data_copy(1).processingMethod, ProcessArray(j))
                             data_copy = [data_copy.children]; continue;
                         end
                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -799,7 +799,7 @@ classdef FitLike < handle
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % No need to destroy RelaxObj. Choose between delete
                     % relaxobj or bloc and replace data in RelaxObj [Manu]
-                    delete(data); this.RelaxData(tf).data_copy;
+                    delete(data); this.RelaxData(tf).data = data_copy;
                     % replace the new relaxObj in the main array
 %                     delete(this.RelaxData(indx)); this.RelaxData(indx) = [];
 %                     this.RelaxData = [this.RelaxData, relaxObj];
@@ -807,11 +807,11 @@ classdef FitLike < handle
                                         
                     drawnow; %EDT
                     % replace the new relaxObj in the main array
-                    setSelectedTree(this.FileManager, class(data_copy));
+                    setTree(this.FileManager, class(data_copy));
                     
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % Take filename from RelaxObj, not DataUnit
-                    updateData(this.FileManager, this.RelaxData(tf).filename, fileID{k});
+                    updateData(this.FileManager, relaxObj(k));
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     
                     drawnow;
@@ -824,8 +824,7 @@ classdef FitLike < handle
                     
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % Same as before, take info from RelaxObj
-                    checkData(this.FileManager, repmat(fileID(k),1,numel(data_copy)),...
-                        {data_copy.displayName}, idxZone, 1);
+                    checkData(this.FileManager, data_copy, idxZone, 1);
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     
                     drawnow; %EDT
@@ -848,17 +847,13 @@ classdef FitLike < handle
 %                             'the graph type: \n\n%s.'], sprintf('%s \n',str{:})))
                         drawnow; pause(0.05);
                         % uncheck these nodes
-                        checkData(this.FileManager, repmat(fileID(k),1,numel(data_copy)),...
-                            {data_copy.displayName}, idxZone, 0);
+                        checkData(this.FileManager, data_copy, idxZone, 0);
                     end
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    
-                    
+                                       
                     drawnow % EDT
-                    dispMsg(this, [sprintf('%d/%d',k,numel(fileID)),'\n']);
+                    dispMsg(this, [sprintf('%d/%d',k,numel(relaxObj)),'\n']);
                 end %for
-                % notify
-                notify(this.FileManager.SelectedTree, 'TreeHasChanged');
             else
                 % Simulation mode
                 % TO DO
