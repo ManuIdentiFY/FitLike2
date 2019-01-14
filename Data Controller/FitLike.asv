@@ -26,6 +26,14 @@ classdef FitLike < handle
             % Add the main View
             this.FitLikeView = FitLikeView(this);
             
+            % Set the main callbacks
+            addlistener(this.FileManager, 'DataSelected',...
+                            @(src, event) selectData(src, event));
+            addlistener(this.FileManager, 'FileEdited',...
+                            @(src, event) editFile(src, event));
+            addlistener(this.FileManager.SelectedTree, 'TreeHasChanged ',...
+                            @(src, event) updateDataTree(src));
+                        
             % Set visible the main windows
             this.FileManager.gui.fig.Visible = 'on';
             this.DisplayManager.gui.fig.Visible = 'on';
@@ -568,54 +576,109 @@ classdef FitLike < handle
 %         end %getFileInfo
 %         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        % Event: data is selected. NEED TO MODIFY RELAXOBJ ACCESS
-        function addData(this, hNode, type, fileID, name, idx)
+        % Event: data is selected. Add or remove data from current plot
+        function this = selectData(this, ~, event)
+            % check if data are selected or deselected
+            if strcmp(event.Action, 'Select')
                 % loop over the input
-                for k = 1:numel(fileID)
-                    
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    % get the corresponding dataobj
-                    tf = strcmp({this.RelaxData.fileID}, fileID{k});
-                    hData = getData(this.RelaxData(tf), type, name);
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    
+                for k = 1:numel(event.Data)
                     % add data from current plot
-                    [~, plotFlag, ~] = addPlot(this.DisplayManager, hData, idx(k));
+                    [~, plotFlag, ~] = addPlot(this.DisplayManager,...
+                                        event.Data(k), event.idxZone(k));
                     if ~plotFlag
                         % uncheck this node
-                        dispMsg(this, ['Cannot plot ',getRelaxProp(hData,'filename'),...
+                        dispMsg(this, ['Cannot plot ', getRelaxProp(hData, 'filename'),...
                             ': the data type doesnt fit with the current tab!\n']);
-                        hNode(k).Checked = 0;
+                        %hNode(k).Checked = 0;
                     end
-                    pause(0.005)
+                    pause(0.005) %EDT
                 end
-                drawnow;
-        end %addData
-        
-        % Event: data is selected. NEED TO MODIFY RELAXOBJ ACCESS
-        function removeData(this, type, fileID, name, idx)
-                % loop over the input
-                for k = 1:numel(fileID)                   
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    % get the corresponding dataobj
-                    tf = strcmp({this.RelaxData.fileID}, fileID{k});
-                    hData = getData(this.RelaxData(tf), type, name);
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    
+            elseif strcmp(event.Action, 'Deselect')
+                 % loop over the input
+                for k = 1:numel(event.Data)
                     % remove data from current plot
-                    removePlot(this.DisplayManager, hData, idx(k));
+                    removePlot(this.DisplayManager,...
+                               event.Data(k), event.idxZone(k));
                     pause(0.005)
-                end
-                drawnow;
-        end %addData
+                end               
+            end
+            drawnow; %EDT
+        end %selectData
+%         
+%         % Event: data is selected. NEED TO MODIFY RELAXOBJ ACCESS
+%         function addData(this, hNode, type, fileID, name, idx)
+%                 % loop over the input
+%                 for k = 1:numel(fileID)
+%                     
+%                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     % get the corresponding dataobj
+%                     tf = strcmp({this.RelaxData.fileID}, fileID{k});
+%                     hData = getData(this.RelaxData(tf), type, name);
+%                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     
+%                     % add data from current plot
+%                     [~, plotFlag, ~] = addPlot(this.DisplayManager, hData, idx(k));
+%                     if ~plotFlag
+%                         % uncheck this node
+%                         dispMsg(this, ['Cannot plot ',getRelaxProp(hData,'filename'),...
+%                             ': the data type doesnt fit with the current tab!\n']);
+%                         hNode(k).Checked = 0;
+%                     end
+%                     pause(0.005)
+%                 end
+%                 drawnow;
+%         end %addData
+%         
+%         % Event: data is selected. NEED TO MODIFY RELAXOBJ ACCESS
+%         function removeData(this, type, fileID, name, idx)
+%                 % loop over the input
+%                 for k = 1:numel(fileID)                   
+%                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     % get the corresponding dataobj
+%                     tf = strcmp({this.RelaxData.fileID}, fileID{k});
+%                     hData = getData(this.RelaxData(tf), type, name);
+%                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     
+%                     % remove data from current plot
+%                     removePlot(this.DisplayManager, hData, idx(k));
+%                     pause(0.005)
+%                 end
+%                 drawnow;
+%         end %addData
         
-        % edit files callback
-        function editFile(this, fileID, prop, val)         
-             % get the file to modify
-             [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
-             % update them
-             [this.RelaxData(indx).(prop)] = deal(val);
+%         % edit files callback
+%         function editFile(this, fileID, prop, val)
+%             % get the file to modify
+%             [~,indx,~] = intersect({this.RelaxData.fileID}, fileID);
+%             % update them
+%             [this.RelaxData(indx).(prop)] = deal(val);
+%         end %editFile
+
+        % edit files callback       
+        function editFile(this, ~, event)
+            % update the data
+            [event.Data.(event.Prop)] = deal(event.Value); 
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+            % another version
+            % get the file to modify
+            [~,indx,~] = intersect({this.RelaxData.fileID}, {event.Data.fileID});
+            % update them
+            [this.RelaxData(indx).(event.Prop)] = deal(event.Value);
         end %editFile
+
+        % Update the current data tree in case where data are plot and need
+        % to be checked
+        function updateDataTree(this, src, ~)
+            % get the tab information
+            [dataObj, idxZone] = getTabData(this.DisplayManager);
+            
+            % check the corresponding data            
+            if ~isempty(dataObj) && strcmp(class(dataObj), src.Tag)
+                checkData(this.FileManager, dataObj, idxZone, 1);
+            end
+        end
         
         % Wrapper to throw message
         function dispMsg(this, msg)
@@ -701,8 +764,7 @@ classdef FitLike < handle
                     % get data
                     tf = strcmp({this.RelaxData.fileID}, fileID{k});
                     data = getData(this.RelaxData(tf), 'Bloc');
-                    % create copy to avoid processing error
-                    data_copy = copy(data);
+ 
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % Could be replace by getData('Bloc')[Manu]
                     % Need to think about a smart way to avoid delete data
@@ -710,6 +772,8 @@ classdef FitLike < handle
                     % 1. If bad processing: destroy relaxObj
                     % 2. If good processing: destroy bloc [Manu] 
                     
+                    % create copy to avoid processing error
+                    data_copy = copy(data);
 %                     % get the ancestor
 %                     bloc = this.RelaxData(indx(1)); %take the first one
 %                     while ~isempty(bloc.parent)
@@ -726,10 +790,12 @@ classdef FitLike < handle
                     
                     % apply the pipeline
                     for j = 1:numel(ProcessArray) 
+                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                         % check if new process or not
                         if strcmp(data_copy(1).processingMethod, ProcessArray(j))
                             data_copy = [data_copy.children]; continue;
                         end
+                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                         % assign the process
                         assignProcessingFunction(data_copy, ProcessArray(j));
                         % apply the process
@@ -741,7 +807,7 @@ classdef FitLike < handle
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % No need to destroy RelaxObj. Choose between delete
                     % relaxobj or bloc and replace data in RelaxObj [Manu]
-                    data_copy = 
+                    delete(data); this.RelaxData(tf).data_copy;
                     % replace the new relaxObj in the main array
 %                     delete(this.RelaxData(indx)); this.RelaxData(indx) = [];
 %                     this.RelaxData = [this.RelaxData, relaxObj];
@@ -749,25 +815,25 @@ classdef FitLike < handle
                                         
                     drawnow; %EDT
                     % replace the new relaxObj in the main array
-                    setSelectedTree(this.FileManager, class(relaxObj));
+                    setSelectedTree(this.FileManager, class(data_copy));
                     
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % Take filename from RelaxObj, not DataUnit
-                    updateData(this.FileManager, relaxObj(1).filename, fileID{k});
+                    updateData(this.FileManager, this.RelaxData(tf).filename, fileID{k});
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     
                     drawnow;
                     if isa(relaxObj, 'Dispersion')
-                        idxZone = repelem(NaN, numel(relaxObj));
+                        idxZone = repelem(NaN, numel(data_copy));
                     else
-                        idxZone = repelem(1,numel(relaxObj));
+                        idxZone = repelem(1,numel(data_copy));
                     end
                     pause(0.005);
                     
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % Same as before, take info from RelaxObj
-                    checkData(this.FileManager, {relaxObj.fileID},...
-                        {relaxObj.displayName}, idxZone, 1);
+                    checkData(this.FileManager, repmat(fileID(k),1,numel(data_copy)),...
+                        {data_copy.displayName}, idxZone, 1);
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     
                     drawnow; %EDT
@@ -779,7 +845,7 @@ classdef FitLike < handle
                     % In this case, how to deal with FileManager update...
                     
                     % try to plot
-                    [~, plotFlag, ~] = addPlot(this.DisplayManager, relaxObj, idxZone);
+                    [~, plotFlag, ~] = addPlot(this.DisplayManager, data_copy, idxZone);
                     % check if everything have been plotted 
                     if ~plotFlag
 %                         str = cellfun(@(x,y) sprintf('%s (Sequence: %s)',x,y),...
@@ -790,8 +856,8 @@ classdef FitLike < handle
 %                             'the graph type: \n\n%s.'], sprintf('%s \n',str{:})))
                         drawnow; pause(0.05);
                         % uncheck these nodes
-                        checkData(this.FileManager, {relaxObj.fileID},...
-                            {relaxObj.displayName}, idxZone, 0);
+                        checkData(this.FileManager, repmat(fileID(k),1,numel(data_copy)),...
+                            {data_copy.displayName}, idxZone, 0);
                     end
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     
@@ -810,9 +876,9 @@ classdef FitLike < handle
     %% --------------------- ModelManager Callback --------------------- %%
     methods (Access = public)
         % Run Fit
-        function this = runFit(this)
+        function this = runFit(this) %%%%% WARNINNNNG %%%%
             % check if data are selected
-            [~, fileID, legendTag, ~] = getSelectedData(this.FileManager,[]);
+            [~, fileID, legendTag, ~] = getSelectedData(this.FileManager,[]); %%%%% WARNINNNNG %%%%
             % according to the mode process, run it
             if isempty(fileID)
                 dispMsg(this, 'Warning: You need to select dispersion data to run fit\n!');
@@ -828,32 +894,32 @@ classdef FitLike < handle
                     dispMsg(this, 'Fitting...');
                     
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    tf = strcmp({this.RelaxData.fileID}, fileID{k});
+                    dispersion = getData(this.RelaxData(tf), 'Dispersion', legendTag{k});
                     % Replace by getData('Dispersion') [Manu]
                     % check for correspondance (same data file)
-                    tf = strcmp(strcat({this.RelaxData.fileID},...
-                        {this.RelaxData.displayName}), strcat(fileID{k},...
-                        legendTag{k}));
+%                     tf = strcmp(strcat({this.RelaxData.fileID},...
+%                         {this.RelaxData.displayName}), strcat(fileID{k},...
+%                         legendTag{k}));
                     % check if dispersion
-                    if ~isa(this.RelaxData(tf), 'Dispersion')
-                        continue
-                    end
+                    if isempty(dispersion); continue; end
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     
                     % apply the fit to the file
                     procObj = DispersionLsqCurveFit;
                     procObj = addModel(procObj,ModelArray);
-                    assignProcessingFunction(this.RelaxData(tf), procObj);
+                    assignProcessingFunction(dispersion, procObj);
                     % apply the process
-                    processData(this.RelaxData(tf)); 
+                    processData(dispersion); 
                     
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % Use Wrapper? [Manu]
                     % update model name
-                    this.RelaxData(tf).processingMethod.model.modelName = tab.Parent.Title;
+                    dispersion.processingMethod.model.modelName = tab.Parent.Title;
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     
                     % notify
-                    notify(this.RelaxData(tf), 'DataHasChanged', EventData(NaN)) 
+                    notify(dispersion, 'DataHasChanged', EventData(NaN)) 
                     dispMsg(this, [sprintf('%d/%d',k,numel(fileID)),'\n']);
                 end
                 drawnow;
@@ -880,61 +946,61 @@ classdef FitLike < handle
         end %hideWindowPressed  
         
         % Check ID integrity of the new bloc. Change ID if needed.
-        function bloc = checkID(this, bloc)
-            % check if UUID
-            bloc = checkUUID(bloc);
+        function relaxObj = checkID(this, relaxObj)
+%             % check if UUID
+%             relaxObj = checkUUID(relaxObj);
             % check if data
             if isempty(this.RelaxData)
                 return
             end
             
             % intersect
-            [~,~,idx] = intersect({this.RelaxData.fileID},{bloc.fileID});
+            [~,~,idx] = intersect({this.RelaxData.fileID},{relaxObj.fileID});
             if ~isempty(idx)
                 % generate new ID
                 for k = 1:numel(idx)
-                    bloc(idx).fileID = char(java.util.UUID.randomUUID);
+                    relaxObj(idx).fileID = char(java.util.UUID.randomUUID);
                 end
-                bloc = checkID(this, bloc);
+                relaxObj = checkID(this, relaxObj);
             end    
             
             %%% ------------------ Nested Function -------------------- %%%
-            % check if UUID is used (old fileID contains '@' and length is
-            % variable).
-            % UUID format is 32 hexadecimal digits, displayed in five
-            % groups separated by hyphens, in the form 8-4-4-4-12.
-            function bloc = checkUUID(bloc)           
-                % loop over the input
-                for i = 1:numel(bloc)
-                    % check format and size
-                    s = strsplit(bloc(i).fileID,'-');
-                    n = cellfun(@numel,s);
-
-                    % generate UUID if needed
-                    if numel(n) ~= 5 || ~isequal(n, [8 4 4 4 12])
-                        bloc(i).fileID = char(java.util.UUID.randomUUID);
-                    end
-                end
-            end
+%             % check if UUID is used (old fileID contains '@' and length is
+%             % variable).
+%             % UUID format is 32 hexadecimal digits, displayed in five
+%             % groups separated by hyphens, in the form 8-4-4-4-12.
+%             function relaxObj = checkUUID(relaxObj)           
+%                 % loop over the input
+%                 for i = 1:numel(relaxObj)
+%                     % check format and size
+%                     s = strsplit(relaxObj(i).fileID,'-');
+%                     n = cellfun(@numel,s);
+% 
+%                     % generate UUID if needed
+%                     if numel(n) ~= 5 || ~isequal(n, [8 4 4 4 12])
+%                         relaxObj(i).fileID = char(java.util.UUID.randomUUID);
+%                     end
+%                 end
+%             end %checkUUID
             %%% ------------------------------------------------------- %%%
         end %checkID
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % To remove [Manu]
-        % Get data from fileID: TO CHANGE
-        function data = getData(this, fileID, type)
-            % get the fileID list
-            tf = strcmp({this.RelaxData.fileID}, fileID);
-            % check if type is correct
-            data = this.RelaxData(tf);
-            while ~strcmp(class(data), type)
-                if isempty(data(1).parent)
-                    data = []; return
-                else
-                    data = [data.parent];
-                end
-            end
-        end %getData
+%         % To remove [Manu]
+%         % Get data from fileID: TO CHANGE
+%         function data = getData(this, fileID, type)
+%             % get the fileID list
+%             tf = strcmp({this.RelaxData.fileID}, fileID);
+%             % check if type is correct
+%             data = this.RelaxData(tf);
+%             while ~strcmp(class(data), type)
+%                 if isempty(data(1).parent)
+%                     data = []; return
+%                 else
+%                     data = [data.parent];
+%                 end
+%             end
+%         end %getData
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     end
 end
