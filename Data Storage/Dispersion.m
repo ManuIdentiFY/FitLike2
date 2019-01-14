@@ -113,9 +113,9 @@ classdef Dispersion < DataUnit
             switch plotType
                 case 'Data'
                     if isnan(idxZone)
-                        leg = sprintf('%s', this.filename);
+                        leg = sprintf('%s', this.relaxObj.filename);
                     else
-                        leg = sprintf('Zone %d: %s', idxZone, this.filename);
+                        leg = sprintf('Zone %d: %s', idxZone, this.relaxObj.filename);
                     end
                     
                     if extend
@@ -131,9 +131,9 @@ classdef Dispersion < DataUnit
                     end
                         
                     if isnan(idxZone)
-                        leg = sprintf('%s: %s', leg, this.filename);
+                        leg = sprintf('%s: %s', leg, this.relaxObj.filename);
                     else
-                        leg = sprintf('%s: Zone %d - %s', leg, idxZone, this.filename);
+                        leg = sprintf('%s: Zone %d - %s', leg, idxZone, this.relaxObj.filename);
                     end
                      
                     if extend

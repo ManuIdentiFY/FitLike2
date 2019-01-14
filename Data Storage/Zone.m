@@ -127,7 +127,7 @@ classdef Zone < DataUnit
                     if isnan(idxZone)
                         % error ?
                     else
-                        leg = sprintf('Zone %d: %s', idxZone, this.filename);
+                        leg = sprintf('Zone %d: %s', idxZone, this.relaxObj.filename);
                     end
                     
                     if extend
@@ -143,7 +143,7 @@ classdef Zone < DataUnit
                             this.parameter.paramList.gof{idxZone}.rsquare);
                                                                                      
                         if extend                        
-                            leg = sprintf('%s: Zone %d - %s', leg, idxZone, this.filename);
+                            leg = sprintf('%s: Zone %d - %s', leg, idxZone, this.relaxObj.filename);
                         end
                     end
                 case 'Mask'
