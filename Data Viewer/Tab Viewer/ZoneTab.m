@@ -20,9 +20,9 @@ classdef ZoneTab < DispersionTab
     
     methods
         % constructor
-        function this = ZoneTab(FitLike, tab)
+        function this = ZoneTab(DisplayManager, tab)
             % call the superclass constructor and set the Presenter
-            this = this@DispersionTab(FitLike, tab);
+            this = this@DispersionTab(DisplayManager, tab);
             % update title and type
             this.Parent.Title = 'Zone';
             this.inputType = 'Zone';
