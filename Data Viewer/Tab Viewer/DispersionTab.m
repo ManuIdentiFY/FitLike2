@@ -8,6 +8,11 @@ classdef DispersionTab < EmptyTab
     % we need to dynamically update the legend (50% maybe) and the axis
     % (10%). Could be improved.
     %
+    % To do:
+    % - add a method to handle axis configuration
+    % - change sortChildren() method (also name maybe?)
+    % - check the legend!!
+    %
     % M.Petit - 11/2018
     % manuel.petit@inserm.fr
     

@@ -6,7 +6,7 @@ classdef DisplayManager < handle
     properties
         gui % GUI (View)
         FitLike % Presenter
-        SelectedTab
+        SelectedTab %wrapper to the selected tab
     end
     
     % List of the wanted uitoggletool and uipushtool (TooltipString)
