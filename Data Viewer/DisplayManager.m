@@ -6,12 +6,17 @@ classdef DisplayManager < handle
     properties
         gui % GUI (View)
         FitLike % Presenter
+        SelectedTab
     end
     
     % List of the wanted uitoggletool and uipushtool (TooltipString)
     properties
         ToggleToolList = {'Zoom Out','Zoom In','Pan'};
         PushToolList = [];
+    end
+    
+    events
+        SelectTab
     end
     
     methods (Access = public)
@@ -26,6 +31,9 @@ classdef DisplayManager < handle
                 this.ToggleToolList, this.PushToolList);
             this.gui = guihandles(gui);
             
+            % Set the wrapper to the selected tab
+            this.SelectedTab = this.gui.tab.SelectedTab;
+            
             %%-------------------------CALLBACK--------------------------%%
             % Replace the close function by setting the visibility to off
             set(this.gui.fig,  'closerequestfcn', ...
@@ -33,7 +41,7 @@ classdef DisplayManager < handle
             
             % Set SelectionChangedFcn calback for tab
             set(this.gui.tab, 'SelectionChangedFcn',...
-                @(src, event) this.FitLike.selectTab(src));   
+                @(src, event) changeTab(this, src, event));   
             
             % Set callback when moving mouse
             set (this.gui.fig,'WindowButtonMotionFcn',...
@@ -64,7 +72,7 @@ classdef DisplayManager < handle
             % push this new tab to the position just before '+' tab
             uistack(this.gui.tab.Children(end),'up');
             % set the selection to this tab
-            this.gui.tab.SelectedTab = this.gui.tab.Children(end-1);
+            this.SelectedTab = this.gui.tab.Children(end-1);
             % reset tab
             setUIMenu(this);
             % EDT synchronisation
@@ -80,11 +88,21 @@ classdef DisplayManager < handle
                 % delete the selected tab
                 delete(this.gui.tab.SelectedTab);
                 % check if the new selected tab is not '+'
-                if isa(this.gui.tab.SelectedTab.Children,'EmptyPlusTab')
-                    this.gui.tab.SelectedTab = this.gui.tab.Children(end-1);
+                if isa(this.SelectedTab.Children,'EmptyPlusTab')
+                    this.SelectedTab = this.gui.tab.Children(end-1);
                 end
             end
-        end %removeTab       
+        end %removeTab    
+        
+        % Change tab callback
+        function this = changeTab(this, src, ~)
+            % check if tab need to be added
+            if isa(src.SelectedTab.Children,'EmptyPlusTab')
+                addTab(this);
+            end
+            % notify
+            notify(this, 'SelectTab');
+        end
         
         %Replace tab: should be improved to speed up GUI [M. Petit]
         function this = replaceTab(this, oldTab, newTab)
@@ -99,7 +117,7 @@ classdef DisplayManager < handle
             % delete the old tab
             delete(oldTab);
             % set the selection to the new tab
-            this.gui.tab.SelectedTab = this.gui.tab.Children(indx); 
+            this.SelectedTab = this.gui.tab.Children(indx); 
             % reset tab
             setUIMenu(this);
         end %replaceTab
@@ -111,52 +129,51 @@ classdef DisplayManager < handle
             cmenu = uicontextmenu(this.gui.fig);
             uimenu(cmenu, 'Label', 'Close Tab',...
                 'Callback',@(src,event) removeTab(this));
-            this.gui.tab.SelectedTab.UIContextMenu = cmenu;  
+            this.SelectedTab.UIContextMenu = cmenu;  
         end
 
         % call the tab plot method
-        function [this, plotFlag, tf] = addPlot(this, hData, idxZone)
-            % get the selected tab 
-            tab = this.gui.tab.SelectedTab;
-            tf = false(1,numel(hData));
+        function this = addPlot(this, hData, idxZone)
             % check if it is an empty tab
             if strcmp(class(tab.Children), 'EmptyTab') %#ok<STISA>
                 % check the class of the first hData
                 switch class(hData(1))
                     case 'Bloc'
-                        plotFlag = 0; % To improve
                         return % TO DO
                     case 'Zone'
-                        replaceTab(this, tab, 'ZoneTab');
+                        replaceTab(this, this.SelectedTab, 'ZoneTab');
                     case 'Dispersion'
-                        replaceTab(this, tab, 'DispersionTab');
+                        replaceTab(this, this.SelectedTab, 'DispersionTab');
                 end
-                tab = this.gui.tab.SelectedTab;
             end
             % call addPlot method of this tab
             for k = 1:numel(hData)
-                [~,tf(k)] = addPlot(tab.Children, hData(k), idxZone(k));
-            end
-            % check if everything have been plotted or not and send a call
-            % to the presenter if not
-            if all(tf == 0)
-                plotFlag = 1;
-            else
-                plotFlag = 0;
+                addPlot(this.SelectedTab.Children, hData(k), idxZone(k));
             end
         end
         
         % call the tab remove method
         function this = removePlot(this, hData, idxZone)
-            % get the selected tab 
-            tab = this.gui.tab.SelectedTab;
-            if strcmp(class(tab.Children), 'EmptyTab') %#ok<STISA>
+            % check if empty tab
+            if strcmp(class(this.SelectedTab.Children), 'EmptyTab') %#ok<STISA>
                 return
             end
             % loop
             for k = 1:numel(hData)
-                deletePlot(tab.Children, hData(k), idxZone(k));
+                deletePlot(this.SelectedTab.Children, hData(k), idxZone(k));
             end
+        end
+        
+        % Wrapper to get data from current tab
+        function [hData, idxZone] = getData(this)
+            % get data
+            hData = this.SelectedTab.Children.hData;
+            idxZone = this.SelectedTab.Children.idxZone;
+        end %getData
+        
+        % Wrapper to get legend from current tab (avoid fit)
+        function [leg, hData] = getLegend(this)
+             [leg, hData] = getLegend(this.SelectedTab.Children);
         end
         
         % mouse move
