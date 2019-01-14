@@ -46,7 +46,7 @@ classdef DispersionTab < EmptyTab
     end
     
     events
-        updateHist
+        UpdateHist
     end
     
     methods (Access = public)
@@ -107,14 +107,9 @@ classdef DispersionTab < EmptyTab
     
     methods (Access = public)        
         % Add plot. 
-        function [this, tf] = addPlot(this, hData, idxZone)
+        function this = addPlot(this, hData, idxZone)
             % check input
-            if ~isa(hData, this.inputType)
-                tf = 1;
-                return
-            else
-                tf = 0;
-            end
+            if ~isa(hData, this.inputType); return; end
             
             % check if duplicates
             if isempty(this.hData) || all(strcmp(getPlotID(this),...
@@ -124,9 +119,9 @@ classdef DispersionTab < EmptyTab
                 this.idxZone = [this.idxZone idxZone];
 
                 % add listener 
-                addlistener(hData,'DataHasChanged',@(src, event) updateData(this, src, event));
-                addlistener(hData,'FileDeletion', @(src, event) deletePlot(this, hData));
-                addlistener(hData,'FileHasChanged',@(src, event) updateLegend(this, src, event));
+                addlistener(hData,'DataUpdate',@(src, event) updateData(this, src, event));
+                addlistener(hData,'DataDeletion', @(src, event) deletePlot(this, hData));
+                addlistener(hData.relaxObj,'FileHasChanged',@(src, event) updateLegend(this, src, event));
                 
                 % set plot specification
                 getPlotSpec(this, hData);
@@ -148,9 +143,8 @@ classdef DispersionTab < EmptyTab
         % Remove plot.
         function this = deletePlot(this, hData, idxZone)
             % check input
-            if nargin < 3
-                idxZone = NaN;
-            end
+            if nargin < 3; idxZone = NaN; end
+            
             % get all plot corresponding to the hData and delete them
             hAxe = findobj(this, 'Type', 'axes');
             plotID = getPlotID(this, hData, idxZone);
@@ -167,8 +161,9 @@ classdef DispersionTab < EmptyTab
                     tf = contains(get(hAxe(k).Children,'Tag'), dataID);
                     delete(hAxe(k).Children(tf));
                 end
-                tf = strcmp(strcat({this.hData.fileID},'@',...
-                    {this.hData.displayName}), dataID);  
+                fileID = arrayfun(@(x) getRelaxProp(x, 'fileID'),...
+                                           this.hData, 'Uniform', 0);
+                tf = strcmp(strcat(fileID,'@', {this.hData.displayName}), dataID);  
             else
                 % loop over axis
                 for k = 1:numel(hAxe)
@@ -178,12 +173,12 @@ classdef DispersionTab < EmptyTab
                 tf = strcmp(getPlotID(this), plotID);  
             end    
             % notify
-            notify(this, 'updateHist');
+            notify(this, 'UpdateHist');
             % reset & check legend
             showLegend(this);
             checkLegend(this, hData);
             % remove handle
-            this.hData = this.hData(~tf);
+            this.hData = this.hData(~tf); 
             this.PlotSpec = this.PlotSpec(~tf);
             this.idxZone = this.idxZone(~tf);    
         end %deletePlot    
@@ -273,7 +268,7 @@ classdef DispersionTab < EmptyTab
                        end
                    end
                    % notify
-                   notify(this, 'updateHist');
+                   notify(this, 'UpdateHist');
                end
             end
             drawnow;
@@ -307,7 +302,8 @@ classdef DispersionTab < EmptyTab
                 plotID = getPlotID(this);
                 for k = 1:numel(this.hData)
                     % check plot existence
-                    hPlot = findobj(this.axe.Children,'Type','ErrorBar','Tag', plotID{k});
+                    hPlot = findobj(this.axe.Children,...
+                        'Type','ErrorBar','Tag', plotID{k});
                     if isempty(hPlot)
                         h = plotData(this.hData(k), this.idxZone(k), plotID{k},...
                             this.axe, this.PlotSpec(k).Color, this.DataLineStyle,...
@@ -335,7 +331,8 @@ classdef DispersionTab < EmptyTab
                 plotID = getPlotID(this);
                 for k = 1:numel(this.hData)
                     % check plot existence
-                    hPlot = findobj(this.axe.Children,'Type','ErrorBar','Tag', plotID{k});
+                    hPlot = findobj(this.axe.Children,...
+                        'Type','ErrorBar','Tag', plotID{k});
                     if ~isempty(hPlot)
                         addError(this.hData(k), this.idxZone(k), hPlot);
                     end
@@ -354,7 +351,8 @@ classdef DispersionTab < EmptyTab
                 plotID = getPlotID(this);
                 for k = 1:numel(this.hData)
                     % check plot existence
-                    hPlot = findobj(this.axe.Children, 'Type','Line', 'Tag', plotID{k});
+                    hPlot = findobj(this.axe.Children,...
+                        'Type','Line', 'Tag', plotID{k});
                     if isempty(hPlot)
                         plotFit(this.hData(k), this.idxZone(k), plotID{k},...
                             this.axe, this.PlotSpec(k).Color,...
@@ -377,7 +375,8 @@ classdef DispersionTab < EmptyTab
                 plotID = getPlotID(this);
                 for k = 1:numel(this.hData)
                     % check plot existence
-                    hPlot = findobj(this.axe.Children, 'Type','Scatter', 'Tag', plotID{k});
+                    hPlot = findobj(this.axe.Children,...
+                        'Type','Scatter', 'Tag', plotID{k});
                     if isempty(hPlot)
                         plotMaskedData(this.hData(k), this.idxZone(k), plotID{k},...
                             this.axe, this.PlotSpec(k).Color,...
@@ -410,7 +409,7 @@ classdef DispersionTab < EmptyTab
                     end
                 end
                 % notify
-                notify(this, 'updateHist');
+                notify(this, 'UpdateHist');
             else
                 % delete the residual axis
                 delete(this.axeres); this.axeres = [];
@@ -470,15 +469,14 @@ classdef DispersionTab < EmptyTab
             addlistener(this.axe, 'XLim', 'PostSet',...
                 @(~,~) set(this.axeres,'XLim',this.axe.XLim));
             % update dynamically histogram
-            addlistener(this, 'updateHist', @(~,~) makeResidualHistogram(this));
+            addlistener(this, 'UpdateHist', @(~,~) makeResidualHistogram(this));
         end %createResidualAxis
         
         % Add an histogram of the residuals
         function this = makeResidualHistogram(this)
             % check existence
-            if isempty(this.axeres)
-                return
-            end
+            if isempty(this.axeres); return; end
+            
             % check if residuals
             if isempty(this.axeres.Children)
                 title(this.axehist,'');
@@ -539,7 +537,8 @@ classdef DispersionTab < EmptyTab
                 % check if the object is selected
                 if isempty(this.SelectedPoint)
                     % create a marker
-                    this.SelectedPoint = plot(this.hData(idx).x(idxZone), this.hData(idx).y(idxZone),...
+                    this.SelectedPoint = plot(this.axe,...
+                            this.hData(idx).x(idxZone), this.hData(idx).y(idxZone),...
                             'LineStyle','none','Marker','s','MarkerSize',14,...
                             'Color','k','ButtonDownFcn',@(s,e) selectData(this,s,e),...
                             'Tag','SelectedPoint');
@@ -617,20 +616,23 @@ classdef DispersionTab < EmptyTab
     
     % Other function
     methods (Access = public)
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Change for legend sorting [Manu]
         % this function sort the axis children according to their tag
         % as well as their type (data1 fit1 data2 fit2 ...)
         function this = sortChildren(this)
             % Check if several plot
             if numel(this.axe.Children) > 1
                 % get the fileID and the type
-                fileID = get(this.axe.Children,'Tag');
+                plotID = get(this.axe.Children,'Tag');
                 type = get(this.axe.Children,'Type');
                 % concatenate and sort
-                [~,idx] = sort(strcat(fileID, type));
+                [~,idx] = sort(strcat(plotID, type));
                 % re-order children
                 this.axe.Children = this.axe.Children(flipud(idx));
             end
         end %sortChildren
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         % This function check the legend and check for duplicates from hData. If
         % duplicates are found, the displayName property is added to the
@@ -645,12 +647,14 @@ classdef DispersionTab < EmptyTab
             type = {'Data','Fit','Mask'};
             plottype = {'ErrorBar','Line','Scatter'};
             % check if other hData are coming from same file
-            idx = find(strcmp({this.hData.fileID}, hData.fileID));
+            fileID = arrayfun(@(x) getRelaxProp(x, 'fileID'),...
+                                           this.hData, 'Uniform', 0);
+            idx = find(strcmp(fileID, getRelaxProp(hData, 'fileID')));
 
             % change legend
             if numel(idx) > 1
                 tf = contains(get(this.axe.Children,'Tag'),...
-                    hData.fileID);
+                    getRelaxProp(hData, 'fileID'));
                 hPlot = this.axe.Children(tf);
                 % check if multiple plot with same legend
                 if numel(hPlot) > 1 && ~all(strcmpi(get(hPlot,'Type'),...
@@ -673,7 +677,7 @@ classdef DispersionTab < EmptyTab
                     end
                 end
             end
-        end %checkDisplayName
+        end %checkLegend
         
         % This function set the color, the marker and the style for the
         % hDispersion object according to the possible Color, Marker and
@@ -688,11 +692,10 @@ classdef DispersionTab < EmptyTab
             else
                 n = numel(this.PlotSpec);
                 % set specification: look if same file is plot
-                plotID = strcat({this.hData.dataset},...
-                                 {this.hData.sequence},...
-                                 {this.hData.filename});
-                tf_plot = strcmp(plotID(1:end-1), strcat(hData.dataset,...
-                                        hData.sequence, hData.filename));
+                fileID = arrayfun(@(x) getRelaxProp(x, 'fileID'),...
+                                           this.hData, 'Uniform', 0);
+                tf_plot = strcmp(fileID, getRelaxProp(hData, 'fileID'));
+                
                 if all(tf_plot == 0)
                     color_count = zeros(1,size(this.Color,1));
                     % set the color that appear the less
@@ -729,12 +732,12 @@ classdef DispersionTab < EmptyTab
                 % check if the same or not
                 xName = this.axe.XLabel.String;
                 if ~strcmp(xName, hData.xLabel)
-                    warndlg('Not the same xLabel!')
+%                     warndlg('Not the same xLabel!')
                 end
                 
                 yName = this.axe.YLabel.String;
                 if ~strcmp(yName, hData.yLabel)
-                    warndlg('Not the same xLabel!')
+%                     warndlg('Not the same xLabel!')
                 end               
             end
         end %setLabel
@@ -774,7 +777,7 @@ classdef DispersionTab < EmptyTab
         function maskData(this)
             % check if data are displayed
             if ~this.optsButton.DataCheckButton.Value || isempty(this.hData)
-                warning('Show or import data to mask them!')
+%                 warning('Show or import data to mask them!')
                 return
             end
             
@@ -807,7 +810,7 @@ classdef DispersionTab < EmptyTab
         function resetMaskData(this)
             % check if data are displayed
             if ~this.optsButton.DataCheckButton.Value || isempty(this.hData)
-                warning('Show or import data to reset mask!')
+%                 warning('Show or import data to reset mask!')
                 return
             end
             
@@ -819,19 +822,15 @@ classdef DispersionTab < EmptyTab
         end % resetMaskData
         
         % get legend: avoid fit
-        function [leg, fileID] = getLegend(this)
+        function [leg, relaxObj] = getLegend(this)
             % get the data plotted
             hData = findobj(this.axe.Children,'Type','ErrorBar');
             
             if isempty(hData)
-                leg = []; fileID = []; return
+                leg = []; relaxObj = []; return
             else
                 leg = {hData.DisplayName}; 
-                fileID = {hData.Tag};
-                for k = numel(leg):-1:1
-                    str = strsplit(fileID{k},'@');
-                    fileID{k} = str{1};
-                end
+                relaxObj = {hData.relaxObj};
             end
         end %getLegend
     end
