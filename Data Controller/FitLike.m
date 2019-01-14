@@ -33,6 +33,9 @@ classdef FitLike < handle
                             @(src, event) editFile(this, src, event));
             addlistener(this.FileManager.SelectedTree, 'TreeHasChanged',...
                             @(src, event) updateTree(this, src));
+             
+            addlistener(this.DisplayManager, 'SelectTab',...
+                            @(src, event) selectTab(this, src));
                         
             % Set visible the main windows
             this.FileManager.gui.fig.Visible = 'on';
@@ -582,24 +585,25 @@ classdef FitLike < handle
             if strcmp(event.Action, 'Select')
                 % loop over the input
                 for k = 1:numel(event.Data)
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    % Use notify() to propagate msg in console!
                     % add data from current plot
-                    [~, plotFlag, ~] = addPlot(this.DisplayManager,...
-                                        event.Data(k), event.idxZone(k));
-                    if ~plotFlag
-                        % uncheck this node
-                        dispMsg(this, ['Cannot plot ', getRelaxProp(event.Data(k), 'filename'),...
-                            ': the data type doesnt fit with the current tab!\n']);
-                        %hNode(k).Checked = 0;
-                    end
+                    addPlot(this.DisplayManager, event.Data(k), event.idxZone(k));
+%                     if ~plotFlag
+%                         % uncheck this node
+%                         dispMsg(this, ['Cannot plot ', getRelaxProp(event.Data(k), 'filename'),...
+%                             ': the data type doesnt fit with the current tab!\n']);
+%                         %hNode(k).Checked = 0;
+%                     end
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     pause(0.005) %EDT
                 end
             elseif strcmp(event.Action, 'Deselect')
                  % loop over the input
                 for k = 1:numel(event.Data)
                     % remove data from current plot
-                    removePlot(this.DisplayManager,...
-                               event.Data(k), event.idxZone(k));
-                    pause(0.005)
+                    removePlot(this.DisplayManager, event.Data(k), event.idxZone(k));
+                    pause(0.005) %EDT
                 end               
             end
             drawnow; %EDT
@@ -664,7 +668,7 @@ classdef FitLike < handle
         % to be checked
         function updateTree(this, src, ~)
             % get the tab information
-            [dataObj, idxZone] = getTabData(this.DisplayManager);
+            [dataObj, idxZone] = getData(this.DisplayManager);
             
             % check the corresponding data            
             if ~isempty(dataObj) && strcmp(class(dataObj), src.Tag)
@@ -681,31 +685,30 @@ classdef FitLike < handle
     methods (Access = public)
         % Tab selection callback
         function selectTab(this, src)
-            % get the selected tab
-            hTab = src.SelectedTab.Children;
+            % reset all tree in FileManager
             reset(this.FileManager);
-            if isa(hTab,'EmptyPlusTab')
-                % add new tab
-                addTab(this.DisplayManager);
-            else 
-                [~, fileID, displayName, idx] = getTabData(this);
+            
+            % get data from the current tab
+            [dataObj, idxZone] = getData(src);
+            
+            if ~isempty(dataObj)          
                 % update FileManager
-                setSelectedTree(this.FileManager, hTab.inputType);
-                checkFile(this.FileManager, fileID);
-                checkData(this.FileManager, fileID, displayName, idx, 1);
+                setTree(this.FileManager, class(dataObj));
+                checkFile(this.FileManager, unique([dataObj.relaxObj]));
+                checkData(this.FileManager, dataObj, idxZone, 1);
                 drawnow;
             end
         end %selectTab
         
-        % Wrapper to get plot data
-        function [c, fileID, displayName, idx] = getTabData(this)
-            [c, fileID, displayName, idx] = getDataID(this.DisplayManager.gui.tab.SelectedTab.Children);
-        end
-        
-        % Wrapper to get legend (avoid fit)
-        function [leg, fileID] = getLegend(this)
-             [leg, fileID] = getLegend(this.DisplayManager.gui.tab.SelectedTab.Children);
-        end
+%         % Wrapper to get plot data
+%         function [c, fileID, displayName, idx] = getTabData(this)
+%             [c, fileID, displayName, idx] = getDataID(this.DisplayManager.gui.tab.SelectedTab.Children);
+%         end
+%         
+%         % Wrapper to get legend (avoid fit)
+%         function [leg, fileID] = getLegend(this)
+%              [leg, fileID] = getLegend(this.DisplayManager.gui.tab.SelectedTab.Children);
+%         end
         
         % Mask data
         function setMask(~, ~, event)
