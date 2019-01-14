@@ -58,7 +58,7 @@ classdef RelaxObj < handle
                 this.fileID = char(java.util.UUID.randomUUID);
                 % if data, add RelaxObj handle
                 if ~isempty(this.data)
-                    set(this.data,'relaxObj',this);
+                    this.data.relaxObj = this;
                 end
             else
                 % array of struct
@@ -76,7 +76,7 @@ classdef RelaxObj < handle
                         this(k).fileID = char(java.util.UUID.randomUUID);
                         % if data, add RelaxObj handle
                         if ~isempty(this(k).data)
-                            set(this(k).data,'relaxObj',this(k));
+                            this(k).data.relaxObj = this(k);
                         end
                     end
                 end
@@ -99,6 +99,9 @@ classdef RelaxObj < handle
         % RelaxObj(i).filename = [RelaxObj(i).filename (n)]
         % with n the index of the duplicated files.
         function this = check(this)
+            % check UUID format
+            this = arrayfun(@(x) checkUUID(x), this, 'Uniform', 0);
+            this = [this{:}];
             % check if bloc are uniques
             [~,~,X] = unique(strcat({this.dataset},{this.sequence},...
                 {this.filename}));
@@ -111,6 +114,21 @@ classdef RelaxObj < handle
                 [this(X == idx(k)).filename] = new_filename{:};
             end
         end %check
+        
+        % check if UUID is used (old fileID contains '@' and length is
+        % variable).
+        % UUID format is 32 hexadecimal digits, displayed in five
+        % groups separated by hyphens, in the form 8-4-4-4-12.
+        function this = checkUUID(this)           
+            % check format and size
+            s = strsplit(this.fileID,'-');
+            n = cellfun(@numel,s);
+
+            % generate UUID if needed
+            if numel(n) ~= 5 || ~isequal(n, [8 4 4 4 12])
+                this.fileID = char(java.util.UUID.randomUUID);
+            end
+        end %checkUUID
         
         % Data formating: mergeFile()
         % merge several objects, considering only the DataUnit at the level
@@ -168,10 +186,9 @@ classdef RelaxObj < handle
         % data = getData(this, 'Zone', 'Zone (Abs)')% get the zone object
         % in RelaxObj named 'Zone (Abs)'
         function data = getData(this, varargin)
-            % check if data are available
-            if isempty(this.data)
-                data = []; return;
-            end
+            % init and check if data are available
+            data = [];            
+            if isempty(this.data); return; end
             
             obj = this.data;
             % check if we need to find a particular type of object
@@ -179,9 +196,7 @@ classdef RelaxObj < handle
                 % find all the object corresponding to this class
                 while ~strcmpi(class(obj), varargin{1})
                     % check if parent are available
-                    if  isempty(obj(1).parent)
-                       error('No object was found with this class!') 
-                    end
+                    if  isempty(obj(1).parent); return; end
                     % get parent and remove duplicates
                     obj = unique([obj.parent]);
                 end
@@ -190,9 +205,7 @@ classdef RelaxObj < handle
                 if nargin > 2
                     tf = strcmp({obj.displayName}, varargin{2});
                     
-                    if all(tf == 0)
-                        error('No object was found with this name!')
-                    else
+                    if ~all(tf == 0)
                         data = obj(tf);
                     end
                 else
@@ -225,6 +238,8 @@ classdef RelaxObj < handle
         function displayName = getDataInfo(this, varargin)
             % get the data object wanted
             obj = getData(this,varargin{:});
+            
+            if isempty(obj); displayName = []; return; end
             
             % get their class
             c = arrayfun(@class, obj, 'Uniform', 0); % because heterogeneous array
