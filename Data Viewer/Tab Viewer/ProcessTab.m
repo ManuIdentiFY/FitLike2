@@ -4,7 +4,7 @@ classdef ProcessTab < uix.Container & handle
     %
     
     properties (Access = public)
-        FitLike %Presenter
+        ProcessingManager %main window
         hbox % main horizontal box
         vbox % array of vertical box
         TabTitle % tab title        
@@ -19,10 +19,10 @@ classdef ProcessTab < uix.Container & handle
     
     methods
         % Constructor
-        function this = ProcessTab(FitLike, tab, TabTitle)
+        function this = ProcessTab(ProcessingManager, tab, TabTitle)
             % Call superclass constructor
             this@uix.Container();
-            this.FitLike = FitLike;
+            this.ProcessingManager = ProcessingManager;
             % set Title
             this.TabTitle = TabTitle;
             % Create the grid in the parent tab

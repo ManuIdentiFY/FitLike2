@@ -6,7 +6,11 @@ classdef ProcessingManager < handle
     properties
         gui % GUI (View)
         FitLike % Presenter
-        SelectedTab
+        SelectedTab %wrapper to the selected tab
+    end
+    
+    events
+        ThrowMessage
     end
     
     methods
@@ -21,8 +25,8 @@ classdef ProcessingManager < handle
             this.gui = guihandles(gui);     
             
             % Set the first tab and the '+' tab
-            ProcessTab(FitLike, uitab(this.gui.tab),'Pipeline1');
-            EmptyPlusTab(FitLike, uitab(this.gui.tab));
+            ProcessTab(this, uitab(this.gui.tab),'Pipeline1');
+            EmptyPlusTab(this, uitab(this.gui.tab));
             
             % Set the wrapper to the selected tab
             this.SelectedTab = this.gui.tab.SelectedTab;
@@ -90,7 +94,7 @@ classdef ProcessingManager < handle
             % count tab
             nTab = numel(this.gui.tab.Children);
             % add new tab
-            ProcessTab(this.FitLike, uitab(this.gui.tab),['Pipeline',num2str(nTab)]);
+            ProcessTab(this, uitab(this.gui.tab),['Pipeline',num2str(nTab)]);
             % push this tab
             uistack(this.gui.tab.Children(end),'up');
             % set the selection to this tab
@@ -141,7 +145,8 @@ classdef ProcessingManager < handle
                 try
                     pipeline = load([path,'/',file],vars{:});
                 catch 
-                    warndlg('The selected pipeline is not valid!','Pipeline selection')
+                    txt = 'Error: The loaded pipeline is not valid!\n';
+                    throwWrapMessage(this, txt);
                     return
                 end
                 % set data
@@ -176,6 +181,17 @@ classdef ProcessingManager < handle
                 src.Value = 1; % always select one item
             end
         end %switchProcessMode
+        
+        % Wrapper to throw messages in the console or in the terminal in
+        % function of FitLike input.
+        function this = throwWrapMessage(this, txt)
+            % check FitLike
+            if ~isa(this.FitLike,'FitLike')
+                fprintf(txt);
+            else
+                notify(this, 'ThrowMessage', EventMessage('txt',txt));
+            end
+        end % throwWrapMessage
     end  
 end
 
