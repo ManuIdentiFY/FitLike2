@@ -25,6 +25,7 @@ classdef FileManager  < handle
     events
         DataSelected
         FileEdited
+        ThrowMessage
     end
     
     methods (Access = public)
@@ -452,19 +453,19 @@ classdef FileManager  < handle
         
         % edit file  OK [14/01/19]
         function this = editFile(this, ~, event)
+            % check if dragdrop call
+            if isa(event,'EventFileManager')
+                notify(this, 'FileEdited', event);
             % check if node was edited
-            if ~strcmp(event.OldName, event.NewName)
-                 % get the node type
+            elseif ~strcmp(event.OldName, event.NewName)
+                % get the node type
                 prop = event.Nodes.Value;
                 % get the node concerned
                 hFile = TreeManager.getEndChild(event.Nodes);
                 % throw event
                 event = EventFileManager('Data',[hFile.UserData],...
-                            'Value', event.NewName,'Prop',prop);
+                    'Value', event.NewName,'Prop',prop);
                 notify(this, 'FileEdited', event);
-%                    
-%                 editFile(this.FitLike, {hFile.UserData}, propname,...
-%                                 event.NewName); 
             end  
         end %editFile
         
@@ -575,6 +576,17 @@ classdef FileManager  < handle
     
     % Console methods: add text
     methods
+        % Wrapper to throw messages in the console or in the terminal in
+        % function of FitLike input.
+        function this = throwWrapMessage(this, txt)
+            % check FitLike
+            if ~isa(this.FitLike,'FitLike')
+                fprintf(txt);
+            else
+                notify(this, 'ThrowMessage', EventMessage('txt',txt));
+            end
+        end % throwWrapMessage
+        
         % Throw a message in the console according to the input text.
         % Messages are automaticaly formatted as:
         % >> (previous text)

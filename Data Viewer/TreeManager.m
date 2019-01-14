@@ -8,7 +8,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
     % manuel.petit@inserm.fr
     
     properties
-        FitLike
+        FileManager %handle to FileManager
     end
     
     properties (Hidden)
@@ -21,11 +21,11 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
     
     methods (Access= public)
         % Constructor
-        function this = TreeManager(FitLike, varargin)
+        function this = TreeManager(FileManager, varargin)
             % call superconstructor
             this = this@uiextras.jTree.CheckboxTree(varargin{:});
             % add Controller
-            this.FitLike = FitLike;
+            this.FileManager = FileManager;
             % add callback if possible
             if this.DndEnabled
                  set(this,'NodeDraggedCallback',@(s,e) DragDrop(this,s,e));
@@ -54,9 +54,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 % find which source is activated
                 tf = strcmp(src.Value, this.valid_target(:,1));
                 
-                if all(tf == 0)
-                    error('Source is unknown!');
-                end
+                if all(tf == 0); return; end
                 
                 % check if the current target is one of the possible valid target
                 if ~all(strcmp(target.Value, this.valid_target{tf,2}) == 0)
@@ -90,7 +88,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                         msg = sprintf(['You can not drop your %s as is in this %s '...
                             'because it already contains the same %s: %s.'],src.Value,...
                             hParent.Value, src.Value, src.Name);
-                        dispMsg(this.FitLike, msg);
+                        throwWrapMessage(this.FileManager, msg)
                         return
                     else
                         % update data
@@ -98,11 +96,11 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                         target_node = target;
                         while ~isempty(target_node.Parent.Parent)
                             target_node = target_node.Parent;
-                            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                            % to change [Manu]
-                            editFile(this.FitLike, {nodes.UserData},...
-                                target_node.Value, target_node.Name);   
-                            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+                            event = EventFileManager('Action','DragDrop',...
+                                'Data',[nodes.UserData],...
+                                'Value',target_node.Name,'Prop',target_node.Value);
+                            editFile(this.FileManager,[],event) 
                         end
                     end
                     
