@@ -158,7 +158,7 @@ classdef FitLikeView < handle
             % delete the item
             tf = strcmp({hLabel(1:end-2).Label}, label);
             delete(hLabel(tf));
-        end
+        end %removeLabel
         
         % This function can create a colored version of the new_file icon.
         % Icons are stored in Data Viewer/icons (.gif format).
@@ -189,7 +189,7 @@ classdef FitLikeView < handle
             warning off
             imwrite(X, map, icon_name);
             warning on
-        end
+        end %colorIcon
     end
     
 end
