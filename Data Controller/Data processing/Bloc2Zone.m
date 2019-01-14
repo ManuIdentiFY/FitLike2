@@ -11,6 +11,13 @@ classdef Bloc2Zone < ProcessDataUnit
             self@ProcessDataUnit;
         end
         
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Remove metadata from the function
+        % If required, use wrapper(s) to get access [Manu]
+        % Need to change the processing model to store parameters from the
+        % function inside the processingMethod property [Manu]
+        
         % function that applies the processing function to one bloc only.
         % This is where the custom processing function is being called.
         function [zone,bloc] = applyProcessFunction(self,bloc)
@@ -32,7 +39,11 @@ classdef Bloc2Zone < ProcessDataUnit
                 dz = [];
                 paramFun = {};
             else
+                
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 for i = 1:bloc.parameter.paramList.NBLK
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                
                     for j = 1:size(bloc.y,3)
                         cellindex{i,j} = [i,j]; %#ok<AGROW>
                     end
@@ -61,11 +72,15 @@ classdef Bloc2Zone < ProcessDataUnit
                 % finally, reshape the list of updated parameters and make a
                 % list of adapted structure objects
                 params = arrayofstruct2struct(paramFun);
+                
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 fh = str2func(class(bloc.parameter));
                 params = fh(params);
                 params = reshape(params,size(z));
                 params = replace([bloc.parameter,params]);
                 bloc.parameter = params;
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                
             end
             
             % generate one zone object for each component provided by the
@@ -89,6 +104,8 @@ classdef Bloc2Zone < ProcessDataUnit
             % store the data, but do not erase previous zone objects if
             % they were already processed
             Nzone = length(cellz);
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             if isempty(bloc.children)
                 zone = Zone('parent',repmat({bloc},size(celldz)),...
                     'x',x,'xLabel',labelX,...
@@ -129,7 +146,10 @@ classdef Bloc2Zone < ProcessDataUnit
                 remove(bloc.children, Nzone+1:numel(bloc.children));
                 zone = bloc.children;
             end
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         % TO DO: make some test functions
                         

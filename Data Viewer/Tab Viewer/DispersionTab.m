@@ -32,7 +32,7 @@ classdef DispersionTab < EmptyTab
     end
     
     % Axis properties
-    properties (Access = public, SetObservable)
+    properties (Access = public, SetObservable) %%??? [Manu]
         axe
         AxePosition = [0.09 0.09 0.86 0.86]; %position of the main axis
     end
