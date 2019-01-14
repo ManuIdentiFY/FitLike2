@@ -6,6 +6,7 @@ classdef ProcessingManager < handle
     properties
         gui % GUI (View)
         FitLike % Presenter
+        SelectedTab
     end
     
     methods
@@ -22,6 +23,9 @@ classdef ProcessingManager < handle
             % Set the first tab and the '+' tab
             ProcessTab(FitLike, uitab(this.gui.tab),'Pipeline1');
             EmptyPlusTab(FitLike, uitab(this.gui.tab));
+            
+            % Set the wrapper to the selected tab
+            this.SelectedTab = this.gui.tab.SelectedTab;
             
             % Set the UI ContextMenu
             setUIMenu(this);
@@ -71,12 +75,12 @@ classdef ProcessingManager < handle
                 'Callback',@(src,event) savePipeline(this));
             uimenu(cmenu, 'Label', 'Delete pipeline',...
                 'Callback',@(src,event) removePipeline(this));  
-            this.gui.tab.SelectedTab.UIContextMenu = cmenu;  
+            this.SelectedTab.UIContextMenu = cmenu;  
         end    
         
         % Select Pipeline
         function this = selectPipeline(this)
-            if strcmp(this.gui.tab.SelectedTab.Title,'+')
+            if strcmp(this.SelectedTab.Title,'+')
                 addPipeline(this);
             end
         end %selectPipeline
@@ -90,7 +94,7 @@ classdef ProcessingManager < handle
             % push this tab
             uistack(this.gui.tab.Children(end),'up');
             % set the selection to this tab
-            this.gui.tab.SelectedTab = this.gui.tab.Children(end-1);
+            this.SelectedTab = this.gui.tab.Children(end-1);
             % add UI menu to this tab
             setUIMenu(this);          
         end %addPipeline
@@ -102,10 +106,10 @@ classdef ProcessingManager < handle
                 return
             else
                 % delete current tab
-                delete(this.gui.tab.SelectedTab);
+                delete(this.SelectedTab);
                 % check if '+' tab selected
-                if strcmp(this.gui.tab.SelectedTab.Title,'+')
-                    this.gui.tab.SelectedTab = this.gui.tab.Children(end-1);
+                if strcmp(this.SelectedTab.Title,'+')
+                    this.SelectedTab = this.gui.tab.Children(end-1);
                 end
             end
         end %removePipeline
@@ -113,13 +117,13 @@ classdef ProcessingManager < handle
         % Remame Pipeline
         function this = renamePipeline(this)
             % get the index of the selected tab
-            idx = find(this.gui.tab.Children == this.gui.tab.SelectedTab);
+            idx = find(this.gui.tab.Children == this.SelectedTab);
             % open inputdlg
             new_name = inputdlg({'Enter a new pipeline name:'},...
                 'Rename Pipeline',[1 70],{['Pipeline',num2str(idx)]});
             % check output and assign new name
             if ~isempty(new_name)
-                this.gui.tab.SelectedTab.Title = new_name{1};
+                this.SelectedTab.Title = new_name{1};
             end
         end %renamePipeline
         
@@ -141,7 +145,7 @@ classdef ProcessingManager < handle
                     return
                 end
                 % set data
-                tab = this.gui.tab.SelectedTab.Children;
+                tab = this.SelectedTab.Children;
                 tab.ProcessArray = pipeline.processArray;
                 setPipelineFromTable(tab, pipeline.pipelineTable);
             end
@@ -150,9 +154,9 @@ classdef ProcessingManager < handle
         % Save Pipeline
         function this = savePipeline(this)
             % get the data from the selected tab
-            processArray = this.gui.tab.SelectedTab.Children.ProcessArray; %#ok<NASGU>
+            processArray = this.SelectedTab.Children.ProcessArray; %#ok<NASGU>
             % concatenate the other data
-            pipelineTable = ProcessTab.getPipelineAsTable(this.gui.tab.SelectedTab.Children); %#ok<NASGU>
+            pipelineTable = ProcessTab.getPipelineAsTable(this.SelectedTab.Children); %#ok<NASGU>
             % choose a name
             uisave({'processArray','pipelineTable'},'myPipeline')
         end %savePipeline
