@@ -275,7 +275,8 @@ classdef RelaxObj < handle
         % No idea why warning [Manu]
         function this = set.filename(this, val)
             % notify that filename has changed
-            notify(this, 'FileHasChanged', EventFile(this.filename, val));
+            event = EventFile('OldName', this.filename, 'NewName', val);
+            notify(this, 'FileHasChanged', event);
             % set the new value
             this.filename = val;
         end
