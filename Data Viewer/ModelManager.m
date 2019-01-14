@@ -23,8 +23,8 @@ classdef ModelManager < handle
             this.gui.jtable = jtable.getModel.getActualModel.getActualModel;
             
             % Set the first tab and the '+' tab
-            ModelTab(FitLike, uitab(this.gui.tab),'Model1');
-            EmptyPlusTab(FitLike, uitab(this.gui.tab));
+            ModelTab(this, uitab(this.gui.tab),'Model1');
+            EmptyPlusTab(this, uitab(this.gui.tab));
             
             % Set the UI ContextMenu
             setUIMenu(this);
@@ -98,7 +98,7 @@ classdef ModelManager < handle
             % count tab
             nTab = numel(this.gui.tab.Children);
             % add new tab
-            ModelTab(this.FitLike, uitab(this.gui.tab),['Model',num2str(nTab)]);
+            ModelTab(this, uitab(this.gui.tab),['Model',num2str(nTab)]);
             % push this tab
             uistack(this.gui.tab.Children(end),'up');
             % set the selection to this tab
@@ -242,6 +242,17 @@ classdef ModelManager < handle
             updateResultTable(this);
             drawnow;
         end %updateFilePopup
+        
+        % Wrapper to throw messages in the console or in the terminal in
+        % function of FitLike input.
+        function this = throwWrapMessage(this, txt)
+            % check FitLike
+            if ~isa(this.FitLike,'FitLike')
+                fprintf(txt);
+            else
+                notify(this.FitLike, 'ThrowMessage', EventMessage('txt',txt));
+            end
+        end % throwWrapMessage
     end      
 end
 

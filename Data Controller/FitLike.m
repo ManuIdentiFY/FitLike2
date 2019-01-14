@@ -13,6 +13,10 @@ classdef FitLike < handle
 %         AcquisitionManager % Other view for the Presenter (subView)
     end
     
+    events
+        ThrowMessage
+    end
+    
     methods (Access = public)
         % Constructor
         function this = FitLike()
@@ -36,6 +40,10 @@ classdef FitLike < handle
              
             addlistener(this.DisplayManager, 'SelectTab',...
                             @(src, event) selectTab(this, src));
+             
+                        
+            addlistener(this, 'ThrowMessage',...
+                            @(src, event) throwMessage(this, src, event));
                         
             % Set visible the main windows
             this.FileManager.gui.fig.Visible = 'on';
@@ -677,8 +685,8 @@ classdef FitLike < handle
         end
         
         % Wrapper to throw message
-        function dispMsg(this, msg)
-            this.FileManager = throwMessage(this.FileManager, msg);
+        function throwMessage(this, ~, event)
+            this.FileManager = throwMessage(this.FileManager, event.txt);
         end %disp
     end   
     %% -------------------- DisplayManager Callback -------------------- %% 

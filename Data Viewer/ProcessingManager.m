@@ -9,10 +9,6 @@ classdef ProcessingManager < handle
         SelectedTab %wrapper to the selected tab
     end
     
-    events
-        ThrowMessage
-    end
-    
     methods
         % Constructor
         function this = ProcessingManager(FitLike)
@@ -189,7 +185,7 @@ classdef ProcessingManager < handle
             if ~isa(this.FitLike,'FitLike')
                 fprintf(txt);
             else
-                notify(this, 'ThrowMessage', EventMessage('txt',txt));
+                notify(this.FitLike, 'ThrowMessage', EventMessage('txt',txt));
             end
         end % throwWrapMessage
     end  

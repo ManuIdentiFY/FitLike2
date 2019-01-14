@@ -17,7 +17,6 @@ classdef DisplayManager < handle
     
     events
         SelectTab
-        ThrowMessage
     end
     
     methods (Access = public)
@@ -194,7 +193,7 @@ classdef DisplayManager < handle
             if ~isa(this.FitLike,'FitLike')
                 fprintf(txt);
             else
-                notify(this, 'ThrowMessage', EventMessage('txt',txt));
+                notify(this.FitLike, 'ThrowMessage', EventMessage('txt',txt));
             end
         end % throwWrapMessage
         

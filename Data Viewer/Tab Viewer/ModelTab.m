@@ -4,7 +4,7 @@ classdef ModelTab < uix.Container & handle
     %
     
     properties (Access = public)
-        FitLike % Presenter
+        ModelManager % main window
         jtable % treetable 
         container % container for treetable      
         ModelArray % list of the model
@@ -12,10 +12,10 @@ classdef ModelTab < uix.Container & handle
     
     methods
         % Constructor
-        function this = ModelTab(FitLike, tab, TabTitle)
+        function this = ModelTab(ModelManager, tab, TabTitle)
             % Call superclass constructor
             this@uix.Container();
-            this.FitLike = FitLike;
+            this.ModelManager = ModelManager;
             % Create the grid in the parent tab
             grid = uix.Grid('Parent',this,'Spacing', 2); 
             % Create vertical box
@@ -135,7 +135,8 @@ classdef ModelTab < uix.Container & handle
                        if newData > model.startPoint(tf)
                            javaMethodEDT('setValueAt',...
                                this.jtable, model.minValue(tf), row, col);
-                           dispMsg(this.FitLike, 'The minBoundarie need to be lower than the startPoint\n');
+                           msg = 'Error: minBoundarie need to be lower than startPoint\n';
+                           throwWrapMessage(this.ModelManager, msg);
                        else
                            this.ModelArray(tf_model).minValue(tf) = newData;
                        end
@@ -145,7 +146,8 @@ classdef ModelTab < uix.Container & handle
                       if newData < model.startPoint(tf)
                           javaMethodEDT('setValueAt',...
                                this.jtable, model.maxValue(tf), row, col);
-                           dispMsg(this.FitLike, 'The maxBoundarie need to be higher than the startPoint\n');
+                           msg = 'Error: maxBoundarie need to be higher than startPoint\n';
+                           throwWrapMessage(this.ModelManager, msg);
                       else
                            this.ModelArray(tf_model).maxValue(tf) = newData;
                        end    
@@ -155,7 +157,8 @@ classdef ModelTab < uix.Container & handle
                        if model.minValue(tf) > newData || model.maxValue(tf) < newData
                            javaMethodEDT('setValueAt',...
                                this.jtable, model.startPoint(tf), row, col);
-                           dispMsg(this.FitLike, 'The startPoint need to be between the min and max boundaries\n');
+                           msg = 'Error: startPoint need to be between the min and maxBoundaries\n';
+                           throwWrapMessage(this.ModelManager, msg);
                        else
                            this.ModelArray(tf_model).startPoint(tf) = newData;
                        end
