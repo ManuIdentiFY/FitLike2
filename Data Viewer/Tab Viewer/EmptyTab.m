@@ -46,21 +46,15 @@ classdef EmptyTab < uix.Container & handle
         end %createFig
         
         % get the ID information of the data plotted
-        function [c, fileID, displayName, idx] = getDataID(this)
-            % check if possible 
-            if isempty(this.hData)
-                c = []; fileID = []; displayName = []; idx = [];
-            else
-                c = class(this.hData);
-                fileID = {this.hData.fileID};
-                displayName = {this.hData.displayName};
-                idx = this.idxZone;
-            end
+        function [hData, idxZone] = getData(this)
+             % get data
+             hData = this.hData;
+             idxZone = this.idxZone;
         end % getDataID
         
         % get legend
-        function [leg, fileID] = getLegend(this)
-            leg = []; fileID = [];
+        function [leg, hData] = getLegend(this) %#ok<MANU>
+            leg = []; hData = [];
         end %getLegend
         
         % get the plotID
@@ -71,21 +65,23 @@ classdef EmptyTab < uix.Container & handle
                     plotID = [];
                 else
                     % concatenate the original ID with the zone index
-                    plotID = strcat({this.hData.fileID},'@',{this.hData.displayName},'@',...
+                    fileID = arrayfun(@(x) getRelaxProp(x, 'fileID'),...
+                                           this.hData, 'Uniform', 0);
+                    plotID = strcat(fileID,'@',{this.hData.displayName},'@',...
                         cellfun(@num2str, num2cell(this.idxZone),'Uniform',0));
                 end
             else
                 if isempty(hData)
                     plotID = [];
                 else
-                    plotID = strcat(hData.fileID,'@', hData.displayName,'@',...
-                        num2str(idxZone));
+                    plotID = strcat(getRelaxProp(hData, 'fileID'),'@',...
+                        hData.displayName,'@', num2str(idxZone));
                 end
             end
         end %getPlotID
         
         % dummy method
-        function moveMouse(this)
+        function moveMouse(this) %#ok<MANU>
             return
         end
     end   
