@@ -67,7 +67,7 @@ classdef ParamObj < matlab.mixin.Heterogeneous
                     error('getfield:MissingField',['The required field does'...
                                          ' not exist'])
                 else
-                    if nargin > 2
+                    if numel(varargin) > 1
                         if strcmp(varargin{1},'ForceCellOutput') &&...
                                 strcmpi(varargin{2},'true')
                             val = {this.paramList.(fld)};
