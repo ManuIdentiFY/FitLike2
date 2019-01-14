@@ -31,16 +31,16 @@ classdef ModelTab < uix.Container & handle
             type = {'char','char','logical','','',''};
             editable = {false,true,true,true,true,true};
             dummy_data = {'','',true,0,0,0};
-            warning off
             treetable = treeTable(this.container,header,dummy_data,...
-                   'ColumnTypes',type,'ColumnEditable',editable); 
-            warning on   
+                   'ColumnTypes',type,'ColumnEditable',editable);  
+               
             % store handle to the data and remove the dummy row   
             this.jtable = treetable.getModel.getActualModel.getActualModel;
             javaMethodEDT('removeRow',this.jtable,0);   
             
             % set the editJTable callback
-            set(handle(this.jtable,'CallbackProperties'), 'TableChangedCallback', {@(src, event) editModel(this, src,event)});
+            set(handle(this.jtable,'CallbackProperties'),...
+                'TableChangedCallback', {@(src, event) editModel(this, src,event)});
             
             % add add/remove model pushbuttons    
             addbox = uix.HButtonBox( 'Parent', box,...

@@ -214,7 +214,7 @@ classdef ProcessTab < uix.Container & handle
                 tf = strcmp({mc{1}.PropertyList.Name}, 'functionName'); %be sure about the index of the name
                 tb.displayName = cellfun(@(x) x.PropertyList(tf).DefaultValue, mc, 'Uniform', 0);
                 % concatenate
-                process_tb = [process_tb; tb];
+                process_tb = [process_tb; tb]; %#ok<AGROW>
             end
             
             % create listdlg to select process
