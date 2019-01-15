@@ -239,9 +239,14 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             if nargin < 3
                 this.mask(dim{:}) = true(size(this.mask(dim{:})));
             else
-                this.mask(dim{:}) = this.mask(dim{:}) &...
-                        ~((xrange(1) < this.x(dim{:}) & this.x(dim{:}) < xrange(2))&...
+                range = ((xrange(1) < this.x(dim{:}) & this.x(dim{:}) < xrange(2))&...
                         (yrange(1) < this.y(dim{:}) & this.y(dim{:}) < yrange(2)));
+                m = this.mask(dim{:});
+                m(range) = ~m(range);
+                this.mask(dim{:}) = m;
+%                 this.mask(dim{:}) = this.mask(dim{:}) &...
+%                         ~((xrange(1) < this.x(dim{:}) & this.x(dim{:}) < xrange(2))&...
+%                         (yrange(1) < this.y(dim{:}) & this.y(dim{:}) < yrange(2)));
             end
             % notify
             notify(this, 'DataUpdate', EventFileManager('idxZone',idxZone));
