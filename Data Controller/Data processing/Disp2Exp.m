@@ -130,20 +130,18 @@ classdef Disp2Exp < ProcessDataUnit
         end
         
         % make a list of all the boudaries for each parameter
-        function self = gatherBoundaries(self)
-            self.model.minValue = [];
-            self.model.maxValue = [];
-            self.model.startPoint = [];
-            self.model.isFixed = [];
-            self.model.bestValue = [];
-            self.model.errorBar = [];
-            for i = 1:length(self.subModel)
-                self.model.minValue = [self.model.minValue, self.subModel(i).minValue(:)']; %#ok<*AGROW>
-                self.model.maxValue = [self.model.maxValue, self.subModel(i).maxValue(:)'];
-                self.model.startPoint = [self.model.startPoint, self.subModel(i).startPoint(:)'];
-                self.model.isFixed  = [self.model.isFixed,  self.subModel(i).isFixed(:)'];
-                self.model.bestValue  = [self.model.bestValue,  self.subModel(i).bestValue(:)'];
-                self.model.errorBar  = [self.model.errorBar,  self.subModel(i).errorBar(:)'];
+        function this = gatherBoundaries(this)
+            % init
+            this.model = struct('minValue',[],'maxValue',[],...
+                'startPoint',[],'isFixed',[],'bestValue',[],'errorBar',[]);
+            
+            for i = 1:length(this.subModel)
+                this.model.minValue = [this.model.minValue, this.subModel(i).minValue(:)']; %#ok<*AGROW>
+                this.model.maxValue = [this.model.maxValue, this.subModel(i).maxValue(:)'];
+                this.model.startPoint = [this.model.startPoint, this.subModel(i).startPoint(:)'];
+                this.model.isFixed  = [this.model.isFixed,  this.subModel(i).isFixed(:)'];
+                this.model.bestValue  = [this.model.bestValue,  this.subModel(i).bestValue(:)'];
+                this.model.errorBar  = [this.model.errorBar,  this.subModel(i).errorBar(:)'];
             end
         end
         
