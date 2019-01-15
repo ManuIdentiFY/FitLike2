@@ -518,17 +518,13 @@ classdef FileManager  < handle
            this.SelectedTree = this.gui.treedata(s.Children == e.NewValue);
            % add the checked files
            hFile = TreeManager.getEndChild(this.gui.treefile.CheckedNodes);
-           addData(this, [hFile.UserData]);
-           %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-           % Move to FitLike! [Manu]
-           % check if we need to check data
-%            [dataObj, idxZone] = getTabData(this.FitLike);
-%            checkData(this, dataObj, idxZone, 1);
-           %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
            
-           % notify
-           notify(this.SelectedTree, 'TreeHasChanged');
-           drawnow nocallbacks
+           if ~isempty(hFile)
+               addData(this, [hFile.UserData]);
+               % notify
+               notify(this.SelectedTree, 'TreeHasChanged');
+               drawnow nocallbacks
+           end
        end %changeTree
 
         % Throw the relaxObj selected  OK [14/01/19]
