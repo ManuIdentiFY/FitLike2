@@ -117,9 +117,6 @@ classdef DispersionTab < EmptyTab
         function delete(this)
             % delete the listener
             delete(this.ls);
-            % clear pointer
-            delete(this);
-            clear this
         end %delete
     end
     
@@ -806,7 +803,7 @@ classdef DispersionTab < EmptyTab
             % check if data are displayed
             if ~this.optsButton.DataCheckButton.Value || isempty(this.hData)
                 txt = 'Warning: Show or import data to mask them!\n';
-                throwWrapMessage(this.DisplayManager, txt)
+                throwWrapMessage(this.DisplayManager, txt);
                 return
             end
             
@@ -840,7 +837,7 @@ classdef DispersionTab < EmptyTab
             % check if data are displayed
             if ~this.optsButton.DataCheckButton.Value || isempty(this.hData)
                 txt = 'Warning: Show or import data to mask them!\n';
-                throwWrapMessage(this.DisplayManager, txt)
+                throwWrapMessage(this.DisplayManager, txt);
                 return
             end
             
