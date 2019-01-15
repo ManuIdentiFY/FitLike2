@@ -12,6 +12,10 @@ classdef Disp2Exp < ProcessDataUnit
         subModel;    % List of sub-models to be added up.
     end
     
+    properties (Abstract)
+        
+    end
+    
     methods
         
         function self = Disp2Exp(varargin)
@@ -132,8 +136,8 @@ classdef Disp2Exp < ProcessDataUnit
         % make a list of all the boudaries for each parameter
         function this = gatherBoundaries(this)
             % init
-            this.model = struct('minValue',[],'maxValue',[],...
-                'startPoint',[],'isFixed',[],'bestValue',[],'errorBar',[]);
+%             this.model = struct('minValue',[],'maxValue',[],...
+%                 'startPoint',[],'isFixed',[],'bestValue',[],'errorBar',[]);
             
             for i = 1:length(this.subModel)
                 this.model.minValue = [this.model.minValue, this.subModel(i).minValue(:)']; %#ok<*AGROW>
