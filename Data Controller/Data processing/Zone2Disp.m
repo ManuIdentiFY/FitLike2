@@ -6,7 +6,7 @@ classdef Zone2Disp < ProcessDataUnit
     
     
     methods
-        
+        % Constructor
         function self = Zone2Disp
             self@ProcessDataUnit;
         end
