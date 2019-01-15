@@ -50,6 +50,10 @@ classdef DispersionTab < EmptyTab
         axehist  % axis for the histogram (residuals)
     end
     
+    properties (Hidden)
+        ls % listeners
+    end
+    
     events
         UpdateHist
     end
@@ -107,7 +111,13 @@ classdef DispersionTab < EmptyTab
             % set heights                  
             this.box.Heights = [-8 -1];
             drawnow;
-        end
+        end %DispersionTab
+        
+        % Destructof
+        function delete(this)
+            % delete the listener
+            delete(this.ls);
+        end %delete
     end
     
     methods (Access = public)        
@@ -124,10 +134,17 @@ classdef DispersionTab < EmptyTab
                 this.idxZone = [this.idxZone idxZone];
 
                 % add listener 
-                addlistener(hData,'DataUpdate',@(src, event) updateData(this, src, event));
-                addlistener(hData,'DataDeletion', @(src, event) deletePlot(this, hData));
-                addlistener(hData.relaxObj,'FileHasChanged',@(src, event) updateLegend(this, src, event));
-                
+                l(1,1) = addlistener(hData,'DataUpdate',...
+                            @(src, event) updateData(this, src, event));
+                l(2,1) = addlistener(hData,'DataDeletion',...
+                            @(src, event) deletePlot(this, src));
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                % Need to solve this issue: How to add listener to
+                % underlined relaxObj. [Manu]
+%                 l(3) = addlistener(hData.relaxObj,'FileHasChanged',...
+%                             @(src, event) updateLegend(this, src, event));
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                this.ls = [this.ls, l];
                 % set plot specification
                 getPlotSpec(this, hData);
             end
@@ -182,10 +199,11 @@ classdef DispersionTab < EmptyTab
             % reset & check legend
             showLegend(this);
             checkLegend(this, hData);
-            % remove handle
-            this.hData = this.hData(~tf); 
+            % remove handle and listener
+            this.hData = this.hData(~tf);
             this.PlotSpec = this.PlotSpec(~tf);
-            this.idxZone = this.idxZone(~tf);    
+            this.idxZone = this.idxZone(~tf);   
+            delete(this.ls(:,tf)); this.ls = this.ls(:,~tf);
         end %deletePlot    
                         
         % Reset data
