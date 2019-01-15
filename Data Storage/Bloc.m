@@ -29,6 +29,17 @@ classdef Bloc < DataUnit
         function x = getZoneAxis(this)
             x = arrayfun(@(x) getZoneAxis(x.parameter),this,'UniformOutput',0);
         end
+        
+        % define dimension indexing for data selection. If idxZone is a NaN
+        % all the data are collected.
+        function dim = getDim(this, idxZone)
+            % check input
+            if isnan(idxZone)
+                dim = {1:size(this.y,1), 1:size(this.y,2), 1:size(this.y,3)};
+            else
+                dim = {1:size(this.y,1), 1:size(this.y,2), idxZone};
+            end
+        end %getDim
     end
     
 end

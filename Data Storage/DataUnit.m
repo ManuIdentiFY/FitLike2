@@ -220,6 +220,33 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     end % methods
     
     methods (Access = public, Sealed = true)   
+        % Wrapper to get data from DataUnit
+        function [x,y,dy,mask] = getData(this, idxZone)
+            % call dimension indexing function
+            dim = getDim(this, idxZone);
+            % get data
+            x = this.x(dim{:}); y = this.y(dim{:});
+            dy = this.dy(dim{:}); mask = this.mask(dim{:});
+        end % getData
+        
+        % Set mask according to a [x,y] range. the new mask is added to the
+        % current mask. Can be called with only two input to reset the mask.
+        function this = setMask(this, idxZone, xrange, yrange)
+            % call dimension indexing function
+            dim = getDim(this, idxZone);
+            
+            % check input: if no range, reset mask
+            if nargin < 3
+                this.mask(dim{:}) = true(size(this.mask(dim{:})));
+            else
+                this.mask(dim{:}) = this.mask(dim{:}) &...
+                        ~((xrange(1) < this.x(dim{:}) & this.x(dim{:}) < xrange(2))&...
+                        (yrange(1) < this.y(dim{:}) & this.y(dim{:}) < yrange(2)));
+            end
+            % notify
+            notify(this, 'DataUpdate', EventFileManager('idxZone',idxZone));
+        end %setMask
+        
         % Wrapper to get RelaxObj property from DataUnit
         function val = getRelaxProp(this, prop)
             % check if RelaxObj exists
@@ -390,7 +417,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotResidual
         %%% -------------------------------------------- %%%
     end %methods
-    
+ 
 %     % The methods described below are used to enable the merge capabilities
 %     % of the DataUnit object. They work by re-directing any quiry for the
 %     % x, y, dy and mask fields towards the list of sub-objects. Any
