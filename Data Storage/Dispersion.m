@@ -2,7 +2,7 @@ classdef Dispersion < DataUnit
     %
     % DISPERSION is a container for "dispersion" data from Stelar SPINMASTER
     %
-    % SEE ALSO BLOC, ZONE, DATAUNIT, DISPERSIONMODEL
+    % SEE ALSO BLOC, ZONE, DATAUNIT
     
     properties
         % See DataUnit for other properties

@@ -70,7 +70,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             if DoDrop && strcmpi(event.DropAction,'move')
                 % Get list of children in target container
                 hChildren = [target.Parent.Children];
-                % Get index or source and target
+                % Get index of source and target
                 idxTarget = find(hChildren == target);
                 idxSource = find(hChildren == src);
                 isChecked = logical(src.Checked);
@@ -84,11 +84,13 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                     % check if duplicate
                     tf = strcmp({hChildren.Name}, src.Name);
                     if ~all(tf == 0)
-                        % throw warning
-                        msg = sprintf(['You can not drop your %s as is in this %s '...
-                            'because it already contains the same %s: %s.'],src.Value,...
-                            hParent.Value, src.Value, src.Name);
-                        throwWrapMessage(this.FileManager, msg)
+                        if isa(this.FileManager,'FileManager')
+                            % throw warning
+                            msg = sprintf(['You can not drop your %s as is in this %s '...
+                                'because it already contains the same %s: %s.'],src.Value,...
+                                hParent.Value, src.Value, src.Name);
+                            throwWrapMessage(this.FileManager, msg)
+                        end
                         return
                     else
                         % update data
@@ -96,11 +98,12 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                         target_node = target;
                         while ~isempty(target_node.Parent.Parent)
                             target_node = target_node.Parent;
-
-                            event = EventFileManager('Action','DragDrop',...
-                                'Data',[nodes.UserData],...
-                                'Value',target_node.Name,'Prop',target_node.Value);
-                            editFile(this.FileManager,[],event) 
+                            if isa(this.FileManager,'FileManager')
+                                event = EventFileManager('Action','DragDrop',...
+                                    'Data',[nodes.UserData],...
+                                    'Value',target_node.Name,'Prop',target_node.Value);
+                                editFile(this.FileManager,[],event) 
+                            end
                         end
                     end
                     

@@ -2,7 +2,7 @@ classdef DispersionTab < EmptyTab
     %
     % Class that design containers for dispersion data
     %
-    % SEE ALSO DISPLAYTAB, DISPLAYMANAGER, DISPERSION
+    % SEE ALSO EMPTYTAB, DISPLAYMANAGER, DISPERSION
     
     % Note: Plotting data requires lot of time, especially because
     % we need to dynamically update the legend (50% maybe) and the axis

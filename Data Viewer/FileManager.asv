@@ -94,12 +94,10 @@ classdef FileManager  < handle
             vbox.Heights = [-3.5 -1];
             hbox.Widths = [-1.5 -1];
             drawnow;                      
-            
-            if isa(this.FitLike,'FitLike')
-                % Replace the close function by setting the visibility to off
-                set(this.gui.fig,  'closerequestfcn', ...
-                    @(src, event) this.FitLike.hideWindowPressed(src)); 
-            end
+            %%-------------------------CALLBACK--------------------------%%
+            % Replace the close function by setting the visibility to off
+            set(this.gui.fig,  'closerequestfcn', ...
+                @(src, event) this.FitLike.hideWindowPressed(src)); 
         end %FileManager
         
         % Destructor
@@ -191,6 +189,7 @@ classdef FileManager  < handle
            icon = this.RelaxObjIcon{this.gui.treedata == this.SelectedTree};
            % loop over the input
            for k = 1:numel(relaxObj)
+               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                % get the data info: displayName
                hData = getData(relaxObj(k), this.SelectedTree.Tag);
                
@@ -287,8 +286,15 @@ classdef FileManager  < handle
        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
        % update data if dataobj is changed. dataObj is a DataUnit.
        function this = updateData(this, relaxObj)
+           
+           %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
            % get data info
+%            datainfo = getFileInfo(this.FitLike, fileID);
+%            fld = fieldnames(datainfo);
+%            % check if data
+%            tf = strcmp(fld, this.SelectedTree.Tag);
             displayName = getDataInfo(relaxObj, this.SelectedTree.Tag);
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
            if ~isempty(displayName)
                % set icon
@@ -306,6 +312,7 @@ classdef FileManager  < handle
                    hFile = TreeManager.addNode(root,...
                        relaxObj.filename, this.FileIcon, 'filename',...
                        'UserData', relaxObj);
+%                    hFile.UserData = fileID;
                    % add relaxObj
                    addRelaxObj(this, hFile, icon, nZone);
                else
@@ -318,6 +325,7 @@ classdef FileManager  < handle
                        hFile = TreeManager.addNode(root,...
                            relaxObj.filename, this.FileIcon, 'filename',...
                           'UserData', relaxObj);
+%                        hFile.UserData = fileID;
                        % add relaxObj
                        addRelaxObj(this, hFile, icon, nZone);
                    else
@@ -394,6 +402,7 @@ classdef FileManager  < handle
             if all([hFile.Checked] == 0)
                % fire event
                for k = 1:numel(hFile)
+                   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                    % get all the data corresponding to the relaxObj
                    hData = getData(hFile(k).UserData, this.SelectedTree.Tag);
                    
@@ -413,6 +422,17 @@ classdef FileManager  < handle
                    event = EventFileManager('Action','Deselect',...
                        'Data',hData,'idxZone',idxZone);
                    notify(this, 'DataSelected', event);
+
+%                        
+%                    hData = search(this.SelectedTree, hFile(k).UserData);
+%                    if ~isempty(hData)
+%                        % get 
+%                        legendTag = {hData.Children.Name};
+%                        removeData(this.FitLike, this.SelectedTree.Tag,...
+%                               repmat({hData.UserData},1,numel(legendTag)),...
+%                               legendTag, repelem(NaN, 1, numel(legendTag)));
+%                    end
+                   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                end
                % remove data from the data panel
                removeData(this, [hFile.UserData]);
