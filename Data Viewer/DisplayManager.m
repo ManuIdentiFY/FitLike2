@@ -99,7 +99,7 @@ classdef DisplayManager < handle
         % Change tab callback
         function this = changeTab(this, src, ~)
             % check if tab need to be added
-            if isa(src.gui.tab.SelectedTab.Children,'EmptyPlusTab')
+            if isa(src.SelectedTab.Children,'EmptyPlusTab')
                 addTab(this);
             end
             % notify
