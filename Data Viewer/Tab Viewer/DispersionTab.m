@@ -117,6 +117,9 @@ classdef DispersionTab < EmptyTab
         function delete(this)
             % delete the listener
             delete(this.ls);
+            % clear pointer
+            delete(this);
+            clear this
         end %delete
     end
     
