@@ -40,7 +40,8 @@ classdef FitLike < handle
              
             addlistener(this.DisplayManager, 'SelectTab',...
                             @(src, event) selectTab(this, src));
-             
+            addlistener(this.DisplayManager, 'PlotError',...
+                            @(src, event) plotError(this, src, event));             
                         
             addlistener(this, 'ThrowMessage',...
                             @(src, event) throwMessage(this, src, event));
@@ -563,26 +564,27 @@ classdef FitLike < handle
         function this = selectData(this, ~, event)
             % check if data are selected or deselected
             if strcmp(event.Action, 'Select')
-                % loop over the input
+                % add data to the current plot
                 for k = 1:numel(event.Data)
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    % Need to uncheck data in case where not possible to
-                    % plot! [Manu]
                     addPlot(this.DisplayManager, event.Data(k), event.idxZone(k));
                     pause(0.005) %EDT
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 end
             elseif strcmp(event.Action, 'Deselect')
-                 % loop over the input
+                 % remove data from current plot
                 for k = 1:numel(event.Data)
-                    % remove data from current plot
                     removePlot(this.DisplayManager, event.Data(k), event.idxZone(k));
                     pause(0.005) %EDT
                 end               
             end
             drawnow; %EDT
         end %selectData
-
+        
+        % Event: error during plot. Need to uncheck the concerning
+        % nodes.
+        function this = plotError(this, ~, event)
+            checkData(this.FileManager, event.Data, event.idxZone, 0);
+        end %plotError
+        
         % edit files callback       
         function editFile(~, ~, event)
             % update the data
@@ -636,14 +638,14 @@ classdef FitLike < handle
                     event.Data(k) = setMask(event.Data(k), event.idxZone(k),...
                         [xmin xmax], [ymin ymax]);
                     % notify
-                    notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))
+                    %notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))
                 end
             elseif strcmp(event.Action,'ResetMask')
                 % reset mask
                 for k = 1:numel(event.Data)
                     event.Data(k) = setMask(event.Data(k), event.idxZone(k));
                     % notify
-                    notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))
+                    %notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))
                 end
             end
         end % setMask
@@ -756,8 +758,6 @@ classdef FitLike < handle
                     
                     % try to plot
                     addPlot(this.DisplayManager, data_copy, idxZone);
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    % Need to uncheck data if not sucessful [Manu]
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                                        
                     drawnow % EDT

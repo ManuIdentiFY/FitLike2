@@ -16,6 +16,7 @@ classdef DisplayManager < handle
     
     events
         SelectTab
+        PlotError
     end
     
     methods (Access = public)
@@ -148,13 +149,13 @@ classdef DisplayManager < handle
                 end
             % check if correct class
             elseif ~strcmp(class(hData), this.gui.tab.SelectedTab.Children.inputType)
+                % notify
+                event = EventFileManager('Data',hData,'idxZone',idxZone);
+                notify(this, 'PlotError', event);
+                % send error
                 msg = ['Error: Input data (',class(hData),') does not fit'...
                        ' the current tab (',this.gui.tab.SelectedTab.Children.inputType,')\n'];
                 throwWrapMessage(this, msg)
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                % Need a call to FileManager to uncheck the nodes!
-                % Pass by FitLike [Manu]
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 return
             end
             % call addPlot method of this tab
