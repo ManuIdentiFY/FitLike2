@@ -296,8 +296,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 % parent container
                 tf = strcmp(get(hParent.Children,'Name'), name);
                 if ~all(tf == 0)
-                    hChildren = hParent.Children(tf);
-                    return
+                    hChildren = hParent.Children(tf); return
                 end
             end
             % add checkbox               
@@ -315,7 +314,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
         function hChildren = getEndChild(hParent)
             % loop over the input
             if isempty(hParent)
-                return
+                hChildren = []; return;
             end
             % init
             for k = numel(hParent):-1:1
