@@ -214,14 +214,14 @@ classdef DisplayManager < handle
                         event.Data(k) = setMask(event.Data(k), event.idxZone(k),...
                             [xmin xmax], [ymin ymax]);
                         % notify
-                        notify(event.Data(k), 'DataUpdate', EventFileManager('idxZone',event.idxZone(k)))
+                        %notify(event.Data(k), 'DataUpdate', EventFileManager('idxZone',event.idxZone(k)))
                     end
                 elseif strcmp(event.Action,'ResetMask')
                     % reset mask
                     for k = 1:numel(event.Data)
                         event.Data(k) = setMask(event.Data(k), event.idxZone(k));
                         % notify
-                        notify(event.Data(k), 'DataUpdate', EventFileManager('idxZone',event.idxZone(k)))
+                        %notify(event.Data(k), 'DataUpdate', EventFileManager('idxZone',event.idxZone(k)))
                     end
                 end
             end
