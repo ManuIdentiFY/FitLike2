@@ -561,7 +561,7 @@ classdef FitLike < handle
     %% --------------------- FileManager Callback ---------------------- %%  
     methods (Access = public)               
         % Event: data is selected. Add or remove data from current plot
-        function this = selectData(this, ~, event)
+        function selectData(this, ~, event)
             % check if data are selected or deselected
             if strcmp(event.Action, 'Select')
                 % add data to the current plot
@@ -581,7 +581,7 @@ classdef FitLike < handle
         
         % Event: error during plot. Need to uncheck the concerning
         % nodes.
-        function this = plotError(this, ~, event)
+        function plotError(this, ~, event)
             checkData(this.FileManager, event.Data, event.idxZone, 0);
         end %plotError
         
@@ -653,7 +653,7 @@ classdef FitLike < handle
     %% ------------------ ProcessingManager Callback ------------------- %%
     methods (Access = public)
         % Run process
-        function this = runProcess(this)
+        function runProcess(this)
             % check if data are selected
             relaxObj = getSelectedFile(this.FileManager);
             % according to the mode process, run it
@@ -773,7 +773,7 @@ classdef FitLike < handle
     %% --------------------- ModelManager Callback --------------------- %%
     methods (Access = public)
         % Run Fit
-        function this = runFit(this) %%%%% WARNINNNNG %%%%
+        function runFit(this) %%%%% WARNINNNNG %%%%
             % check if data are selected
             [~, fileID, legendTag, ~] = getSelectedData(this.FileManager,[]); %%%%% WARNINNNNG %%%%
             % according to the mode process, run it

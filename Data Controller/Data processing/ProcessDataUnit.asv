@@ -14,8 +14,7 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous
     end
     
     properties
-        parameter@struct        % structure containing parameters associated with the process (weighted, robust fit, log,...)
-    end
+                parameter@struct        % structure containing parameters associated with the process (weighted, robust fit, log,...)
     
     methods
         function self = ProcessDataUnit(varargin)
