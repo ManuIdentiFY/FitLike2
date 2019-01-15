@@ -276,7 +276,7 @@ classdef DispersionTab < EmptyTab
                    notify(this, 'UpdateHist');
                end
             end
-            drawnow;
+%             drawnow;
             showLegend(this);
             checkLegend(this, src);
             drawnow;

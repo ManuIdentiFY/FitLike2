@@ -6,6 +6,7 @@ classdef DisplayManager < handle
     properties
         gui % GUI (View)
         FitLike % Presenter
+        SelectedTab %wrapper to the selected tab
     end
     
     % List of the wanted uitoggletool and uipushtool (TooltipString)
@@ -26,6 +27,9 @@ classdef DisplayManager < handle
             gui = buildDisplayManager(this,...
                 this.ToggleToolList, this.PushToolList);
             this.gui = guihandles(gui);
+            
+            % Set the wrapper to the selected tab
+            this.SelectedTab = this.gui.tab.SelectedTab;
             
             % Set SelectionChangedFcn calback for tab
             set(this.gui.tab, 'SelectionChangedFcn',...
@@ -98,7 +102,7 @@ classdef DisplayManager < handle
         % Change tab callback
         function this = changeTab(this, src, ~)
             % check if tab need to be added
-            if isa(src.gui.tab.SelectedTab.Children,'EmptyPlusTab')
+            if isa(src.SelectedTab.Children,'EmptyPlusTab')
                 addTab(this);
             end
             % notify
@@ -118,7 +122,7 @@ classdef DisplayManager < handle
             % delete the old tab
             delete(oldTab);
             % set the selection to the new tab
-            this.gui.tab.SelectedTab = this.gui.tab.Children(indx); 
+            this.SelectedTab = this.gui.tab.Children(indx); 
             % reset tab
             setUIMenu(this);
         end %replaceTab
@@ -138,7 +142,7 @@ classdef DisplayManager < handle
             % check if it is an empty tab
             if strcmp(class(this.gui.tab.SelectedTab.Children), 'EmptyTab') %#ok<STISA>
                 % check the class of the first hData
-                switch class(hData)
+                switch class(hData(1))
                     case 'Bloc'
                         return % TO DO
                     case 'Zone'
@@ -147,9 +151,9 @@ classdef DisplayManager < handle
                         replaceTab(this, this.gui.tab.SelectedTab, 'DispersionTab');
                 end
             % check if correct class
-            elseif ~strcmp(class(hData), this.gui.tab.SelectedTab.Children.inputType)
+            elseif ~strcmp(class(hData), this.SelectedTab.Children.inputType)
                 msg = ['Error: Input data (',class(hData),') does not fit'...
-                       ' the current tab (',this.gui.tab.SelectedTab.Children.inputType,')\n'];
+                       ' the current tab (',this.SelectedTab.Children.inputType,')\n'];
                 throwWrapMessage(this, msg)
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % Need a call to FileManager to uncheck the nodes!
@@ -159,32 +163,32 @@ classdef DisplayManager < handle
             end
             % call addPlot method of this tab
             for k = 1:numel(hData)
-                addPlot(this.gui.tab.SelectedTab.Children, hData(k), idxZone(k));
+                addPlot(this.SelectedTab.Children, hData(k), idxZone(k));
             end
         end
         
         % call the tab remove method
         function this = removePlot(this, hData, idxZone)
             % check if empty tab
-            if strcmp(class(this.gui.tab.SelectedTab.Children), 'EmptyTab') %#ok<STISA>
+            if strcmp(class(this.SelectedTab.Children), 'EmptyTab') %#ok<STISA>
                 return
             end
             % loop
             for k = 1:numel(hData)
-                deletePlot(this.gui.tab.SelectedTab.Children, hData(k), idxZone(k));
+                deletePlot(this.SelectedTab.Children, hData(k), idxZone(k));
             end
         end
         
         % Wrapper to get data from current tab
         function [hData, idxZone] = getData(this)
             % get data
-            hData = this.gui.tab.SelectedTab.Children.hData;
-            idxZone = this.gui.tab.SelectedTab.Children.idxZone;
+            hData = this.SelectedTab.Children.hData;
+            idxZone = this.SelectedTab.Children.idxZone;
         end %getData
         
         % Wrapper to get legend from current tab (avoid fit)
         function [leg, hData] = getLegend(this)
-             [leg, hData] = getLegend(this.gui.tab.SelectedTab.Children);
+             [leg, hData] = getLegend(this.SelectedTab.Children);
         end
         
         % Wrapper to throw messages in the console or in the terminal in
