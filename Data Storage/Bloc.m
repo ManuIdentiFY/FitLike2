@@ -19,8 +19,8 @@ classdef Bloc < DataUnit
             % call superclass constructor
             this = this@DataUnit(varargin{:});
             % set xLabel and yLabel
-            [this.xLabel] = deal('Time');
-            [this.yLabel] = deal('Signal');
+            [this.xLabel] = deal('Time (s)');
+            [this.yLabel] = deal('Signal (A.U.)');
         end %Bloc
     end
     

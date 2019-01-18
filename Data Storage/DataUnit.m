@@ -28,13 +28,14 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     properties (Access = public)
         legendTag@char = '';
         displayName@char = '';  % char array to place in the legend associated with the data
-        relaxObj@RelaxObj       %handle to the meta-data
     end
     
     % other properties
     properties (Hidden = true)
+        relaxObj@RelaxObj       %handle to the meta-data
         parent@DataUnit;            % parent of the object
         children@DataUnit;          % children of the object
+        parameters@paramobj;     % redirects towards relaxobj parameters
     end
     
     events
