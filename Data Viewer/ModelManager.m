@@ -49,6 +49,10 @@ classdef ModelManager < handle
             set(this.gui.RunPushButton, 'Callback',...
                 @(src, event) this.FitLike.runFit());
             
+            % Set callback for the run pushbutton
+            set(this.gui.ExportPushButton, 'Callback',...
+                @(src, event) this.FitLike.exportFitResult());
+                        
             % Set callback for the file selection popup
             set(this.gui.FileSelectionPopup,'Callback',...
                 @(src, event) updateResultTable(this));

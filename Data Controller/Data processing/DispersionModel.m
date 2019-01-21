@@ -174,5 +174,9 @@ classdef DispersionModel < matlab.mixin.Heterogeneous
             end
         end
         
+        function [paramName,paramVal,paramErr] = collectFitResults(this)
+            
+        end
+        
     end
 end
