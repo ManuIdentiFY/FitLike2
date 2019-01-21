@@ -1,10 +1,10 @@
 classdef DispersionLsqCurveFit < Disp2Exp
     
     properties
-        functionName = 'Least square fit';  % character string, name of the model, as appearing in the figure legend
-        labelY = 'fit result';              % string, labels the Y-axis data in graphs
-        labelX = 'Experimental parameter';  % string, labels the X-axis data in graphs
-        legendTag = {'Data tag'};             % cell of strings, contain the legend associated with the data processed
+        functionName@char = 'Least square fit';  % character string, name of the model, as appearing in the figure legend
+        labelY@char = 'fit result';              % string, labels the Y-axis data in graphs
+        labelX@char = 'Experimental parameter';  % string, labels the X-axis data in graphs
+        legendTag@cell = {'Data tag'};             % cell of strings, contain the legend associated with the data processed
     end
     
     methods
