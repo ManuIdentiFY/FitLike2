@@ -35,7 +35,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         relaxObj@RelaxObj       %handle to the meta-data
         parent@DataUnit;            % parent of the object
         children@DataUnit;          % children of the object
-        parameters@paramobj;     % redirects towards relaxobj parameters
+        parameters@ParamObj;     % redirects towards relaxobj parameters
     end
     
     events
