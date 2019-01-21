@@ -2,8 +2,8 @@ classdef Bloc2Zone < DataUnit2DataUnit
     
     properties
         Bloc@Bloc;  % store the Bloc object to be processed
-        InputChildClass = Bloc;
-        OutputChildClass = Zone;
+        InputChildClass = 'Blo
+        OutputChildClass@char %define the class of the child object
     end
     
     

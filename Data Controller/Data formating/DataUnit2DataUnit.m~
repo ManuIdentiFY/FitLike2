@@ -23,12 +23,10 @@ classdef DataUnit2DataUnit
                                             % with same class as the wanted
                                             % one for child creation.
         pipeline = []; % for future use, handle to the pipeline object
-        DataUnit@DataUnit; % store the handle to the DataUnit object linked to the processing object
     end
     
     properties (Abstract)
-        InputChildClass@DataUnit
-        OutputChildClass@DataUnit %define the class of the child object
+        OutputChildClass@char %define the class of the child object
     end
     
     methods
@@ -217,6 +215,9 @@ classdef DataUnit2DataUnit
             end
         end %makeProcessData
         
+        % fill in the starting point of the model
+        function self = evaluateStartPoint(self)
+        end
     end
     
     methods (Static)        
@@ -242,13 +243,13 @@ classdef DataUnit2DataUnit
         end %checkSize   
     end
     
-%     methods (Abstract)
-%         
-%         % test the compatibility between the processing object and the
-%         % input data
-%         function out = testDataFormat(self)
-%         end
-%     end
+    methods (Abstract)
+        
+        % test the compatibility between the processing object and the
+        % input data
+        function out = testDataFormat(self)
+        end
+    end
     
 end
 

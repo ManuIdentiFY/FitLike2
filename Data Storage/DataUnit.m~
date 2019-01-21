@@ -17,7 +17,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         dy@double = [];         % error bars on Y
         yLabel@char = '';       % name of the variable Y ('R1','fid',...)
         mask@logical = true(0);           % mask the X and Y arrays
-        sequence@char;
     end   
     
     % file processing
@@ -126,9 +125,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     methods (Access = public)
         % assign a processing function to the data object
         function this = assignProcessingFunction(this,processObj)
-            this = arrayfun(@(s)setfield(s,'processingMethod',processObj),this,'UniformOutput',0); %#ok<*SFLD> link the data to the processing method
-            this = [this{:}];
-            this = arrayfun(@(s)setfield(s.processingMethod,'DataUnit',s),this,'UniformOutput',0); % link the processing method to the data
+            this = arrayfun(@(s)setfield(s,'processingMethod',processObj),this,'UniformOutput',0); %#ok<*SFLD>
+            this = arrayfun(@(s)setfield(s,'processingMethod',processObj),this,'UniformOutput',0);
             this = [this{:}];
         end %assignProcessingFunction
 

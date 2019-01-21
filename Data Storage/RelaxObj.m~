@@ -173,9 +173,9 @@ classdef RelaxObj < handle
             if nargin < 3
                 assignindex = ones(1,length(this.data));
             else
-                assignindex = arrayfun(@(d) isequal(d.sequence,sequence),[this.data]);
+                assignindex = arrayfun(@(c) isequal(c.sequence,sequence),[this.data]);
             end
-            arrayfun(@(d) setfield(d.processingMethod,model),[this.data]);
+            arrayfun(@(m) 
         end
     end
     

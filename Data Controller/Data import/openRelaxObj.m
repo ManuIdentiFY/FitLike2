@@ -49,6 +49,8 @@ if nargin < 2
     for ind = 1:length(file)
         dataset{ind} = 'Default dataset';
     end
+elseif ischar(dataset)
+    dataset = {dataset};
 end
 
 % check inputs
@@ -91,14 +93,12 @@ for i = 1:length(file)
             new_bloc = Bloc('x',data.time,'y',y,...
                 'xLabel',repmat({'Time'},1,length(name)),...
                 'yLabel',repmat({'Signal'},1,length(name)),...
-                'parameter',num2cell(parameter),...
-                'filename',name,'sequence',sequence);  
+                'sequence',sequence);   % name of the sequence
             new_bloc = checkBloc(new_bloc);
 
             % create the metadata object associated with this acquisition
             relax = RelaxObj('label','Default data',...                     % defines the category of data (user defined)
                              'filename',filename,...             % store the data file name
-                             'sequence',sequence{1},...   % name of the sequence
                              'dataset',dataset{i},...                          % dataset associated 
                              'data',new_bloc,...
                              'parameter', parameter);  
@@ -143,17 +143,7 @@ end
 % link the relaxobj and bloc data
 
     function bloc = checkBloc(bloc)
-         % check if bloc are uniques
-        [~,~,X] = unique(strcat({bloc.dataset},{bloc.sequence},...
-            {bloc.filename}));
-        Y = hist(X,unique(X));
-        idx = find(Y > 1);
-        for k = 1:numel(idx)
-            ibloc = bloc(X == idx(k));
-            new_filename = cellfun(@(x) [ibloc(1).filename,' (',num2str(x),')'],...
-                num2cell(1:numel(ibloc)), 'Uniform',0);
-            [bloc(X == idx(k)).filename] = new_filename{:};                        
-        end
+        
     end %checkBloc
 
 end
