@@ -93,15 +93,17 @@ for i = 1:length(file)
             new_bloc = Bloc('x',data.time,'y',y,...
                 'xLabel',repmat({'Time'},1,length(name)),...
                 'yLabel',repmat({'Signal'},1,length(name)),...
-                'sequence',sequence);   % name of the sequence
+                'sequence',sequence,...
+                'parameter', parameter);   % name of the sequence
             new_bloc = checkBloc(new_bloc);
 
             % create the metadata object associated with this acquisition
-            relax = RelaxObj('label','Default data',...                     % defines the category of data (user defined)
-                             'filename',filename,...             % store the data file name
-                             'dataset',dataset{i},...                          % dataset associated 
-                             'data',new_bloc,...
-                             'parameter', parameter);  
+            relax = arrayfun(@(b) RelaxObj('label','Default data',...                     % defines the category of data (user defined)
+                                           'filename',filename,...             % store the data file name
+                                           'dataset',dataset{i},...                          % dataset associated 
+                                           'data',b,...
+                                           'parameter', parameter),new_bloc);  
+            [new_bloc.relaxObj] = deal(relax);                  % link the bloc object to the relax object
 
 
             % append them to the current data
@@ -116,12 +118,13 @@ for i = 1:length(file)
                 'y',y,'dy',dy,'yLabel','Relaxation Rate R_1 (s^{-1})',...
                 'filename',file{i},'sequence','Unknown');
             % create the metadata object associated with this acquisition
-            relax = RelaxObj('label','Default data',...                     % defines the category of data (user defined)
+            relax = arrayfun(@(b) RelaxObj('label','Default data',...                     % defines the category of data (user defined)
                              'filename',filename,...             % store the data file name
                              'sequence','Unknown',...   % name of the sequence
                              'dataset',dataset{i},...                          % dataset associated 
-                             'data',new_bloc,...
-                             'parameter', ParamV1);  
+                             'data',b,...
+                             'parameter', ParamV1),new_bloc);  
+            [new_bloc.relaxObj] = deal(relax);
             % append them to the current data
             relaxlist = [relaxlist relax]; %#ok<AGROW>
         case '.mat'
@@ -143,7 +146,7 @@ end
 % link the relaxobj and bloc data
 
     function bloc = checkBloc(bloc)
-        
+        % TODO
     end %checkBloc
 
 end

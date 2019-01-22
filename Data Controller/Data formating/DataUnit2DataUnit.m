@@ -1,4 +1,4 @@
-classdef DataUnit2DataUnit
+classdef DataUnit2DataUnit < handle & matlab.mixin.Copyable
     %
     % This class allows to format DataUnit for processing pipeline. Data
     % are formatted to fit with model requirements as well as making or 
@@ -23,12 +23,16 @@ classdef DataUnit2DataUnit
                                             % with same class as the wanted
                                             % one for child creation.
         pipeline = []; % for future use, handle to the pipeline object
-        DataUnit@DataUnit; % store the handle to the DataUnit object linked to the processing object
+        InputData@DataUnit; % store the handle to the DataUnit object linked to the processing object
+        OutputData@DataUnit; % store the handle to the data generated
+    end
+    
+    properties (Access = private)
     end
     
     properties (Abstract)
-        InputChildClass@DataUnit
-        OutputChildClass@DataUnit %define the class of the child object
+        InputChildClass@char
+        OutputChildClass@char %define the class of the child object
     end
     
     methods
@@ -36,7 +40,7 @@ classdef DataUnit2DataUnit
         function this = DataUnit2DataUnit()
             
         end %DataUnit2DataUnit
-        
+                
         % Format DataUnit data in an array of structure with the following
         % field: x, y, dy, mask (See DataUnit property).
         % Dimension of the array of structure depends on the input class:
@@ -217,6 +221,56 @@ classdef DataUnit2DataUnit
             end
         end %makeProcessData
         
+        function this = addInputData(this,dataUnit)
+            if length(this)>1
+                this = arrayfun(@(t) addInputData(t,dataUnit),this);
+            else
+                % check input type
+                if ~isequal(class(dataUnit),this.InputChildClass)
+                    error(['Wrong data input type , is ' class(dataToProcess) ' when expecting ' this.InputChildClass '.'])
+                else
+                    if isempty(this.InputData)
+                        this.InputData = dataUnit;
+                    elseif ~prod(arrayfun(@(d) isequal(d,dataUnit),this.InputData)) % check that the data is not already contained
+                        this.InputData(end+1) = dataUnit;
+                    end
+                end
+            end
+        end
+        
+        function dataList = checkInputData(this)
+            dataList = this.InputData;
+        end
+        
+        function dataList = checkOutputData(this)
+            dataList = this.OutputData;
+        end
+        
+        function removeInputData(this,dataUnit)
+            for i = 1:length(dataUnit)
+                index = arrayfun(@(d) isequal(d,dataUnit(i)),this.InputData);
+                this.InputData(index) = [];
+            end
+        end
+        
+        
+        % standard naming convention for the processing function
+        % Inputs: 
+        %   this: array of processing objects
+        %   dataToProcess: single DataUnit element
+        function [this,dataProcessed,dataToProcess] = processData(this)
+            % distribute the algorithms defined in the process object (which
+            % inherits from DataUnit2DataUnit and DataModel)
+            [z,b] = arrayfun(@(s)applyProcessFunction(s,this.InputData,this.OutputData),this,'UniformOutput',0);
+            % parse outputs
+            dataProcessed = [z{:}];
+            dataToProcess = [b{:}];
+            % check output type
+            if ~isequal(class(dataProcessed),this.OutputChildClass)
+                error(['Wrong data input type , is ' class(dataToProcess) ' when expecting ' this.OutputChildClass '.'])
+            end
+        end
+        
     end
     
     methods (Static)        
@@ -241,6 +295,7 @@ classdef DataUnit2DataUnit
             end
         end %checkSize   
     end
+    
     
 %     methods (Abstract)
 %         

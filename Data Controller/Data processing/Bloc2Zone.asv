@@ -1,6 +1,11 @@
 classdef Bloc2Zone < DataUnit2DataUnit
     
-   
+    properties
+        Bloc@Bloc;  % store the Bloc object to be processed
+        InputChildClass@char;
+        OutputChildClass@char;
+    end
+    
     
     methods
         
@@ -110,10 +115,10 @@ classdef Bloc2Zone < DataUnit2DataUnit
                     'sequence',repmat({bloc.sequence},size(celldz)));
             else % if a child object is there, just update it
                 this.OutputData = arrayfun(@(z,lx,cz,cdz,ly,p,l) updateProperties(z,...
-                                            'xLabel',lx,...
-                                            'y',cz,'dy',cdz,'yLabel',ly,...
-                                            'parameter',p,'legendTag',l),...
-                                            this.OutputData,labelX,cellz,celldz,labelY,params,legendTag);
+                                            'xLabel',labelX,...
+                                            'y',cellz,'dy',celldz,'yLabel',labelY,...
+                                            'parameter',params,'legendTag',legendTag),...
+                                            this.OutputData,);
             end
             
             zone = this.OutputData;

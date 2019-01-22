@@ -14,9 +14,7 @@ classdef DataFunction < DataModel
         end
         
         function [z,dz,paramFun] = process(this,x,y,dataObj,index) %#ok<*INUSD,*INUSL>
-            out = this.modelFunction(x,y,dataObj.mask);
-            z = out(1);
-            dz = out(2);
+            [z,dz] = deal(this.modelFunction(x,y,dataObj.mask));
             paramFun.test = index;
         end
         

@@ -9,6 +9,9 @@ classdef Zone2Disp < ProcessDataUnit
         % Constructor
         function self = Zone2Disp
             self@ProcessDataUnit;
+            
+            this.InputChildClass = 'Bloc';
+            this.OutputChildClass = 'Zone';
         end
         
     end

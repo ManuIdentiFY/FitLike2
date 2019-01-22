@@ -168,15 +168,16 @@ classdef RelaxObj < handle
            
         end %mergeFile
         
-        % assign a process to the data, according to the type of sequence
-        function this = assignProcess(this,model,sequence)
-            if nargin < 3
-                assignindex = ones(1,length(this.data));
-            else
-                assignindex = arrayfun(@(d) isequal(d.sequence,sequence),[this.data]);
-            end
-            arrayfun(@(d) setfield(d.processingMethod,model),[this.data]);
-        end
+%         % assign a process to the data, according to the type of sequence
+%         % (TO DO, with pipeline)
+%         function this = assignProcess(this,pipeline,sequence)
+%             if nargin < 3
+%                 assignindex = ones(1,length(this.data));
+%             else
+%                 assignindex = arrayfun(@(d) isequal(d.sequence,sequence),[this.data]);
+%             end
+%             arrayfun(@(d) setfield(d.processingMethod,model),[this.data]);
+%         end
     end
     
     % Data access functions
