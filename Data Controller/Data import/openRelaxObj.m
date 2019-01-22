@@ -92,18 +92,18 @@ for i = 1:length(file)
             % format the output
             new_bloc = Bloc('x',data.time,'y',y,...
                 'xLabel',repmat({'Time'},1,length(name)),...
-                'yLabel',repmat({'Signal'},1,length(name)),...
-                'sequence',sequence,...
-                'parameter', parameter);   % name of the sequence
+                'yLabel',repmat({'Signal'},1,length(name)));   % name of the sequence
             new_bloc = checkBloc(new_bloc);
 
             % create the metadata object associated with this acquisition
-            relax = arrayfun(@(b) RelaxObj('label','Default data',...                     % defines the category of data (user defined)
+            relax = arrayfun(@(b,seq,p) RelaxObj('label','Default data',...                     % defines the category of data (user defined)
                                            'filename',filename,...             % store the data file name
                                            'dataset',dataset{i},...                          % dataset associated 
                                            'data',b,...
-                                           'parameter', parameter),new_bloc);  
-            [new_bloc.relaxObj] = deal(relax);                  % link the bloc object to the relax object
+                                           'sequence',seq{1},...
+                                           'parameter', p),new_bloc,sequence,parameter);  
+                                       
+%             new_bloc = arrayfun(@(r) setfield(r.data,'relaxObj',r),relax);
 
 
             % append them to the current data
@@ -116,7 +116,7 @@ for i = 1:length(file)
             % format the output
             new_bloc = Dispersion('x',x,'xLabel','Magnetic Field (MHz)',...
                 'y',y,'dy',dy,'yLabel','Relaxation Rate R_1 (s^{-1})',...
-                'filename',file{i},'sequence','Unknown');
+                'filename',file{i});
             % create the metadata object associated with this acquisition
             relax = arrayfun(@(b) RelaxObj('label','Default data',...                     % defines the category of data (user defined)
                              'filename',filename,...             % store the data file name
