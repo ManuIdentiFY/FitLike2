@@ -6,7 +6,7 @@ classdef FitAlgorithm
         name
     end
     
-    properties
+    properties (Dependent)
         options % structure containing the fit options
     end
     
@@ -19,6 +19,21 @@ classdef FitAlgorithm
     
     methods (Abstract)
         applyFit(this)
-    end         
+    end  
+    
+    % Set/Get
+    methods 
+        function this = set.options(this, val)
+            this = setOptions(this, val);
+        end
+    end
+    
+    % Dummy method that can be overri
+    methods (Hidden)
+        function this = setOptions(this, val)
+            this.options = val;
+        end
+    end
+        
 end
 

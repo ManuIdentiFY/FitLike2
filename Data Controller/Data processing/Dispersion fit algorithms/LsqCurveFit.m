@@ -2,22 +2,32 @@ classdef LsqCurveFit < FitAlgorithm
     
     properties
         name = 'lsqcurvefit';
-        weightMethod = 'none' % one of the following weight method:
-                              % - 'none'
-                              % - 'data': use the data error w = 1./(dy.^2)
-                              % - {'andrews','bisquare','cauchy','fair',...
-                              %    'huber','logistic','ols','talwar','welsch'}
+    end
+    
+    properties (Hidden)
+        % Available weighted methods:
+        % - 'none'
+        % - 'data': use the data error w = 1./(dy.^2)
+        % - {'andrews','bisquare','cauchy','fair',...
+        %    'huber','logistic','ols','talwar','welsch'}
+        % last options gather iterative weight methods
+        % and use the FEX function from J.-A. Adrian (JA)
+        % see https://github.com/JAAdrian/MatlabRobustNonlinLsq/blob/master/robustlsqcurvefit.m
+        weightMethodList = {'none','data','andrews','bisquare','cauchy','fair',...
+                            'huber','logistic','ols','talwar','welsch'};
     end
 
     methods
         % Constructor
         function this = LsqCurveFit
             % call superclass constructor
-            this@FitAlgorithm
+            this = this@FitAlgorithm;
             % create default options
-            this.options = optimoptions(@lsqcurvefit);
+            this.options = optimset('lsqcurvefit');
             % add default weight options
-            this.options.Weight = this.weightMethod;
+            this.options.Weight = 'none';
+            % remove display
+            this.options.Display = 'off';
         end
     end
     
@@ -36,7 +46,9 @@ classdef LsqCurveFit < FitAlgorithm
                         [coeff,resnorm,residuals,~,~,~,jacobian] = lsqnonlin(@wfun,...
                             x0, ub, lb, this.options, xdata, ydata, 1./(dydata.^2)); 
                     otherwise
-                        % apply robust fit
+                        % apply robust fit:
+                        % FEX function from J.-A. Adrian (JA)
+                        % see https://github.com/JAAdrian/MatlabRobustNonlinLsq/blob/master/robustlsqcurvefit.m
                         [coeff,resnorm,residuals,~,~,~,jacobian] = robustlsqcurvefit(fun,...
                             x0, xdata, ydata,lb, ub,...
                             this.options.Weight, this.options);
@@ -59,7 +71,7 @@ classdef LsqCurveFit < FitAlgorithm
                 % get error
                 err = weight.*(fun(coeff, xdata) - ydata);
             end
-        end
+        end % applyFit
         
         % Calculate the goodness of fit: rsquare, adjrsquare, RMSE, SSE
         function gof = getGOF(coeff, ydata, residual, resnorm)
@@ -75,24 +87,4 @@ classdef LsqCurveFit < FitAlgorithm
             gof.RMSE = sqrt(resnorm);
         end %getGOF        
     end
-    
-    % Set methods
-    methods
-        % Possible weight method:
-        % - 'none'
-        % - 'data': use the data error w = 1./(dy.^2)
-        % - {'andrews','bisquare','cauchy','fair',...
-        %    'huber','logistic','ols','talwar','welsch'} from robustfit
-        function this = set.weightMethod(this, val)
-            % check the input
-            if any(strcmp({'none','data','andrews','bisquare','cauchy','fair',...
-                    'huber','logistic','ols','talwar','welsch'}, val))
-                % update the field and the associated option struct
-                this.weightMethod = val;
-                this.options.Weight = val;
-            else
-                error('WeightMethod: Unknown weight method')
-            end
-        end %weightMethod
-    end   
 end
