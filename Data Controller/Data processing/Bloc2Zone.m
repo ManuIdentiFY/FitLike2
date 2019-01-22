@@ -9,8 +9,8 @@ classdef Bloc2Zone < DataUnit2DataUnit
     
     methods
         
-        function self = Bloc2Zone
-            self@DataUnit2DataUnit;
+        function this = Bloc2Zone
+            this@DataUnit2DataUnit;
         end
     end
 %         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

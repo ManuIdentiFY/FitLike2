@@ -9,8 +9,8 @@ classdef Zone2Disp < ProcessDataUnit
     
     methods
         % Constructor
-        function self = Zone2Disp
-            self@ProcessDataUnit;
+        function this = Zone2Disp
+            this@ProcessDataUnit;
         end
         
     end
