@@ -14,5 +14,10 @@ classdef DataModel < matlab.mixin.Heterogeneous & handle & matlab.mixin.Copyable
                
         
     end
+    
+    methods (Abstract)
+        numberOfInputs(this)
+        numberOfOutputs(this)
+    end
 end
 

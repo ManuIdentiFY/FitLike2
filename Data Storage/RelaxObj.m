@@ -131,7 +131,7 @@ classdef RelaxObj < handle
         
         function this = add(this,dataunit)
             % check that it is not already present in the data list
-            if ~prod(arrayfun(@(d) isequal(d,dataunit),this.data))||isempty(this.data)
+            if ~sum(arrayfun(@(d) isequal(d,dataunit),this.data))||isempty(this.data)
                 this.data(end+1) = dataunit;
             end
         end

@@ -238,6 +238,17 @@ classdef DataUnit2DataUnit < handle & matlab.mixin.Copyable
             end
         end
         
+        function this = removeInputData(this,dataUnit)
+            if length(this)>1
+                this = arrayfun(@(t) removeInputData(t,dataUnit),this);
+            else
+                for i = 1:length(dataUnit)
+                    ind = isequal(this.InputData,dataUnit(i));
+                    this.InputData(ind) = [];
+                end
+            end
+        end
+        
         function dataList = checkInputData(this)
             dataList = this.InputData;
         end
@@ -245,13 +256,13 @@ classdef DataUnit2DataUnit < handle & matlab.mixin.Copyable
         function dataList = checkOutputData(this)
             dataList = this.OutputData;
         end
-        
-        function removeInputData(this,dataUnit)
-            for i = 1:length(dataUnit)
-                index = arrayfun(@(d) isequal(d,dataUnit(i)),this.InputData);
-                this.InputData(index) = [];
-            end
-        end
+%         
+%         function removeInputData(this,dataUnit)
+%             for i = 1:length(dataUnit)
+%                 index = arrayfun(@(d) isequal(d,dataUnit(i)),this.InputData);
+%                 this.InputData(index) = [];
+%             end
+%         end
         
         
         % standard naming convention for the processing function
@@ -261,7 +272,7 @@ classdef DataUnit2DataUnit < handle & matlab.mixin.Copyable
         function [this,dataProcessed,dataToProcess] = processData(this)
             % distribute the algorithms defined in the process object (which
             % inherits from DataUnit2DataUnit and DataModel)
-            [z,b] = arrayfun(@(s)applyProcessFunction(s,this.InputData,this.OutputData),this,'UniformOutput',0);
+            [z,b] = arrayfun(@(s)applyProcessFunction(s,[this.InputData],[this.OutputData]),this,'UniformOutput',0);
             % parse outputs
             dataProcessed = [z{:}];
             dataToProcess = [b{:}];

@@ -122,7 +122,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             notify(this, 'DataDeletion');
             
             % delete the parent and clear children/parent
-            delete(this.parent);
+%             removeInputData(this.processingMethod,this); % unlink processing methods
+            remove(this.relaxObj,this); % unlink relaxObj
+%             delete(this.parent);  % this will destroy the BLoc object too, which is a problem if one only wants to remove a mistake  
             this.children(:) = [];
             this.parent(:) = [];
         end
@@ -190,7 +192,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             end
             [processMethod,childDataUnit,~] = arrayfun(@(o)processData(o.processingMethod),this,'UniformOutput',0); % If called from here, processData processes each DataUnit objects one by one
             childDataUnit = [childDataUnit{:}];
-            [this.processingMethod] = deal(processMethod);
+%             [this.processingMethod] = deal(processMethod);
         end        
         
         % collect the display names from all the parents in order to get

@@ -122,8 +122,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             notify(this, 'DataDeletion');
             
             % delete the parent and clear children/parent
-            delete(this.parent);
-            this.children(:) = [];
+%             removeInputData(this.processingMethod,this); % unlink processing methods
+            remove(this.relaxObj,this); % unlink relaxObj
+%             delete(this.parent);  % this will destroy the BLoc object too      this.children(:) = [];
             this.parent(:) = [];
         end
     end
@@ -190,7 +191,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             end
             [processMethod,childDataUnit,~] = arrayfun(@(o)processData(o.processingMethod),this,'UniformOutput',0); % If called from here, processData processes each DataUnit objects one by one
             childDataUnit = [childDataUnit{:}];
-            [this.processingMethod] = deal(processMethod);
+%             [this.processingMethod] = deal(processMethod);
         end        
         
         % collect the display names from all the parents in order to get
@@ -450,9 +451,11 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     end %methods
     
     methods
-        % make sure that a
-        function set.relaxObj
-            
+        % make sure that any link to a relax object updates the object in
+        % question
+        function set.relaxObj(this,relax)
+            add(relax,this);
+            this.relaxObj = relax;
         end
         
     end
