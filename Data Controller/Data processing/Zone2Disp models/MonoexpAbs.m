@@ -1,4 +1,4 @@
-classdef MonoexpAbs < Zone2Disp
+classdef MonoexpAbs < Zone2Disp & DataFit
 %MONOEXP Compute the 1-exponential decay model. The function is based on a
 %non-linear regression using iterative least-squares estimation and returned the
 %time constant of the equation y = f(x) with its error as well as the model used.
@@ -7,6 +7,17 @@ classdef MonoexpAbs < Zone2Disp
         labelY@char = 'R_1 (s^{-1})';                   % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution field (MHz)';          % string, labels the X-axis data in graphs
         legendTag@cell = {'T1'};
+        
+        numberOfOutputs = 1;	% defined in DataModel
+        numberOfInputs  = 1;	% defined in DataModel
+        modelName    	= '';% defined in DataFit
+        modelEquation	= '';% defined in DataFit
+        variableName 	='';% defined in DataFit
+        parameterName	='';% defined in DataFit
+        isFixed      	=[];% defined in DataFit
+        minValue     	=[];% defined in DataFit
+        maxValue     	=[];% defined in DataFit
+        startPoint   	=[];% defined in DataFit
     end
     
     methods

@@ -29,7 +29,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     % meta-data
     properties (Access = public)
         legendTag@char = '';
-        displayName@char = '';  % char array to place in the legend associated with the data
+        displayName@char = '';  % char array to place in the legend associated with the data (should be protected)
     end
     
     % other properties
@@ -131,11 +131,21 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     end
     
     methods (Access = public)
+        
+        function [this,processObj] = addprocess(this,processObj)
+            if isempty(this.processingMethod)
+                this.processingMethod = processObj;
+            else
+                this.processingMethod(end+1) = processObj;
+            end
+        end
+        
         % assign a processing function to the data object
         function [this,processList] = assignProcessingFunction(this,processObj)
-            this = arrayfun(@(s)setfield(s,'processingMethod',[s.processingMethod copy(processObj)]),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
-            this = [this{:}];            
-            processList = arrayfun(@(s) addInputData(s.processingMethod,s),this,'UniformOutput',0); % associate each data unit with its processing method
+            [this,processList] = arrayfun(@(s)addprocess(s,copy(processObj)),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
+            this = [this{:}];   
+            processList = [processList{:}];
+            processList = arrayfun(@(s) addInputData(processList,s),this,'UniformOutput',1); % associate each data unit with its processing method
         end %assignProcessingFunction
         
         % remove or clear a list of processing functions for a given
@@ -280,21 +290,28 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 val = []; return;
             end
             
-            % get the prop if possible
-            fld = fieldnames(this.relaxObj);
-            tf = strcmpi(fieldnames(this.relaxObj), prop);
+            fld = fieldnames(this);
+            tf = strcmpi(fieldnames(this), prop);
             
-            if all(tf ==0) % the property was not found in the RelaxObj fields
-                fld = fieldnames(this.relaxObj.parameter.paramList);  % try with the sequence parameters
-                tf = strcmpi(fieldnames(this.relaxObj.parameter.paramList), prop);
-                
-                if all(tf ==0) % the property was not found in the sequence properties either
-                    error('getRelaxProp: Unknown property') % give up the search
+            if all(tf ==0)
+                % get the prop if possible
+                fld = fieldnames(this.relaxObj);
+                tf = strcmpi(fieldnames(this.relaxObj), prop);
+
+                if all(tf ==0) % the property was not found in the RelaxObj fields
+                    fld = fieldnames(this.relaxObj.parameter.paramList);  % try with the sequence parameters
+                    tf = strcmpi(fieldnames(this.relaxObj.parameter.paramList), prop);
+
+                    if all(tf ==0) % the property was not found in the sequence properties either
+                        error('getRelaxProp: Unknown property') % give up the search
+                    else
+                        val = this.relaxObj.parameter.paramList.(fld{tf});
+                    end
                 else
-                    val = this.relaxObj.parameter.paramList.(fld{tf});
+                    val = this.relaxObj.(fld{tf});
                 end
             else
-                val = this.relaxObj.(fld{tf});
+                val = this.(fld{tf});
             end
         end %get.meta
         

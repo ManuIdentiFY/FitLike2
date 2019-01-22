@@ -27,10 +27,9 @@ classdef DataFit < DataModel
     end
     
     methods
-        function obj = DataFit(inputArg1,inputArg2)
+        function obj = DataFit()
             %DATAFIT Construct an instance of this class
             %   Detailed explanation goes here
-            obj.Property1 = inputArg1 + inputArg2;
         end
         
         % fill in the starting point of the model
@@ -47,6 +46,12 @@ classdef DataFit < DataModel
         function y = evaluateRange(this,x1,x2,n)
             x = logspace(log10(x1),log10(x2),n);
             y = evaluate(this,x);
+        end
+        
+        function numberOfInputs(this)
+        end
+        
+        function numberOfOutputs(this)
         end
     end
 end

@@ -17,17 +17,19 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         dy@double = [];         % error bars on Y
         yLabel@char = '';       % name of the variable Y ('R1','fid',...)
         mask@logical = true(0);           % mask the X and Y arrays
+%         sequence@char;
+%         parameter@ParamObj; 
     end   
     
     % file processing
     properties (Access = public)
-        processingMethod@ProcessDataUnit; % stores the processing objects that are associated with the data unit
+        processingMethod; % @(DataUnit2DataUnit & ProcessDataUnit); % stores the processing objects that are associated with the data unit (cannot declare mixed class types)
     end
     
     % meta-data
     properties (Access = public)
         legendTag@char = '';
-        displayName@char = '';  % char array to place in the legend associated with the data
+        displayName@char = '';  % char array to place in the legend associated with the data (should be protected)
     end
     
     % other properties
@@ -91,9 +93,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         this(1,k) = fh();
                         % fill arguments
                         for ind = 1:2:nargin 
-                            [this(k).(varargin{ind})] = varargin{ind+1}{k};                          
+                            if iscell(varargin{ind+1})
+                                [this(k).(varargin{ind})] = varargin{ind+1}{k}; 
+                            else
+                                [this(k).(varargin{ind})] = varargin{ind+1}(k);                          
+                            end
                         end
-                        % parent explicitely the object if needed
+                        % declare explicitely the parent object if needed
                         if ~isempty(this(k).parent)
                             link(this(k).parent, this(k));
                             this(k).relaxObj = this(k).parent.relaxObj;
@@ -116,7 +122,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             notify(this, 'DataDeletion');
             
             % delete the parent and clear children/parent
-            delete(this.parent);
+%             removeInputData(this.processingMethod,this); % unlink processing methods
+            remove(this.relaxObj,this); % unlink relaxObj
+%             delete(this.parent);  % this will destroy the BLoc object too, which is a problem if one only wants to remove a mistake  
             this.children(:) = [];
             this.parent(:) = [];
         end
@@ -124,11 +132,24 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     
     methods (Access = public)
         % assign a processing function to the data object
-        function this = assignProcessingFunction(this,processObj)
-            this = arrayfun(@(s)setfield(s,'processingMethod',processObj),this,'UniformOutput',0); %#ok<*SFLD>
-            this = arrayfun(@(s)setfield(s,'processingMethod',processObj),this,'UniformOutput',0);
-            this = [this{:}];
+        function [this,processList] = assignProcessingFunction(this,processObj)
+            this = arrayfun(@(s)setfield(s,'processingMethod',[s.processingMethod copy(processObj)]),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
+            this = [this{:}];            
+            processList = arrayfun(@(s) addInputData(s.processingMethod,s),this,'UniformOutput',0); % associate each data unit with its processing method
         end %assignProcessingFunction
+        
+        % remove or clear a list of processing functions for a given
+        % object or list of objects
+        function this = removeProcessingFunction(this,processObj)
+            if nargin < 2
+                this = arrayfun(@(d) setfield(d,'processingMethod', []),this);
+            else
+                for ind = 1:length(processObj)
+                    index = arrayfun(@(d) isequal(d.processingMethod,processObj(ind)),this,'UniformOutput',0);
+                end
+                this = arrayfun(@(d,i) setfield(d,'processingMethod', d.processingMethod(i)),this,index);
+            end
+        end
 
         % link parent and children units
         function [parentObj,childrenObj] = link(parentObj,childrenObj)
@@ -165,12 +186,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         end %unlink
         
         % wrapper function to start the processing of the data unit
-        function [newDataUnit,this] = processData(this)
+        function [childDataUnit,this] = processData(this)
             if sum(arrayfun(@(s)isempty(s.processingMethod),this))
                 error('One or more data object are not assigned to a processing function.')
             end
-            newDataUnit = arrayfun(@(o)processData(o.processingMethod,o),this,'UniformOutput',0);
-            newDataUnit = [newDataUnit{:}];
+            [processMethod,childDataUnit,~] = arrayfun(@(o)processData(o.processingMethod),this,'UniformOutput',0); % If called from here, processData processes each DataUnit objects one by one
+            childDataUnit = [childDataUnit{:}];
+%             [this.processingMethod] = deal(processMethod);
         end        
         
         % collect the display names from all the parents in order to get
@@ -258,12 +280,23 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 val = []; return;
             end
             
+            fld = fieldnames(this);
+            tf = strcmpi(fieldnames(this), prop);
+            
+            if all(tf ==0)
             % get the prop if possible
             fld = fieldnames(this.relaxObj);
             tf = strcmpi(fieldnames(this.relaxObj), prop);
             
-            if all(tf ==0)
-                error('getRelaxProp: Unknown property')
+            if all(tf ==0) % the property was not found in the RelaxObj fields
+                fld = fieldnames(this.relaxObj.parameter.paramList);  % try with the sequence parameters
+                tf = strcmpi(fieldnames(this.relaxObj.parameter.paramList), prop);
+                
+                if all(tf ==0) % the property was not found in the sequence properties either
+                    error('getRelaxProp: Unknown property') % give up the search
+                else
+                    val = this.relaxObj.parameter.paramList.(fld{tf});
+                end
             else
                 val = this.relaxObj.(fld{tf});
             end
@@ -421,6 +454,16 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotResidual
         %%% -------------------------------------------- %%%
     end %methods
+    
+    methods
+        % make sure that any link to a relax object updates the object in
+        % question
+        function set.relaxObj(this,relax)
+            add(relax,this);
+            this.relaxObj = relax;
+        end
+        
+    end
  
 %     % The methods described below are used to enable the merge capabilities
 %     % of the DataUnit object. They work by re-directing any quiry for the
