@@ -320,16 +320,16 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         function this = updateProperties(this,varargin)
             fieldName = varargin(1:2:end);
             value = varargin(2:2:end);
-            selfcell = mat2cell(this(:)',1,ones(1,length(this)));
+%             selfcell = mat2cell(this(:)',1,ones(1,length(this)));
             for nf = 1:length(fieldName)
                 if ~iscell(value{nf})
                     value{nf} = repmat(value(nf),1,length(this));
                 elseif length(value{nf}) == 1
                     value{nf} = repmat(value{nf},1,length(this));
                 end
-                selfcell = cellfun(@(obj,value) setfield(obj,fieldName{nf},value),selfcell,value{nf},'UniformOutput',0);
+                this = arrayfun(@(obj) setfield(obj,fieldName{nf},value{nf}),this);
             end
-            this = [selfcell{:}];
+%             this = [selfcell{:}];
         end %updateProperties
         
         % set displayName following this rule:
