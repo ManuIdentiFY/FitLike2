@@ -19,6 +19,6 @@ classdef FitAlgorithm
     
     methods (Abstract)
         applyFit(this)
-    end         
+    end       
 end
 

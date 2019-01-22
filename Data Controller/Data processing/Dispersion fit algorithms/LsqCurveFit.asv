@@ -1,16 +1,20 @@
 classdef LsqCurveFit < FitAlgorithm
-    %
-    % Available weighted methods:
-    % - 'none'
-    % - 'data': use the data error w = 1./(dy.^2)
-    % - {'andrews','bisquare','cauchy','fair',...
-    %    'huber','logistic','ols','talwar','welsch'}
-    % last options gather iterative weight methods
-    % and use the FEX function from J.-A. Adrian (JA)
-    % see https://github.com/JAAdrian/MatlabRobustNonlinLsq/blob/master/robustlsqcurvefit.m
-    %
+    
     properties
         name = 'lsqcurvefit';
+    end
+    
+    properties (Hidden)
+        % Available weighted methods:
+        % - 'none'
+        % - 'data': use the data error w = 1./(dy.^2)
+        % - {'andrews','bisquare','cauchy','fair',...
+        %    'huber','logistic','ols','talwar','welsch'}
+        % last options gather iterative weight methods
+        % and use the FEX function from J.-A. Adrian (JA)
+        % see https://github.com/JAAdrian/MatlabRobustNonlinLsq/blob/master/robustlsqcurvefit.m
+        weightMethodList = {'none','data','andrews','bisquare','cauchy','fair',...
+                            'huber','logistic','ols','talwar','welsch'};
     end
 
     methods
@@ -20,7 +24,7 @@ classdef LsqCurveFit < FitAlgorithm
             this = this@FitAlgorithm;
             
             % create default options
-            this.options = LsqCurveFit.getOptions('default');
+            this.options = LsqCurveFit.getOption();
         end
     end
     
@@ -90,12 +94,11 @@ classdef LsqCurveFit < FitAlgorithm
         end %getGOF  
     end
     
-    methods (Static)
+    methods (Static)               
         % Create the options structure (default) or get the possible input
         % for the option structure
-        function options = getOptions(flag)
-            % check input
-            if strcmp(flag,'default')
+        function options = getOptions(varargin)
+            if nargin < 1
                 % create a structure with default option
                 options = struct('Algorithm','trust-region-reflective',...
                     'Display','off',...
@@ -104,14 +107,13 @@ classdef LsqCurveFit < FitAlgorithm
                     'StepTolerance',1e-6,...
                     'Weight','none');
             else
-                % create a structure with all possible string and default numeric option
-                options = struct('Algorithm',{{'trust-region-reflective','levenberg-marquardt'}},...
-                    'Display',{{'off','none','iter','final'}},...
-                    'FunctionTolerance',1e-6,...
+                % create a structure with default option
+                options = struct('Algorithm',{'trust-region-reflective','levenberg-marquardt'},...
+                    'Display',{'off','none','iter','final'},...
+                    'FunctionTolerance',[],...
                     'MaxIterations',400,...
                     'StepTolerance',1e-6,...
-                    'Weight',{{'none','data','andrews','bisquare','cauchy','fair',...
-                                'huber','logistic','ols','talwar','welsch'}});                
+                    'Weight','none');                
             end
         end %getOptions
     end
