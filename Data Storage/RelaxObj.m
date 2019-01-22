@@ -3,16 +3,15 @@ classdef RelaxObj < handle
     %
     % See also DATAUNIT, BLOC, ZONE, DISPERSION
     
-    % file properties
+   
     properties (Access = public)
+    % file properties
         label@char = '';               % label of the file ('control','tumour',...)
         filename@char = '';            % name of the file ('file1.sdf')
-%         sequence@char = '';            % name of the sequence ('IRCPMG')
+        sequence@char = '';            % name of the sequence ('IRCPMG')
         dataset@char = 'myDataset';    % name of the dataset('ISMRM2018')
-    end
-    
+        
     % data properties
-    properties (Access = public)
         data@DataUnit
         parameter@ParamObj = ParamObj();  
     end  
@@ -129,6 +128,20 @@ classdef RelaxObj < handle
                 this.fileID = char(java.util.UUID.randomUUID);
             end
         end %checkUUID
+        
+        function this = add(this,dataunit)
+            % check that it is not already present in the data list
+            if ~prod(arrayfun(@(d) isequal(d,dataunit),this.data))||isempty(this.data)
+                this.data(end+1) = dataunit;
+            end
+        end
+        
+        function this = remove(this,dataunit)
+            for i = 1:length(this)
+                index = arrayfun(@(d) isequal(d,dataunit),this(i).data);
+                this(i).data(index) = [];
+            end
+        end
         
         % Data formating: mergeFile()
         % merge several objects, considering only the DataUnit at the level

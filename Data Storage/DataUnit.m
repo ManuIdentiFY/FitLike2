@@ -17,8 +17,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         dy@double = [];         % error bars on Y
         yLabel@char = '';       % name of the variable Y ('R1','fid',...)
         mask@logical = true(0);           % mask the X and Y arrays
-        sequence@char;
-        parameter@ParamObj; 
+%         sequence@char;
+%         parameter@ParamObj; 
     end   
     
     % file processing
@@ -448,6 +448,16 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotResidual
         %%% -------------------------------------------- %%%
     end %methods
+    
+    methods
+        % make sure that any link to a relax object updates the object in
+        % question
+        function set.relaxObj(this,relax)
+            add(relax,this);
+            this.relaxObj = relax;
+        end
+        
+    end
  
 %     % The methods described below are used to enable the merge capabilities
 %     % of the DataUnit object. They work by re-directing any quiry for the

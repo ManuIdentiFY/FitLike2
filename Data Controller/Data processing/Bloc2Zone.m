@@ -1,11 +1,13 @@
 classdef Bloc2Zone < DataUnit2DataUnit
+    
+    properties
+        InputChildClass@char = 'Bloc';
+        OutputChildClass@char = 'Zone';
+    end
    
     methods
-        
         function this = Bloc2Zone
             this@DataUnit2DataUnit;
-            this.InputChildClass = 'Bloc';
-            this.OutputChildClass = 'Zone';
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -38,10 +40,7 @@ classdef Bloc2Zone < DataUnit2DataUnit
                 paramFun = {};
             else
                 
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                for i = 1:bloc.parameter.paramList.NBLK
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                
+                for i = 1:getRelaxProp(bloc, 'NBLK')                
                     for j = 1:size(bloc.y,3)
                         cellindex{i,j} = [i,j]; %#ok<AGROW>
                     end
@@ -67,18 +66,6 @@ classdef Bloc2Zone < DataUnit2DataUnit
                     dz = permute(dz,[2 1 3]);
                 end
             
-                % finally, reshape the list of updated parameters and make a
-                % list of adapted structure objects
-                params = arrayofstruct2struct(paramFun);
-                
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                fh = str2func(class(bloc.parameter));
-                params = fh(params);
-                params = reshape(params,size(z));
-                params = replace([bloc.parameter,params]);
-                bloc.parameter = params;
-                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                
             end
             
             % generate one zone object for each component provided by the
@@ -90,7 +77,7 @@ classdef Bloc2Zone < DataUnit2DataUnit
             celldz = cellfun(@(x) squeeze(x),celldz,'UniformOutput',0);
             x = getZoneAxis(bloc); % raw x-axis (needs to be repmat to fit the dimension of y)
             x = repmat(x,size(cellz)); % make sure that all cell arrays are consistent
-            params = repmat({params},size(cellz));
+%             params = repmat({params},size(cellz));
             labelX = repmat({this.labelX},size(cellz));
             labelY = repmat({this.labelY},size(cellz));
             if numel(this.legendTag) ~= numel(labelX)
@@ -102,16 +89,16 @@ classdef Bloc2Zone < DataUnit2DataUnit
             % generate the children objects if they are not yet created
             if isempty(this.OutputData)
                 this.OutputData = Zone('parent',repmat({bloc},size(celldz)),...
-                    'x',x,'xLabel',labelX,...
-                    'y',cellz,'dy',celldz,'yLabel',labelY,...
-                    'parameter',params,'legendTag',legendTag,...
-                    'sequence',repmat({bloc.sequence},size(celldz)));
+                                       'x',x,'xLabel',labelX,...
+                                       'y',cellz,'dy',celldz,'yLabel',labelY,...
+                                       'legendTag',legendTag,...
+                                       'relaxObj',bloc.relaxObj);
             else % if a child object is there, just update it
-                this.OutputData = arrayfun(@(z,lx,cz,cdz,ly,p,l) updateProperties(z,...
+                this.OutputData = arrayfun(@(z,lx,cz,cdz,ly,l) updateProperties(z,...
                                             'xLabel',lx,...
                                             'y',cz,'dy',cdz,'yLabel',ly,...
-                                            'parameter',p,'legendTag',l),...
-                                            this.OutputData,labelX,cellz,celldz,labelY,params,legendTag);
+                                            'legendTag',l),...
+                                            this.OutputData,labelX,cellz,celldz,labelY,legendTag);
             end
             
             zone = this.OutputData;
