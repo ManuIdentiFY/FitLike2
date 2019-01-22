@@ -1,7 +1,5 @@
 classdef Bloc2Zone < DataUnit2DataUnit
-    
    
-    
     methods
         
         function this = Bloc2Zone
@@ -121,63 +119,10 @@ classdef Bloc2Zone < DataUnit2DataUnit
 %             
 %             if isempty(this.children)
 %                 zone = 
-%             elseif length(bloc.children) < Nzone
-%                 % case when the new processing function produces more
-%                 % outputs than the previous one. In that case we replace
-%                 % when can be replaced and create new zone objects
-%                 index = 1:length(bloc.children);
-%                 bloc.children = updateProperties(bloc.children,...
-%                     'x',x(index),'xLabel',labelX(index),...
-%                     'y',cellz(index),'dy',celldz(index),'yLabel',labelY(index),...
-%                     'parameter',params(index),'legendTag',legendTag(index));
-%                 index = length(bloc.children)+1 : Nzone;
-%                 Zone('parent',repmat({bloc},size(index)),...
-%                     'x',x(index),'xLabel',labelX(index),...
-%                     'y',cellz(index),'dy',celldz(index),'yLabel',labelY(index),...
-%                     'parameter',params(index),'legendTag',legendTag(index),...
-%                     'sequence',repmat({bloc.sequence},size(index)));
-%                 % add the other zone objects to return them all
-%                 zone = bloc.children;
-%             else
-%                 % case when the new processing function provides less or as
-%                 % many outputs as the previous one. In that case we update
-%                 % all the zonea we can and discard the others.
-%                 bloc.children(1:Nzone) = updateProperties(bloc.children,...
-%                     'x',x,'xLabel',labelX,...
-%                     'y',cellz,'dy',celldz,'yLabel',labelY,...
-%                     'parameter',params,'legendTag',legendTag);
-%                 remove(bloc.children, Nzone+1:numel(bloc.children));
-%                 zone = bloc.children;
-%             end
-            
         end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        % TO DO: make some test functions
-                        
-%         % Function that makes the actual processing of the bloc. It only
-%         % deals with one bloc at a time and creates one zone only.
-%         function [zone,bloc] = makeZone(self,bloc)
-%             % check that all the input objects are bloc objects
-%             % TO DO
-%             
-%             % generate the data to populate the zone object
-%             [zone,bloc] = arrayfun(@self.applyProcessFunction,bloc,'Uniform',0);
-%             zone = [zone{:}]; % back to array of objects
-%             bloc = [bloc{:}];
-%         end
     end
-%     
-%     methods (Sealed)
-%         % standard naming convention for the processing function
-%         function [zone,bloc] = processData(self,bloc)
-%             [z,b] = arrayfun(@(s)makeZone(s,bloc),self,'UniformOutput',0);
-%             zone = [z{:}];
-%             bloc = [b{:}];
-%         end
-%     end
-    
+
+        
 end
 
 

@@ -1,16 +1,14 @@
-classdef Bloc2Disp < DataUnit2DataUnit
+classdef Bloc2Disp < ProcessDataUnit
     
     properties
-        Bloc@Bloc;  % store the Bloc object to be processed
-        InputChildClass = Bloc;
-        OutputChildClass = Dispersion;
+        
     end
     
     
     methods
         
-        function this = Bloc2Disp
-            this@DataUnit2DataUnit;
+        function self = Bloc2Disp
+            self@ProcessDataUnit;
         end
     end
 %         
