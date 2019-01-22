@@ -37,16 +37,33 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous
             out = 1;
         end
         
-        % function that allows estimating the start point. It should be 
-        % over-riden by the derived classes
-        function self = evaluateStartPoint(self,x,y)
-        end
+        % main process function
+        function [childObj, parentObj] = processData(this, parentObj)
+            % get data
+            data = getProcessData(this, parentObj);
+            
+            % apply process
+            [this, new_data] = arrayfun(@(x) applyProcess(this, x, parentObj), data, 'Uniform', 0);
+            
+            % gather data and create childObj
+            childObj = makeProcessData(this, new_data, parentObj);           
+        end %processData
+    end
+    
+    methods (Abstract)
+        function [this, new_data] = applyProcess(this, data, parentObj)
+            
+        end %applyProcess
+    end
+%       
+%         % function that allows estimating the start point. It should be 
+%         % over-riden by the derived classes
+%         function self = evaluateStartPoint(self,x,y)
+%         end
         
 %         function [newData, dataObj] = processData(self,dataObj)
 %             newData = dataObj;
 %         end
-                
-    end
     
 %     methods (Abstract)
 %         
