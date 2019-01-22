@@ -1,4 +1,4 @@
-classdef Bloc2Disp < ProcessDataUnit
+classdef Bloc2Disp < DataUnit2DataUnit
     
     properties
         Bloc@Bloc;  % store the Bloc object to be processed
@@ -9,7 +9,7 @@ classdef Bloc2Disp < ProcessDataUnit
     
     methods
         
-        function self = Bloc2Disp
+        function this = Bloc2Disp
             this@DataUnit2DataUnit;
         end
     end
