@@ -13,6 +13,7 @@ classdef DataFit < DataModel
         maxValue;           % array of values, maximum values reachable for each parameter, respective to the order of parameterName
         startPoint;         % array of values, starting point for each parameter, respective to the order of parameterName 
     end
+    
     properties
         modelHandle;      % function handle that refers to the equation, or to any other function defined by the user
         bestValue;        % array of values, estimated value found from the fit.
