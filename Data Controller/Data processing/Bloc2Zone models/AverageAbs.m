@@ -29,7 +29,7 @@ classdef AverageAbs < Bloc2Zone & ProcessDataUnit
     
     methods
         % Define abstract method applyProcess(). See ProcessDataUnit.
-        function [this, new_data] = applyProcess(this, data, bloc)
+        function [this, new_data] = applyProcess(this, data)
             % get data size
             [~, NBLK, BRLX] = size(data.y);
             % get absolute y-values and replace unwanted values by nan (masked).
@@ -39,9 +39,7 @@ classdef AverageAbs < Bloc2Zone & ProcessDataUnit
             % apply absolute average on the first dimension and avoid nan
             % values. Reshape to get NBLK x BRLX matrix
             new_data.y = reshape(mean(y,1,'omitnan'),[NBLK, BRLX]);
-            new_data.dy = reshape(std(y,[],1,'omitnan'),[NBLK, BRLX]);
-            % get the x-axis from the parameter of the RelaxObj
-            new_data.x = getZoneAxis(bloc);           
+            new_data.dy = reshape(std(y,[],1,'omitnan'),[NBLK, BRLX]);          
         end %applyProcess
 % 
 %         % this is where you should put the algorithm that processes the raw

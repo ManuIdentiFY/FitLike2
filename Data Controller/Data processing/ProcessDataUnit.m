@@ -43,7 +43,7 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous
             data = getProcessData(this, parentObj);
             
             % apply process
-            [this, new_data] = arrayfun(@(x) applyProcess(this, x, parentObj), data, 'Uniform', 0);
+            [this, new_data] = arrayfun(@(x) applyProcess(this, x), data, 'Uniform', 0);
             this = [this{:}]; new_data = [new_data{:}];
             
             % gather data and create childObj
