@@ -50,7 +50,20 @@ classdef ProcessDataUnit < handle
 %         end %processData
 %         
 %         
-        
+        % main process function
+        function [childObj, parentObj] = processData(this, parentObj)
+            % apply process
+            [this, new_data] = arrayfun(@(x) applyProcess(this, x), data, 'Uniform', 0);
+            
+            % format output
+            [this, new_data] = formatData([this{:}], new_data);
+            
+            % gather data and create childObj
+            childObj = makeProcessData(this, new_data, parentObj);     
+            
+            % add other data (xLabel, yLabel,...)
+            childObj = addOtherProp(this, childObj);
+        end %processData
                 
         % function that applies one processing function to one bloc only.
         % This is where the custom processing function is being called.
@@ -138,6 +151,34 @@ classdef ProcessDataUnit < handle
         end
 
         
+
+        
+        % format output data from process: cell array to array of structure
+        % This function could also be used to modify this in order to
+        % gather all fit data for instance [Manu]
+        function [this, new_data] = formatData(this, new_data)
+            % get size to properly reshape at the end
+            dim = size(new_data);
+            
+            % uncell and reshape
+            this = reshape(this, dim);
+            this = arrayofstruct2struct(this);
+            new_data = reshape([new_data{:}], dim);
+        end %formatData
+        
+        % add other properties (xLabel, yLabel, legendTag
+        function childObj = addOtherProp(this, childObj)
+            % add xLabel and yLabel
+            [childObj.xLabel] = deal(this.labelX);
+            [childObj.yLabel] = deal(this.labelY);
+            
+            % add legendTag
+            [childObj.legendTag] = this.legendTag{:};
+        end %addOtherProp
+    end
+    
+    methods (Abstract)
+        applyProcess(this, data, parentObj)
     end
     
 %     methods (Abstract)

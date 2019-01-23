@@ -16,7 +16,19 @@ classdef Zone < DataUnit
         % other: structure
         function this = Zone(varargin)
             this = this@DataUnit(varargin{:});
+            % get x-data if empty
+            if isempty(this.x)
+               this.x = getZoneAxis(this);
+            end
         end %Zone
+        
+        % get the inversion time (x-values for zone(s) axis)
+        function x = getZoneAxis(this)
+            % get the x-axis
+            x = arrayfun(@(x) getZoneAxis(x), this.relaxObj.parameter, 'UniformOutput',0);
+            % cat cell array to have NBLK x BRLX matrix
+            x = [x{:}];
+        end
         
         function x = getDispAxis(this)
             x = arrayfun(@(x) getDispAxis(x.parameter),this,'UniformOutput',0);
