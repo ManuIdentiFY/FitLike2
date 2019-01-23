@@ -10,7 +10,7 @@ classdef BiexponentialT2 < Bloc2Zone & DataFit
    properties
        modelName = 'Biexponential T2';          % character string, name of the model, as appearing in the figure legend
        modelEquation = 'abs(M0 + A1*exp(-t*R21) + A2*exp(-t*R22))';      % character string, equation that relates the Larmor frequency (Hz) to the parameters to R1 (s^{-1})
-       variableName = 't';                                  % List of characters, name of the variables appearing in the equation
+       variableName = {'t'};                                  % List of characters, name of the variables appearing in the equation
        parameterName = {'M0','A1','R21','A2','R22'};        % List of characters, name of the parameters appearing in the equation
        isFixed = [0 0 0 0 0];                               % List of array of booleans, set to 1 if the corresponding parameter is fixed, 0 if they are to be optimised by the fit.
        minValue = [-Inf -Inf -Inf -Inf -Inf];               % array of values, minimum values reachable for each parameter, respective to the order of parameterName
@@ -35,6 +35,15 @@ classdef BiexponentialT2 < Bloc2Zone & DataFit
             data.dy = [this.errorBar(3),  this.errorBar(5)];
         end %formatFitData
         
+        % fill in the starting point of the model
+        function this = evaluateStartPoint(this, xdata, ydata)  
+            ydata = abs(ydata);
+            this.startPoint = [ydata(end),...
+                               (ydata(1)-ydata(end))*2/3,...
+                               3/xdata(end),...
+                               (ydata(1)-ydata(end))/3,...
+                               10/xdata(end)];
+        end
         
 % 
 %         % this is where you should put the algorithm that processes the raw
