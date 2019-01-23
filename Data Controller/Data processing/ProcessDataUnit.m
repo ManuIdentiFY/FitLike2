@@ -44,7 +44,9 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous
             
             % apply process
             [this, new_data] = arrayfun(@(x) applyProcess(this, x), data, 'Uniform', 0);
-            this = [this{:}]; new_data = [new_data{:}];
+            
+            % format output
+            [this, new_data] = formatData([this{:}], new_data);
             
             % gather data and create childObj
             childObj = makeProcessData(this, new_data, parentObj);     
@@ -52,6 +54,19 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous
             % add other data (xLabel, yLabel,...)
             childObj = addOtherProp(this, childObj);
         end %processData
+        
+        % format output data from process: cell array to array of structure
+        % This function could also be used to modify this in order to
+        % gather all fit data for instance [Manu]
+        function [this, new_data] = formatData(this, new_data)
+            % get size to properly reshape at the end
+            dim = size(new_data);
+            
+            % uncell and reshape
+            this = reshape(this, dim);
+            this = arrayofstruct2struct(this);
+            new_data = reshape([new_data{:}], dim);
+        end %formatData
         
         % add other properties (xLabel, yLabel, legendTag
         function childObj = addOtherProp(this, childObj)
