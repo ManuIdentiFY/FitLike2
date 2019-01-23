@@ -27,7 +27,10 @@ classdef Bloc < DataUnit
     methods (Access = public)
         % get the inversion time (x-values for zone(s) axis)
         function x = getZoneAxis(this)
-            x = arrayfun(@(x) getZoneAxis(x.relaxObj.parameter),this,'UniformOutput',0);
+            % get the x-axis
+            x = arrayfun(@(x) getZoneAxis(x), this.relaxObj.parameter, 'UniformOutput',0);
+            % cat cell array to have NBLK x BRLX matrix
+            x = [x{:}];
         end
         
         % define dimension indexing for data selection. If idxZone is a NaN
