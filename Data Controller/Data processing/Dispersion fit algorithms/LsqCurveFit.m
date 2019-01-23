@@ -42,18 +42,18 @@ classdef LsqCurveFit < FitAlgorithm
                     case 'none'
                         % apply fit 
                         [coeff,resnorm,residuals,~,~,~,jacobian] = lsqcurvefit(fun,...
-                            x0, xdata, ydata, lb, ub, this.options);
+                            x0, xdata, ydata, lb, ub, opts);
                     case 'data'
                         % apply fit with 1./(dydata.^2) weight
                         [coeff,resnorm,residuals,~,~,~,jacobian] = lsqnonlin(@wfun,...
-                            x0, ub, lb, this.options, xdata, ydata, 1./(dydata.^2)); 
+                            x0, ub, lb, opts, xdata, ydata, 1./(dydata.^2)); 
                     otherwise
                         % apply robust fit:
                         % FEX function from J.-A. Adrian (JA)
                         % see https://github.com/JAAdrian/MatlabRobustNonlinLsq/blob/master/robustlsqcurvefit.m
                         [coeff,resnorm,residuals,~,~,~,jacobian] = robustlsqcurvefit(fun,...
                             x0, xdata, ydata,lb, ub,...
-                            this.options.Weight, this.options);
+                            this.options.Weight, opts);
                 end           
             catch
                 coeff = x0;
