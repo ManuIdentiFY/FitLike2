@@ -29,14 +29,14 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     % meta-data
     properties (Access = public)
         legendTag@char = '';
-        displayName@char = '';  % char array to place in the legend associated with the data
+        displayName@char = '';  % char array to place in the legend associated with the data (should be protected)
     end
     
     % other properties
     properties (Hidden = true)
-        relaxObj@RelaxObj       %handle to the meta-data
-        parent@DataUnit;            % parent of the object
-        children@DataUnit;          % children of the object
+        relaxObj@RelaxObj        %handle to the meta-data
+        parent@DataUnit          % parent of the object
+        children@DataUnit        % children of the object
         parameters@ParamObj;     % redirects towards relaxobj parameters
     end
     
@@ -120,21 +120,35 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         function delete(this)
             % notify the deletion
             notify(this, 'DataDeletion');
-            
+            if 0
             % delete the parent and clear children/parent
 %             removeInputData(this.processingMethod,this); % unlink processing methods
             remove(this.relaxObj,this); % unlink relaxObj
-%             delete(this.parent);  % this will destroy the BLoc object too      this.children(:) = [];
+%             delete(this.parent);  % this will destroy the BLoc object too, which is a problem if one only wants to remove a mistake  
+            end
+            % I try something else [Manu]
+            delete(this.children(isvalid(this.children)));
+            this.children(:) = [];
             this.parent(:) = [];
         end
     end
     
     methods (Access = public)
+        
+        function [this,processObj] = addprocess(this,processObj)
+            if isempty(this.processingMethod)
+                this.processingMethod = processObj;
+            else
+                this.processingMethod(end+1) = processObj;
+            end
+        end
+        
         % assign a processing function to the data object
         function [this,processList] = assignProcessingFunction(this,processObj)
-            this = arrayfun(@(s)setfield(s,'processingMethod',[s.processingMethod copy(processObj)]),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
-            this = [this{:}];            
-            processList = arrayfun(@(s) addInputData(s.processingMethod,s),this,'UniformOutput',0); % associate each data unit with its processing method
+            [this,processList] = arrayfun(@(s)addprocess(s,copy(processObj)),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
+            this = [this{:}];   
+            processList = [processList{:}];
+            processList = arrayfun(@(s) addInputData(processList,s),this,'UniformOutput',1); % associate each data unit with its processing method
         end %assignProcessingFunction
         
         % remove or clear a list of processing functions for a given
@@ -149,24 +163,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 this = arrayfun(@(d,i) setfield(d,'processingMethod', d.processingMethod(i)),this,index);
             end
         end
-
-        % link parent and children units
-        function [parentObj,childrenObj] = link(parentObj,childrenObj)
-            for indp = 1:length(parentObj)
-                for indc = 1:length(childrenObj)
-                    % check that the children objects are not already listed in the
-                    % parent object
-                    if ~sum(isequal(childrenObj(indc).parent,parentObj(indp)))
-                        childrenObj(indc).parent(end+1) = parentObj(indp);
-                    end
-                    % check that the children objects are not already listed in the
-                    % parent object
-                    if ~sum(isequal(parentObj(indp).children,childrenObj(indc)))
-                        parentObj(indp).children(end+1) = childrenObj(indc);
-                    end
-                end
-            end         
-        end %link
         
         % removal from the parent object list for clean deletion
         function unlink(this)
@@ -242,7 +238,36 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 
     end % methods
     
-    methods (Access = public, Sealed = true)   
+    methods (Access = public, Sealed = true)  
+        % remove dataunit 
+        function this = remove(this, idx)
+            % check input
+            if nargin < 2
+                idx = 1:numel(this)
+            end
+            % remove properly DataUnit
+            
+        end
+        
+        % link parent and children units
+        function [parentObj, childObj] = link(parentObj, childObj)
+            for indp = 1:length(parentObj)              
+                for indc = 1:length(childObj)
+                    % check that the children objects are not already listed in the
+                    % parent object
+                    if ~sum(isequal(childObj(indc).parent,parentObj(indp)))
+                        childObj(indc).parent(end+1) = parentObj(indp);
+                    end
+                    % check that the children objects are not already listed in the
+                    % parent object
+                    if ~sum(isequal(parentObj(indp).children,childObj(indc)))
+                        parentObj(indp).children(end+1) = childObj(indc);
+                    end
+                end
+           end         
+        end %link
+        
+        
         % Wrapper to get data from DataUnit
         function [x,y,dy,mask] = getData(this, idxZone)
             % call dimension indexing function
@@ -279,21 +304,28 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 val = []; return;
             end
             
-            % get the prop if possible
-            fld = fieldnames(this.relaxObj);
-            tf = strcmpi(fieldnames(this.relaxObj), prop);
+            fld = fieldnames(this);
+            tf = strcmpi(fieldnames(this), prop);
             
-            if all(tf ==0) % the property was not found in the RelaxObj fields
-                fld = fieldnames(this.relaxObj.parameter.paramList);  % try with the sequence parameters
-                tf = strcmpi(fieldnames(this.relaxObj.parameter.paramList), prop);
-                
-                if all(tf ==0) % the property was not found in the sequence properties either
-                    error('getRelaxProp: Unknown property') % give up the search
+            if all(tf ==0)
+                % get the prop if possible
+                fld = fieldnames(this.relaxObj);
+                tf = strcmpi(fieldnames(this.relaxObj), prop);
+
+                if all(tf ==0) % the property was not found in the RelaxObj fields
+                    fld = fieldnames(this.relaxObj.parameter.paramList);  % try with the sequence parameters
+                    tf = strcmpi(fieldnames(this.relaxObj.parameter.paramList), prop);
+
+                    if all(tf ==0) % the property was not found in the sequence properties either
+                        error('getRelaxProp: Unknown property') % give up the search
+                    else
+                        val = this.relaxObj.parameter.paramList.(fld{tf});
+                    end
                 else
-                    val = this.relaxObj.parameter.paramList.(fld{tf});
+                    val = this.relaxObj.(fld{tf});
                 end
             else
-                val = this.relaxObj.(fld{tf});
+                val = this.(fld{tf});
             end
         end %get.meta
         

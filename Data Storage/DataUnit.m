@@ -34,9 +34,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     
     % other properties
     properties (Hidden = true)
-        relaxObj@RelaxObj       %handle to the meta-data
-        parent@DataUnit;            % parent of the object
-        children@DataUnit;          % children of the object
+        relaxObj@RelaxObj        %handle to the meta-data
+        parent@DataUnit          % parent of the object
+        children@DataUnit        % children of the object
         parameters@ParamObj;     % redirects towards relaxobj parameters
     end
     
@@ -120,11 +120,14 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         function delete(this)
             % notify the deletion
             notify(this, 'DataDeletion');
-            
+            if 0
             % delete the parent and clear children/parent
 %             removeInputData(this.processingMethod,this); % unlink processing methods
             remove(this.relaxObj,this); % unlink relaxObj
 %             delete(this.parent);  % this will destroy the BLoc object too, which is a problem if one only wants to remove a mistake  
+            end
+            % I try something else [Manu]
+            delete(this.children(isvalid(this.children)));
             this.children(:) = [];
             this.parent(:) = [];
         end
@@ -160,24 +163,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 this = arrayfun(@(d,i) setfield(d,'processingMethod', d.processingMethod(i)),this,index);
             end
         end
-
-        % link parent and children units
-        function [parentObj,childrenObj] = link(parentObj,childrenObj)
-            for indp = 1:length(parentObj)
-                for indc = 1:length(childrenObj)
-                    % check that the children objects are not already listed in the
-                    % parent object
-                    if ~sum(isequal(childrenObj(indc).parent,parentObj(indp)))
-                        childrenObj(indc).parent(end+1) = parentObj(indp);
-                    end
-                    % check that the children objects are not already listed in the
-                    % parent object
-                    if ~sum(isequal(parentObj(indp).children,childrenObj(indc)))
-                        parentObj(indp).children(end+1) = childrenObj(indc);
-                    end
-                end
-            end         
-        end %link
         
         % removal from the parent object list for clean deletion
         function unlink(this)
@@ -253,7 +238,40 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 
     end % methods
     
-    methods (Access = public, Sealed = true)   
+    methods (Access = public, Sealed = true)  
+        % remove dataunit 
+        function this = remove(this, idx)
+            % check input
+            if nargin < 2
+                idx = 1:numel(this);
+            end
+            % remove properly DataUnit
+            for k = 1:numel(idx)
+                delete(this(idx(k)));
+            end
+            % remove deleted handle
+            this = this(setdiff(1:numel(this),idx));
+        end
+        
+        % link parent and children units
+        function [parentObj, childObj] = link(parentObj, childObj)
+            for indp = 1:length(parentObj)              
+                for indc = 1:length(childObj)
+                    % check that the children objects are not already listed in the
+                    % parent object
+                    if ~sum(isequal(childObj(indc).parent,parentObj(indp)))
+                        childObj(indc).parent(end+1) = parentObj(indp);
+                    end
+                    % check that the children objects are not already listed in the
+                    % parent object
+                    if ~sum(isequal(parentObj(indp).children,childObj(indc)))
+                        parentObj(indp).children(end+1) = childObj(indc);
+                    end
+                end
+           end         
+        end %link
+        
+        
         % Wrapper to get data from DataUnit
         function [x,y,dy,mask] = getData(this, idxZone)
             % call dimension indexing function
@@ -355,8 +373,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % [class(obj) obj.legendTag (obj.parent.legendTag,
         % obj.parent.parent.legendTag, ...)]
         function this = setname(this)
-            % check if existing displayName
-            if ~isempty(this.displayName); return; end
+%             % check if existing displayName
+%             if ~isempty(this.displayName); return; end
 
             % init
             if isempty(this.legendTag)
@@ -478,14 +496,21 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         
     end
  
-%     % The methods described below are used to enable the merge capabilities
-%     % of the DataUnit object. They work by re-directing any quiry for the
-%     % x, y, dy and mask fields towards the list of sub-objects. Any
-%     % modification in here must take care to avoid recursive calls and to
-%     % limit the processing time, as these fields are used extensively
-%     % during processing.
-%     % LB 20/08/2018
-%     methods
+    % The methods described below are used to enable the merge capabilities
+    % of the DataUnit object. They work by re-directing any quiry for the
+    % x, y, dy and mask fields towards the list of sub-objects. Any
+    % modification in here must take care to avoid recursive calls and to
+    % limit the processing time, as these fields are used extensively
+    % during processing.
+    % LB 20/08/2018
+    methods
+       % set legendTag update the displayName
+       function this = set.legendTag(this, val) %#ok<MCHV2>
+           % add legendTag and update displayName
+           this.legendTag = val;
+           setname(this);
+       end
+    end
 %         % check that new objects added to the list are of the same type as
 %         % the main object
 %         function self = set.subUnitList(self,objArray) %#ok<*MCSV,*MCHC,*MCHV2>
