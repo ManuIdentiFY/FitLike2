@@ -296,6 +296,7 @@ classdef DataUnit2DataUnit < handle & matlab.mixin.Copyable
                 return
             end
             
+            %%%%%%%%%%%%%%%%%% make it an independant search function %%%%%
             % here, only one process is selected. It may be applied to
             % several RelaxObjects, and to several DataUnit within the each
             % RelaxObject. Selections are done using the type of pulse
@@ -315,6 +316,7 @@ classdef DataUnit2DataUnit < handle & matlab.mixin.Copyable
                         end
                 end               
             end
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
             % launch the processing for each RelaxObj
             for indRelax = 1:length(relax)
@@ -343,92 +345,7 @@ classdef DataUnit2DataUnit < handle & matlab.mixin.Copyable
                 error(['Wrong data input type , is ' class(dataToProcess) ' when expecting ' this.OutputChildClass '.'])
             end
         end
-                
-        % function that applies one processing function to one bloc only.
-        % This is where the custom processing function is being called.
-        function [outputdata,inputdata] = applyProcessFunction(this)  
-            
-            sze = size(this.InputData.y);
-            if length(sze)<3
-                sze(3) = 1;   % make sure the data is interpreted as a 3D matrix
-            end
-            % prepare the cell arrays, making sure the dimensions are
-            % consistent
-            cellx = squeeze(num2cell(this.InputData.x,1));
-            celly = squeeze(num2cell(this.InputData.y,1));
-            % make sure the data is sorted
-            [cellx,ord] = cellfun(@(c)sort(c),cellx,'UniformOutput',0);
-            celly = cellfun(@(c,o)c(o),celly,ord,'UniformOutput',0);
-            % cast to cell array for cellfun
-%             cellindex = repmat(num2cell(1:this.InputData.parameter.paramList.NBLK)',1,size(this.InputData.y,3));
-            if isempty(this.InputData.y)
-                z = [];
-                dz = [];
-                this.ProcessData = {};
-            else
-                for i = 1:getRelaxProp(this.InputData, 'NBLK')                
-                    for j = 1:size(this.InputData.y,3)
-                        cellindex{i,j} = [i,j]; %#ok<AGROW>
-                    end
-                end
-                if ~isequal(size(cellindex),size(cellx))
-                    cellx = cellx';
-                    celly = celly';
-                end
-                % make sure that each acquisition is referenced from the time
-                % of acquisition within the data this.InputData
-                cellx = cellfun(@(x)x-x(1),cellx,'UniformOutput',0);
-                % process the cell array to get the this.OutputData data
-                [z, dz, this.ProcessData] = cellfun(@(x,y,i) process(this,x,y,this.InputData,i),cellx,celly,cellindex,'Uniform',0);
-                szeout = size(z{1,1});
-                [szeout,ind] = max(szeout); 
-                if ind == 2 % check that the result of the process is a column array
-                    z = reshape(cell2mat(z),sze(2),szeout,sze(3));
-                    dz = reshape(cell2mat(dz),sze(2),szeout,sze(3));
-                else
-                    z = reshape(cell2mat(z),szeout,sze(2),sze(3));
-                    z = permute(z,[2 1 3]);
-                    dz = reshape(cell2mat(dz),szeout,sze(2),sze(3));
-                    dz = permute(dz,[2 1 3]);
-                end
-            end
-            
-            % generate one this.OutputData object for each component provided by the
-            % processing algorithm
-            warning('off','MATLAB:mat2cell:TrailingUnityVectorArgRemoved') % avoid spamming the terminal when the data is not multiexponential
-            cellz = mat2cell(z,size(z,1),ones(1,size(z,2)),size(z,3));
-            celldz = mat2cell(dz,size(dz,1),ones(1,size(dz,2)),size(dz,3));
-            cellz = cellfun(@(x) squeeze(x),cellz,'UniformOutput',0);
-            celldz = cellfun(@(x) squeeze(x),celldz,'UniformOutput',0);
-            x = getZoneAxis(this.InputData); % raw x-axis (needs to be repmat to fit the dimension of y)
-            x = repmat(x,size(cellz)); % make sure that all cell arrays are consistent
-%             params = repmat({params},size(cellz));
-            labelX = repmat({this.labelX},size(cellz));
-            labelY = repmat({this.labelY},size(cellz));
-            if numel(this.legendTag) ~= numel(labelX)
-                legendTag = repmat(this.legendTag,size(cellz));
-            else
-                legendTag = this.legendTag;
-            end
-            
-            % generate the children objects if they are not yet created
-            if isempty(this.OutputData)
-                this.OutputData = Zone('parent',repmat({this.InputData},size(celldz)),...
-                                       'x',x,'xLabel',labelX,...
-                                       'y',cellz,'dy',celldz,'yLabel',labelY,...
-                                       'legendTag',legendTag,...
-                                       'relaxObj',this.InputData.relaxObj);
-            else % if a child object is there, just update it
-                this.OutputData = arrayfun(@(z,lx,cz,cdz,ly,l) updateProperties(z,...
-                                            'xLabel',lx,...
-                                            'y',cz,'dy',cdz,'yLabel',ly,...
-                                            'legendTag',l),...
-                                            this.OutputData,labelX,cellz,celldz,labelY,legendTag);
-            end
-            outputdata = this.OutputData;
-            inputdata = this.InputData;
-        end
-
+        
         
     end
     
