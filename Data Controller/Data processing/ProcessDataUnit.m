@@ -44,16 +44,28 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous
             
             % apply process
             [this, new_data] = arrayfun(@(x) applyProcess(this, x, parentObj), data, 'Uniform', 0);
+            this = [this{:}]; new_data = [new_data{:}];
             
             % gather data and create childObj
-            childObj = makeProcessData(this, new_data, parentObj);           
+            childObj = makeProcessData(this, new_data, parentObj);     
+            
+            % add other data (xLabel, yLabel,...)
+            childObj = addOtherProp(this, childObj);
         end %processData
+        
+        % add other properties (xLabel, yLabel, legendTag
+        function childObj = addOtherProp(this, childObj)
+            % add xLabel and yLabel
+            [childObj.xLabel] = deal(this.labelX);
+            [childObj.yLabel] = deal(this.labelY);
+            
+            % add legendTag
+            [childObj.legendTag] = this.legendTag{:};
+        end %addOtherProp
     end
     
     methods (Abstract)
-        function [this, new_data] = applyProcess(this, data, parentObj)
-            
-        end %applyProcess
+        applyProcess(this, data, parentObj)
     end
 %       
 %         % function that allows estimating the start point. It should be 
