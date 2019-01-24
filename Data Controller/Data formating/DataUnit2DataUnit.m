@@ -140,12 +140,11 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
             if this.ForceDataCat
                 % get number of object to create
                 n = numel(data_formated); 
-                % get dimension access                
-                dim = num2cell([size(data_formated(1).(fld{1})), repelem(1,n)]);
                 % loop over the field
                 for k = numel(fld):-1:1
-                    % get data and convert to cell array
-                    data{2*k} = mat2cell([data_formated.(fld{k})], dim{:});                 
+                    % get data and convert to 1xn cell array
+                    val = [data_formated.(fld{k})];
+                    data{2*k} = squeeze(num2cell(val,1:numel(size(val))-1));               
                 end                
             else
                 %number of object to create
@@ -163,8 +162,8 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
                     % get data and reshape
                     val = vertcat(data_formated.(fld{k}));
                     val = reshape(val, dim);
-                    % convert into cell array
-                    data{2*k} = mat2cell(val,1, 1, repelem(1,n));
+                    % convert into 1xn cell array
+                    data{2*k} = squeeze(num2cell(val,1:numel(size(val))-1));
                 end
             end
             % get the output class
@@ -215,6 +214,14 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
                 end
             end
         end %makeProcessData
+        
+        % Simple function that format output data from applyProcess
+        function data = formatData(this, data)
+            % get size to properly reshape at the end
+            dim = size(data);
+            % uncell and reshape
+            data = reshape([data{:}], dim);
+        end %formatData
         
         % add a DataUnit object to the list of data to be processed (and
         % check for duplicates). Works with arrays too.
