@@ -23,15 +23,6 @@ classdef MonoexpAbs < Zone2Disp & DataFit
    end
 %         numberOfOutputs = 1;	% defined in DataModel
 %         numberOfInputs  = 1;	% defined in DataModel
-%         modelName    	= '';% defined in DataFit
-%         modelEquation	= '';% defined in DataFit
-%         variableName 	='';% defined in DataFit
-%         parameterName	='';% defined in DataFit
-%         isFixed      	=[];% defined in DataFit
-%         minValue     	=[];% defined in DataFit
-%         maxValue     	=[];% defined in DataFit
-%         startPoint   	=[];% defined in DataFit
-%     end
 
     methods
         function this = MonoexpAbs
