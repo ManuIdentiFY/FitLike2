@@ -325,6 +325,7 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
 %                 end
 %             end
 %         end
+
         
         % Avoid method's name problem: ProcessDataUnit defines already this
         % method [Manu]
@@ -332,6 +333,21 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
         % Inputs: 
         %   this: array of processing objects
         %   dataToProcess: single DataUnit element
+
+%         function [this,dataProcessed,dataToProcess] = processData(this)
+%             % distribute the algorithms defined in the process object (which
+%             % inherits from DataUnit2DataUnit and DataModel)
+%             [out,in] = arrayfun(@(s)applyProcessFunction(s),this,'UniformOutput',0);
+%             % parse outputs
+%             dataProcessed = [out{:}];
+%             dataToProcess = [in{:}];
+%             % check output type
+%             if ~isequal(class(dataProcessed),this.OutputChildClass)
+%                 error(['Wrong data input type , is ' class(dataToProcess) ' when expecting ' this.OutputChildClass '.'])
+%             end
+%         end
+        
+
 %         function [this,dataProcessed,dataToProcess] = processData(this)
 %             % distribute the algorithms defined in the process object (which
 %             % inherits from DataUnit2DataUnit and DataModel)
@@ -429,6 +445,7 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
             outputdata = this.OutputData;
             inputdata = this.InputData;
         end
+
 
         
     end

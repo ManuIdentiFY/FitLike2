@@ -5,9 +5,11 @@ classdef AverageAbs < Bloc2Zone & ProcessDataUnit
         labelY@char = 'Average magnitude (A.U.)';       % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution time (s)';             % string, labels the X-axis data in graphs
         legendTag@cell = {'Abs'};         % tag appearing in the legend of data derived from this object
-%         modelFunction = @(x,y,mask) mean(y) ;          % value provided to the Zone
-%                                  
-%         errorFunction = @(x,y,mask) std(y);        % estimation of the error
+
+%         modelFunction = @(x,y,mask) mean(abs(y)) ;          % value provided to the Zone
+%         errorFunction = @(x,y,mask) std(abs(y));        % estimation of the error
+
+
     end
         
     methods
