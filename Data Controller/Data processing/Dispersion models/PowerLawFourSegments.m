@@ -1,16 +1,9 @@
-classdef PowerLawFourSegments < DataUnit2DataUnit & DataFit
+classdef PowerLawFourSegments < DispersionModel
     % Phenomenological model using power laws with four segments. This is
     % not derived from physical models but is a kind of linear
     % approximation in the log-log space.
     %
     % Lionel Broche, University of Aberdeen, 08/02/2017 (modified 23/08/18)
-    
-    properties 
-        functionName@char = 'DispersionModel'   % character string, name of the model, as appearing in the figure legend
-        labelY@char = '';             % string, labels the Y-axis data in graphs
-        labelX@char = '';             % string, labels the X-axis data in graphs
-        legendTag@cell = {''};          % cell of strings, contain the legend associated with the data processed
-    end
     
     properties
         modelName     = '4-segments power law';
@@ -34,8 +27,7 @@ classdef PowerLawFourSegments < DataUnit2DataUnit & DataFit
      methods
         function this = PowerLawFourSegments
             % call superclass constructor
-            this = this@DataUnit2DataUnit;
-            this = this@DataFit;
+            this = this@DispersionModel;
         end 
 
     end

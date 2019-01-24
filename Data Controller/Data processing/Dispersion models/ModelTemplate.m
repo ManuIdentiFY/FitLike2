@@ -1,4 +1,4 @@
-classdef ModelTemplate < DataUnit2DataUnit & DataFit
+classdef ModelTemplate < DispersionModel
     % Class template for models of NMRD profiles. To use it:
     % - Replace 'ModelTemplate' by the name of the model you wish to
     %   implement (type control+f and replace). Do not use space or special
@@ -22,15 +22,7 @@ classdef ModelTemplate < DataUnit2DataUnit & DataFit
     % - All the fields present in the section 'properties' MUST be defined
     % - The methods functions are not mandatory and may be deleted if not
     %   used (be careful not to delete the final 'end', though)
-    
-    % Do not change this.
-    properties 
-        functionName@char = 'DispersionModel'   % character string, name of the model, as appearing in the figure legend
-        labelY@char = '';             % string, labels the Y-axis data in graphs
-        labelX@char = '';             % string, labels the X-axis data in graphs
-        legendTag@cell = {''};          % cell of strings, contain the legend associated with the data processed
-    end 
-    
+
     properties
         % start editing from here:
 
@@ -60,8 +52,7 @@ classdef ModelTemplate < DataUnit2DataUnit & DataFit
         % Here replace ModelTemplate by your classname
         function this = ModelTemplate
             % call superclass constructor
-            this = this@DataUnit2DataUnit;
-            this = this@DataFit;
+            this = this@DispersionModel;
         end
     end
     

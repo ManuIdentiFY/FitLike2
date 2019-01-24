@@ -1,4 +1,4 @@
-classdef QPKimmichWinter < DataUnit2DataUnit & DataFit
+classdef QPKimmichWinter < DispersionModel
     % Model for 14N quadrupolar peaks in biological tissues.
     %
     % Original paper: 
@@ -26,13 +26,6 @@ classdef QPKimmichWinter < DataUnit2DataUnit & DataFit
     % (B0<e0^2*q*Q/(4*hb*gammaN)
     % Vasileios Zampetoulas, 2016
     % Modified by Lionel Broche for compatibility, 23/08/18
-     
-    properties 
-        functionName@char = 'DispersionModel'   % character string, name of the model, as appearing in the figure legend
-        labelY@char = '';             % string, labels the Y-axis data in graphs
-        labelX@char = '';             % string, labels the X-axis data in graphs
-        legendTag@cell = {''};          % cell of strings, contain the legend associated with the data processed
-    end
     
     properties
         modelName     = 'Quadrupolar peaks, Kimmich-Winter model';
@@ -51,8 +44,7 @@ classdef QPKimmichWinter < DataUnit2DataUnit & DataFit
     methods
          function this = QPKimmichWinter
              % call superclass constructor
-             this = this@DataUnit2DataUnit;
-             this = this@DataFit;
+             this = this@DispersionModel;
          end
     end
 end

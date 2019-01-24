@@ -1,16 +1,9 @@
-classdef PowerLawThreeSegments < DataUnit2DataUnit & DataFit
+classdef PowerLawThreeSegments < DispersionModel
     % Phenomenological model using power laws with three segments. This may
     % be used to model the dispersion of certain polymers or may be used as
     % a kind of linear approximation in the log-log space.  
     %
     % Lionel Broche, University of Aberdeen, 08/02/2017
-    
-    properties 
-        functionName@char = 'DispersionModel'   % character string, name of the model, as appearing in the figure legend
-        labelY@char = '';             % string, labels the Y-axis data in graphs
-        labelX@char = '';             % string, labels the X-axis data in graphs
-        legendTag@cell = {''};          % cell of strings, contain the legend associated with the data processed
-    end
     
     properties
         modelName     = '3-segments power law';
@@ -31,8 +24,7 @@ classdef PowerLawThreeSegments < DataUnit2DataUnit & DataFit
      methods
          function this = PowerLawThreeSegments
              % call superclass constructor
-             this = this@DataUnit2DataUnit;
-             this = this@DataFit;
+             this = this@DispersionModel;
          end
     end
 end

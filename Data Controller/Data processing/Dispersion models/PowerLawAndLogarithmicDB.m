@@ -1,4 +1,4 @@
-classdef PowerLawAndLogarithmicDB < DataUnit2DataUnit & DataFit
+classdef PowerLawAndLogarithmicDB < DispersionModel
     % Power law with logarithmic segment at the low-frequency end. Derived
     % for the modelling of free proteins dynamics
     % Note that the constant term has been removed from the original
@@ -37,8 +37,7 @@ classdef PowerLawAndLogarithmicDB < DataUnit2DataUnit & DataFit
      methods
          function this = PowerLawAndLogarithmicDB
              % call superclass constructor
-             this = this@DataUnit2DataUnit;
-             this = this@DataFit;
+             this = this@DispersionModel;
          end
     end
 end
