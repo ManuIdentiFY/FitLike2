@@ -32,6 +32,14 @@ classdef Dispersion < DataUnit
             this = [this{:}];
         end
         
+        % get x-values        
+        function x = getXData(this)
+            % get data
+            x = arrayfun(@(x) getDispAxis(x),this.relaxObj.parameter,'UniformOutput',0);
+            % cat cell array to have NBLK x BRLX matrix
+            x = [x{:}];
+        end
+        
         % define dimension indexing for data selection
         function dim = getDim(this, idxZone)
             % check input

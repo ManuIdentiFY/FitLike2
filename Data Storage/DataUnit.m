@@ -70,6 +70,10 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 if ~isempty(this.parent)
                     link(this.parent, this);
                     this.relaxObj = this.parent.relaxObj;
+                    % check x-values
+                    if isempty(this.x)
+                        this.x = getXData(this);
+                    end
                 end
                 % check mask
                 if isempty(this.mask) || ~isequal(size(this.mask), size(this.y))
@@ -103,6 +107,10 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         if ~isempty(this(k).parent)
                             link(this(k).parent, this(k));
                             this(k).relaxObj = this(k).parent.relaxObj;
+                            % check x-values
+                            if isempty(this(k).x)
+                                this(k).x = getXData(this(k));
+                            end
                         end
                         % check mask
                         if isempty(this(k).mask) ||...
@@ -180,6 +188,10 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             end
         end %unlink
         
+        % dummy function to get x-values (redefined in subclasses)
+        function x = getXData(this)            
+        end %getXData
+
         % wrapper function to start the processing of the data unit
         function [childDataUnit,this] = processData(this)
             if sum(arrayfun(@(s)isempty(s.processingMethod),this))
