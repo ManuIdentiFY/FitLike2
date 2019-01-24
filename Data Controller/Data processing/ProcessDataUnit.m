@@ -52,6 +52,9 @@ classdef ProcessDataUnit < handle
 %         
         % main process function
         function [childObj, parentObj] = processData(this, parentObj)
+            % get data
+            data = getProcessData(this, parentObj);
+            
             % apply process
             [this, new_data] = arrayfun(@(x) applyProcess(this, x), data, 'Uniform', 0);
             
@@ -149,9 +152,6 @@ classdef ProcessDataUnit < handle
             outputdata = this.OutputData;
             inputdata = this.InputData;
         end
-
-        
-
         
         % format output data from process: cell array to array of structure
         % This function could also be used to modify this in order to
