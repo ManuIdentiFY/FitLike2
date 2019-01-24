@@ -41,7 +41,7 @@ classdef DataFit < ProcessDataUnit%DataModel
     
     methods
         % redefine the abstract method applyProcess
-        function [this, new_data] = applyProcess(this, data)
+        function [model, new_data] = applyProcess(this, data)
             % check data and format them
             % TO COMPLETE
             xdata = data.x(data.mask);
@@ -65,17 +65,32 @@ classdef DataFit < ProcessDataUnit%DataModel
             fun = setFixedParameter(this, this.modelHandle);
             
             % apply fit
-            [this.bestValue, this.errorBar, this.gof] = applyFit(this.solver,...
+            [model.bestValue, model.errorBar, model.gof] = applyFit(this.solver,...
                                     fun, xdata, ydata, dydata, x0, lb, ub);
             
             % gather data and make output structure
-            new_data = formatFitData(this);
+            new_data = formatFitData(this, model);
         end %applyProcess
            
         % format output fit data. Default is empty
-        function new_data = formatFitData(this)
+        function new_data = formatFitData(this, model)
             new_data = [];
         end %formatFitData
+        
+        % format output data from process: cell array to array of structure
+        % This function could also be used to modify this in order to
+        % gather all fit data for instance [Manu]
+        function this = formatModel(this, model)
+            % get data from model and assign it in this
+            fld = fieldnames(model{1,1});
+            
+            for k = 1:numel(fld) 
+                % get data
+                val = cellfun(@(x) x.(fld{k}), model, 'Uniform', 0);
+                % assign
+                this.(fld{k}) = val;
+            end
+        end %formatData
         
         % generate the function handle for the fit model. The format is
         % as follows:

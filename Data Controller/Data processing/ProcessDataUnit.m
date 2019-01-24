@@ -56,18 +56,19 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             data = getProcessData(this, parentObj);
             
             % apply process
-            [this, new_data] = arrayfun(@(x) applyProcess(this, x), data, 'Uniform', 0);
+            [model, new_data] = arrayfun(@(x) applyProcess(this, x), data, 'Uniform', 0);
             
             % format output
-            [this, new_data] = formatData([this{:}], new_data);
-            
+            new_data = formatData(this, new_data);
+            this = formatModel(this, model);
+                        
             % gather data and create childObj
             childObj = makeProcessData(this, new_data, parentObj);     
             
             % add other data (xLabel, yLabel,...)
             childObj = addOtherProp(this, childObj);
         end %processData
-                
+   
         % function that applies one processing function to one bloc only.
         % This is where the custom processing function is being called.
 %         function [outputdata,inputdata] = applyProcessFunction(this)  
@@ -156,14 +157,8 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
         % format output data from process: cell array to array of structure
         % This function could also be used to modify this in order to
         % gather all fit data for instance [Manu]
-        function [this, new_data] = formatData(this, new_data)
-            % get size to properly reshape at the end
-            dim = size(new_data);
+        function this = formatModel(this, model)
             
-            % uncell and reshape
-            this = reshape(this, dim);
-            this = arrayofstruct2struct(this);
-            new_data = reshape([new_data{:}], dim);
         end %formatData
         
         % add other properties (xLabel, yLabel, legendTag
@@ -175,11 +170,6 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             % add legendTag
             [childObj.legendTag] = this.legendTag{:};
         end %addOtherProp
-        
-        % function to convert array of structure to structure
-        function this = arrayofstructure2struct(this)
-            
-        end %arrayofstructure2struct
     end
     
     methods (Abstract)

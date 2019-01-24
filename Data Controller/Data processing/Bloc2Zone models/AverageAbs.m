@@ -31,7 +31,7 @@ classdef AverageAbs < Bloc2Zone & ProcessDataUnit
     
     methods
         % Define abstract method applyProcess(). See ProcessDataUnit.
-        function [this, new_data] = applyProcess(this, data)
+        function new_data = applyProcess(this, data)
             % get data size
             [~, NBLK, BRLX] = size(data.y);
             % get absolute y-values and replace unwanted values by nan (masked).

@@ -29,10 +29,10 @@ classdef BiexponentialT2 < Bloc2Zone & DataFit
     methods
         % dummy function. Can be improved by adding new property DataIndex
         % or something similar [Manu]
-        function data = formatFitData(this)
+        function data = formatFitData(this, model)
             % collect result from fit
-            data.y =  [this.bestValue(3), this.bestValue(5)];
-            data.dy = [this.errorBar(3),  this.errorBar(5)];
+            data.y =  [model.bestValue(3), model.bestValue(5)];
+            data.dy = [model.errorBar(3),  model.errorBar(5)];
         end %formatFitData
         
         % fill in the starting point of the model
