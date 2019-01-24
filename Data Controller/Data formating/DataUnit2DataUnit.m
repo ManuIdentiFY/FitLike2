@@ -140,11 +140,11 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
             if this.ForceDataCat
                 % get number of object to create
                 n = numel(data_formated); 
+                data_formated = struct2cell(data_formated);
                 % loop over the field
                 for k = numel(fld):-1:1
                     % get data and convert to 1xn cell array
-                    val = [data_formated.(fld{k})];
-                    data{2*k} = squeeze(num2cell(val,1:numel(size(val))-1));               
+                    data{2*k} = squeeze(data_formated(k,:,:));               
                 end                
             else
                 %number of object to create
