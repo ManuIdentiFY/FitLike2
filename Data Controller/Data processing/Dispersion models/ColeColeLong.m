@@ -1,4 +1,4 @@
-classdef ColeColeLong < DispersionModel
+classdef ColeColeLong < DataUnit2DataUnit & DataFit
     % Cole-Cole background model - long version
     % Papers:
     % 1. Field-Cycling relaxometry of protein solutions and tissue: implications for MRI
@@ -8,7 +8,14 @@ classdef ColeColeLong < DispersionModel
     %
     % Vasileios Zampetoulas, University of Aberdeen, 2016
     % Adapted by LB, 23/08/18
-                 
+    
+    properties 
+        functionName@char = 'DispersionModel'   % character string, name of the model, as appearing in the figure legend
+        labelY@char = '';             % string, labels the Y-axis data in graphs
+        labelX@char = '';             % string, labels the X-axis data in graphs
+        legendTag@cell = {''};          % cell of strings, contain the legend associated with the data processed
+    end 
+    
     properties
         modelName = 'Cole-Cole, long';        
         modelEquation = ['y0 + A*(1 + (f/fcc)^(b/2)*cosd(45*b)) / '...
@@ -19,5 +26,14 @@ classdef ColeColeLong < DispersionModel
         maxValue =      [10,    110,   1e8,      5];         
         startPoint =    [0.4,   30,   1e5,     0.7];       
         isFixed = [0 0 0 0];
+        visualisationFunction@cell = {};
+    end
+    
+     methods
+        function this = ColeColeLong
+            % call superclass constructor
+            this = this@DataUnit2DataUnit;
+            this = this@DataFit;
+        end
     end
 end

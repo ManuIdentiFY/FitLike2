@@ -14,7 +14,7 @@ classdef PowerLawOneSegment < DataUnit2DataUnit & DataFit
     end
     
     properties
-        modelName = 'Single power law';                             % character string, name of the model, as appearing in the figure legend. You may use spaces here.
+        modelName = '1-segment power law';                             % character string, name of the model, as appearing in the figure legend. You may use spaces here.
         modelEquation ='(dl*f.^v)';  % character string, equation that relates the Larmor frequency (MHz) to the parameters to R1 (s^{-1})
         variableName = {'f'};                                           % Characters, name of the variables appearing in the equation (frequency)
         parameterName = {'dl',  'v'};               % List of characters, name of the parameters appearing in the equation

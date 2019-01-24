@@ -1,4 +1,4 @@
-classdef ParamagneticSlowMotion < DispersionModel
+classdef ParamagneticSlowMotion < DataUnit2DataUnit & DataFit
     % attempt to make a naive model for paramagneticrelaxation. This is
     % more a proof-of-principle than a working model, to show how more
     % advanced modelling may be performed using static methods and nested
@@ -9,7 +9,14 @@ classdef ParamagneticSlowMotion < DispersionModel
     % UNFINISHED! Beware, not working in the current state. 
     %
     % Lionel Broche, University of Aberdeen, 23/08/2018
-            
+    
+    properties 
+        functionName@char = 'DispersionModel'   % character string, name of the model, as appearing in the figure legend
+        labelY@char = '';             % string, labels the Y-axis data in graphs
+        labelX@char = '';             % string, labels the X-axis data in graphs
+        legendTag@cell = {''};          % cell of strings, contain the legend associated with the data processed
+    end 
+    
     properties
         modelName = 'Paramagnetic contribution, slow motion'; 
         modelEquation = 'functionname(f,a,b,d,tau,N,w12,w23,w13,w34,w24)'; 
@@ -19,6 +26,15 @@ classdef ParamagneticSlowMotion < DispersionModel
         maxValue      = [ Inf  Inf  Inf  Inf  Inf  Inf  Inf  Inf  Inf  Inf ];
         startPoint    = [   1    1    1    1    1    1    1    1    1    1];
         isFixed       = [   0    0    0    0    0    1    1    1    1    1];
+        visualisationFunction@cell = {};
+    end
+    
+    methods
+        function this = ParamagneticSlowMotion
+            % call superclass constructor
+            this = this@DataUnit2DataUnit;
+            this = this@DataFit;
+        end
     end
     
     % The model for paramagnetic relaxation is quite complex, therefore a

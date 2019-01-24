@@ -1,4 +1,4 @@
-classdef ColeColeMedium < DispersionModel
+classdef ColeColeMedium < DataUnit2DataUnit & DataFit
     % Cole-Cole background model - medium version
     % Papers:
     % 1. Field-Cycling relaxometry of protein solutions and tissue: implications for MRI
@@ -8,9 +8,15 @@ classdef ColeColeMedium < DispersionModel
     %
     % Vasileios Zampetoulas, University of Aberdeen, 2016
     % Adapted by LB, 23/08/18
-               
+    
+    properties 
+        functionName@char = 'DispersionModel'   % character string, name of the model, as appearing in the figure legend
+        labelY@char = '';             % string, labels the Y-axis data in graphs
+        labelX@char = '';             % string, labels the X-axis data in graphs
+        legendTag@cell = {''};          % cell of strings, contain the legend associated with the data processed
+    end  
+    
     properties
-
         modelName = 'Cole-Cole, medium';        
         modelEquation = 'y0 + A/(1+(f/fcc)^(b/2))';    
         variableName = {'f'};     
@@ -19,5 +25,14 @@ classdef ColeColeMedium < DispersionModel
         maxValue =     [10,     110,  1e8,      5];         
         startPoint =   [0.6,    30,   1e5,      0.7];       
         isFixed = [ 0 0 0 0];
+        visualisationFunction@cell = {};
+    end
+    
+    methods
+        function this = ColeColeMedium
+            % call superclass constructor
+            this = this@DataUnit2DataUnit;
+            this = this@DataFit;
+        end
     end
 end
