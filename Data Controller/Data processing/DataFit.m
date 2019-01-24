@@ -23,7 +23,7 @@ classdef DataFit < ProcessDataUnit%DataModel
         bestValue;        % array of values, estimated value found from the fit.
         errorBar;         % 2 x n array of values, provide the 95% confidence interval on the estimated fit values (lower and upper errors)
         gof;              % structure that contains all the info required about the goodness of fit
-        fitobj;           % fitting object created after the model is used for fitting.
+        subModel@DataFit;           % fitting object created after the model is used for fitting.
         solver@FitAlgorithm       
     end
     
@@ -41,7 +41,7 @@ classdef DataFit < ProcessDataUnit%DataModel
     
     methods
         % redefine the abstract method applyProcess
-        function [model, new_data] = applyProcess(this, data)
+        function [res, new_data] = applyProcess(this, data)
             % check data and format them
             % TO COMPLETE
             xdata = data.x(data.mask);
@@ -65,15 +65,15 @@ classdef DataFit < ProcessDataUnit%DataModel
             fun = setFixedParameter(this, this.modelHandle);
             
             % apply fit
-            [model.bestValue, model.errorBar, model.gof] = applyFit(this.solver,...
+            [res.bestValue, res.errorBar, res.gof] = applyFit(this.solver,...
                                     fun, xdata, ydata, dydata, x0, lb, ub);
             
             % gather data and make output structure
-            new_data = formatFitData(this, model);
+            new_data = formatFitData(this, res);
         end %applyProcess
            
         % format output fit data. Default is empty
-        function new_data = formatFitData(this, model)
+        function new_data = formatFitData(this, res)
             new_data = [];
         end %formatFitData
         
