@@ -19,7 +19,7 @@ classdef LorentzianStretched < DispersionModel
     methods
         function this = LorentzianStretched
             % call superclass constructor
-            this = this@DDispersionModel;
+            this = this@DispersionModel;
         end
     end
     

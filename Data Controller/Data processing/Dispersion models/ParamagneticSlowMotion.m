@@ -25,7 +25,7 @@ classdef ParamagneticSlowMotion < DispersionModel
     methods
         function this = ParamagneticSlowMotion
             % call superclass constructor
-            this = this@DDispersionModel;
+            this = this@DispersionModel;
         end
     end
     
