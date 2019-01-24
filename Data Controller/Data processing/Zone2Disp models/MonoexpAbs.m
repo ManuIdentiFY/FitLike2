@@ -46,7 +46,7 @@ classdef MonoexpAbs < Zone2Disp & DataFit
             ydata = abs(ydata);
             this.startPoint = [ydata(1), -ydata(end), 1/xdata(end), ydata(1)/10];
         end
-    end
+    end %evaluateStartPoint
 %     
 %     methods
 %         % this is where you should put the algorithm that processes the raw

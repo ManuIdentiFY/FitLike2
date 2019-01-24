@@ -8,8 +8,7 @@ classdef Monoexp < Zone2Disp & DataFit
         labelX@char = 'Evolution field (MHz)';          % string, labels the X-axis data in graphs
         legendTag@cell = {'T1'};
     end
-    
-    
+       
     properties
        modelName = 'Monoexponential T1';          % character string, name of the model, as appearing in the figure legend
        modelEquation = '(M0-Minf)*exp(-x*R1)+Minf';      % character string, equation that relates the Larmor frequency (Hz) to the parameters to R1 (s^{-1})
@@ -45,7 +44,7 @@ classdef Monoexp < Zone2Disp & DataFit
             ydata = abs(ydata);
             this.startPoint = [ydata(1), -ydata(end), 1/xdata(end)];
         end
-    end
+    end %evaluateStartPoint
 %     
 %     methods
 %         % this is where you should put the algorithm that processes the raw
