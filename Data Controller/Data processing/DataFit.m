@@ -12,6 +12,10 @@ classdef DataFit < ProcessDataUnit%DataModel
         minValue;           % array of values, minimum values reachable for each parameter, respective to the order of parameterName
         maxValue;           % array of values, maximum values reachable for each parameter, respective to the order of parameterName
         startPoint;         % array of values, starting point for each parameter, respective to the order of parameterName 
+        
+        % Additional display models custom-defined by the user. It must use
+        % the same parameters and variable names as the main function.
+        visualisationFunction@cell;  % Visualisation functions user-defined to simplify the analysis of the fit results
     end
     
     properties
@@ -20,11 +24,7 @@ classdef DataFit < ProcessDataUnit%DataModel
         errorBar;         % 2 x n array of values, provide the 95% confidence interval on the estimated fit values (lower and upper errors)
         gof;              % structure that contains all the info required about the goodness of fit
         fitobj;           % fitting object created after the model is used for fitting.
-        solver@FitAlgorithm
-        
-        % Additional display models custom-defined by the user. It must use
-        % the same parameters and variable names as the main function.
-        visualisationFunction@cell;  % Visualisation functions user-defined to simplify the analysis of the fit results
+        solver@FitAlgorithm       
     end
     
     methods
