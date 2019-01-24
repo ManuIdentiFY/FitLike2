@@ -77,6 +77,11 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous
             % add legendTag
             [childObj.legendTag] = this.legendTag{:};
         end %addOtherProp
+        
+        % function to convert array of structure to structure
+        function this = arrayofstructure2struct(this)
+            
+        end %arrayofstructure2struct
     end
     
     methods (Abstract)
