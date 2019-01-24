@@ -62,6 +62,9 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             new_data = formatData(this, new_data);
             this = formatModel(this, model);
                         
+            % assign process in parentObj (to test, Manu)
+            parentObj.processingMethod = this;
+            
             % gather data and create childObj
             childObj = makeProcessData(this, new_data, parentObj);     
             
