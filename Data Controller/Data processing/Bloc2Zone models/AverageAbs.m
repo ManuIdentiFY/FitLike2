@@ -8,8 +8,6 @@ classdef AverageAbs < Bloc2Zone & ProcessDataUnit
 
 %         modelFunction = @(x,y,mask) mean(abs(y)) ;          % value provided to the Zone
 %         errorFunction = @(x,y,mask) std(abs(y));        % estimation of the error
-
-
     end
         
     methods
