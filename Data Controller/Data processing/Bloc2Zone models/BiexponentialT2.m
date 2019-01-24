@@ -16,7 +16,7 @@ classdef BiexponentialT2 < Bloc2Zone & DataFit
        minValue = [-Inf -Inf -Inf -Inf -Inf];               % array of values, minimum values reachable for each parameter, respective to the order of parameterName
        maxValue = [Inf Inf Inf Inf Inf];               % array of values, maximum values reachable for each parameter, respective to the order of parameterName
        startPoint = [1 1 1 1 1];             % array of values, starting point for each parameter, respective to the order of parameterName
-       visualisationFunction = [];
+       visualisationFunction@cell = {};
    end
     
     methods

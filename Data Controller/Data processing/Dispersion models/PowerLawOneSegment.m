@@ -22,7 +22,7 @@ classdef PowerLawOneSegment < DataUnit2DataUnit & DataFit
         maxValue =      [100,      0];                  % array of values, maximum values reachable for each parameter, respective to the order of parameterName
         startPoint =    [18,    -0.16];                % array of values, starting point for each parameter, respective to the order of parameterName
         isFixed =       [0        0];
-        visualisationFunction = {'dl*f.^v'}
+        visualisationFunction = {'dl*f.^v'};
     end
     
  methods
