@@ -1,15 +1,15 @@
-classdef PeakAverageAbs < Bloc2Zone & ProcessDataUnit
+classdef PeakAverageAbsRephased < Bloc2Zone & ProcessDataUnit
     
     properties
-        functionName@char = 'Average FFT peak magnitude';     % character string, name of the model, as appearing in the figure legend
+        functionName@char = 'Average FFT peak magnitude rephased';     % character string, name of the model, as appearing in the figure legend
         labelY@char = 'Average magnitude (A.U.)';       % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution time (s)';             % string, labels the X-axis data in graphs
-        legendTag@cell = {'AbsFFT Average'};         % tag appearing in the legend of data derived from this object
+        legendTag@cell = {'AbsFFT AverageRephased'};         % tag appearing in the legend of data derived from this object
     end
-    
+       
     methods
         % Constructor
-        function this = PeakAverageAbs
+        function this = PeakAverageAbsRephased
             % call both superclass constructor
             this = this@Bloc2Zone;
             this = this@ProcessDataUnit;
@@ -21,33 +21,20 @@ classdef PeakAverageAbs < Bloc2Zone & ProcessDataUnit
             % ...
             %
             this.ForceDataCat = true;
-        end % PeakAverageAbs
+        end % PeakAverageAbsRephased
     end
     
     methods
-        % Important: this implementation do not take in account the mask
-        % since NaN values are not accepted by fft(). Custom implementation
-        % of the fft() need to be done or interpolation step need to be
-        % prior the fft call.
+        % TO DO
         % Define abstract method applyProcess(). See ProcessDataUnit.
         function [model, new_data] = applyProcess(this, data)
-            % apply FFT on first dimension (BS)
-            Y = fftshift(abs(fft(data.y,[],1)));
-            [~,indPeak] = max(abs(Y),[],1); % get max for each bloc
-            
-            % Could be vectorized [Manu]
-            for k = size(Y,3):-1:1
-                for j = size(Y,2):-1:1
-                    new_data.z(j,k) = mean(Y(indPeak(1,j,k)-50:indPeak(1,j,k)+50,j,k));
-                    new_data.dz(j,k) = 0;
-                end
-            end
-            
+
             % dummy
             model = [];
         end %applyProcess
         
-%                 % this is where you should put the algorithm that processes the raw
+%         
+%         % this is where you should put the algorithm that processes the raw
 %         % data. Multi-component algorithms can store several results along
 %         % a single dimension (z and dz are column arrays).
 %         % NOTE: additional info from the process can be stored in the
@@ -55,7 +42,21 @@ classdef PeakAverageAbs < Bloc2Zone & ProcessDataUnit
 %         function [z,dz,paramFun] = process(self,x,y,bloc,index) %#ok<*INUSD,*INUSL>
 %             Y = fftshift(abs(fft(y)));
 %             [~,indPeak] = max(Y);
-%             z = mean(Y(indPeak-50:indPeak+50));
+%             z = median(abs(Y(indPeak-50:indPeak+50)));
+%             
+%             % estimation of the phase (using the entire zone)
+%             if index(1)==1
+%                 sigPh = median(angle(squeeze(bloc.y(4:10,:,index(2)))));
+%                 [~,indexJump] = max(abs(diff(sigPh))); % find where the phase changes using the first 10 points or so
+%                 ph = (1:size(bloc.y,2))<=indexJump;
+%                 bloc.parameter.paramList.phasingArray(:,index(2)) = ph;
+%             else
+%                 ph = bloc.parameter.paramList.phasingArray(:,index(2));
+%             end
+%             if ~ph(index(1))
+%                 z = -z;
+%             end
+%             
 %             dz = 0;
 %             paramFun.test = index;
 %         end
