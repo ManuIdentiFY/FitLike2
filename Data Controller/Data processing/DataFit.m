@@ -81,6 +81,8 @@ classdef DataFit < ProcessDataUnit%DataModel
         % This function could also be used to modify this in order to
         % gather all fit data for instance [Manu]
         function this = formatModel(this, model)
+            % check input
+            if isempty(model); return; end
             % get data from model and assign it in this
             fld = fieldnames(model{1,1});
             

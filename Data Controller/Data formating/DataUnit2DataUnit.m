@@ -217,6 +217,8 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
         
         % Simple function that format output data from applyProcess
         function data = formatData(this, data)
+            % check input
+            if isempty(data); return; end
             % get size to properly reshape at the end
             dim = size(data);
             % uncell and reshape
