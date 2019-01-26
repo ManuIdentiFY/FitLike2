@@ -12,6 +12,7 @@ classdef DataFit < ProcessDataUnit%DataModel
         minValue;           % array of values, minimum values reachable for each parameter, respective to the order of parameterName
         maxValue;           % array of values, maximum values reachable for each parameter, respective to the order of parameterName
         startPoint;         % array of values, starting point for each parameter, respective to the order of parameterName 
+        valueToReturn;          % set which fit parameters must be returned by the function
         
         % Additional display models custom-defined by the user. It must use
         % the same parameters and variable names as the main function.
@@ -43,7 +44,7 @@ classdef DataFit < ProcessDataUnit%DataModel
         % redefine the abstract method applyProcess
         function [res, new_data] = applyProcess(this, data)
             % check data and format them
-            % TO COMPLETE
+            % TO COMPLETE + TO BE VECTORISED
             xdata = data.x(data.mask);
             ydata = data.y(data.mask);
             dydata = data.dy(data.mask);
@@ -71,10 +72,13 @@ classdef DataFit < ProcessDataUnit%DataModel
             % gather data and make output structure
             new_data = formatFitData(this, res);
         end %applyProcess
-           
-        % format output fit data. Default is empty
-        function new_data = formatFitData(this, res)
-            new_data = [];
+                   
+        % dummy function. Can be improved by adding new property DataIndex
+        % or something similar [Manu]
+        function data = formatFitData(this, model)
+            % collect result from fit
+            data.y =  model.bestValue(3);
+            data.dy = model.errorBar(3);
         end %formatFitData
         
         % format output data from process: cell array to array of structure
