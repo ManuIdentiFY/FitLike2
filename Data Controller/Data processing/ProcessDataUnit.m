@@ -164,6 +164,25 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             
         end %formatData
         
+        % compare two process to determine if they are the same. This
+        % function only check the necessary fields:
+        % *class of the processObj (AverageAbs, Monoexp, Constant,...)
+        % *property parameters (if parameters are the same, the results
+        % will be the same)
+        function tf = isequal(this, processObj)
+            % dummy check
+            if ~isa(processObj, 'ProcessDataUnit')
+                tf = 0; return
+            end
+            % compare the class of the input and their parameters
+            if ~strcmp(class(this), class(processObj)) ||...
+                    ~isequal(this.parameters, processObj.parameters)
+                tf = 0;
+            else
+                tf = 1;
+            end
+        end %isequal
+        
         % add other properties (xLabel, yLabel, legendTag
         function childObj = addOtherProp(this, childObj)
             % add xLabel and yLabel
