@@ -8,11 +8,11 @@ classdef DataFit < ProcessDataUnit%DataModel
         modelEquation;      % character string, equation that relates the Larmor frequency (Hz) to the parameters to R1 (s^{-1})
         variableName;       % List of characters, name of the variables appearing in the equation
         parameterName;      % List of characters, name of the parameters appearing in the equation
-        isFixed;            % List of array of booleans, set to 1 if the corresponding parameter is fixed, 0 if they are to be optimised by the fit. 
+        isFixed;            % List of array of booleans, set to 1 if the corresponding parameter is fixed, 0 if they are to be optimised by the fit.
         minValue;           % array of values, minimum values reachable for each parameter, respective to the order of parameterName
         maxValue;           % array of values, maximum values reachable for each parameter, respective to the order of parameterName
-        startPoint;         % array of values, starting point for each parameter, respective to the order of parameterName 
-        valueToReturn;          % set which fit parameters must be returned by the function
+        startPoint;         % array of values, starting point for each parameter, respective to the order of parameterName
+        valueToReturn;      % set which fit parameters must be returned by the function in case where children object are created (R1,..)
         
         % Additional display models custom-defined by the user. It must use
         % the same parameters and variable names as the main function.
@@ -24,8 +24,8 @@ classdef DataFit < ProcessDataUnit%DataModel
         bestValue;        % array of values, estimated value found from the fit.
         errorBar;         % 2 x n array of values, provide the 95% confidence interval on the estimated fit values (lower and upper errors)
         gof;              % structure that contains all the info required about the goodness of fit
-        subModel@DataFit;           % fitting object created after the model is used for fitting.
-        solver@FitAlgorithm       
+        subModel@DataFit;           % submodels of the main models 
+        solver@FitAlgorithm         % solver used for regression fit
     end
     
     methods
@@ -36,7 +36,10 @@ classdef DataFit < ProcessDataUnit%DataModel
             % set default solver
             this.solver = LsqCurveFit();
             % make function handle
-            this = makeFunctionHandle(this);           
+            this = makeFunctionHandle(this);    
+            % add some properties to the property 'parameters'. allow the
+            % user to dynamically update process/model
+            this = addParameter(this);
         end        
     end
     
@@ -73,12 +76,15 @@ classdef DataFit < ProcessDataUnit%DataModel
             new_data = formatFitData(this, res);
         end %applyProcess
                    
-        % dummy function. Can be improved by adding new property DataIndex
-        % or something similar [Manu]
-        function data = formatFitData(this, model)
+        % format output fit data (if childObj is created from fit results)
+        function data = formatFitData(this, res)
+            %check if value need to be returned
+            if isempty(this.valueToReturn) || all(this.valueToReturn == 0)
+                data = []; return
+            end
             % collect result from fit
-            data.y =  model.bestValue(3);
-            data.dy = model.errorBar(3);
+            data.y =  res.bestValue(logical(this.valueToReturn));
+            data.dy = res.errorBar(logical(this.valueToReturn));
         end %formatFitData
         
         % format output data from process: cell array to array of structure
@@ -171,6 +177,16 @@ classdef DataFit < ProcessDataUnit%DataModel
             x = logspace(log10(x1),log10(x2),n);
             y = evaluate(this,x);
         end
+        
+        % link parameter to the main parameter structure
+        function this = addParameter(this)
+            % add model options
+            modelOption = struct('modelName','0','isFixed',[],'minValue',[],...
+                                                    'maxValue',[], 'startPoint',[]); 
+            % add fit options
+            this.parameter = struct('fitAlgorithm', this.solver.options,...
+                                    'modelOption', modelOption);           
+        end %addParameter
         
         % should be in Pipeline probably
 %         function numberOfInputs(this)

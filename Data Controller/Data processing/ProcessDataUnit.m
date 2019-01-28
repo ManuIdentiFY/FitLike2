@@ -79,7 +79,7 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             end
             % compare the class of the input and their parameters
             if ~strcmp(class(this), class(processObj)) ||...
-                    ~isequal(this.parameters, processObj.parameters)
+                    ~isequal(this.parameter, processObj.parameter)
                 tf = 0;
             else
                 tf = 1;
@@ -101,4 +101,12 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
         applyProcess(this, data, parentObj)
     end
     
+    % set/get methods
+%     methods
+%         function this = set.parameter(this, val)
+%             oldProp = this.parameter;
+%             this.parameter = val;
+%             this = update(this, val);
+%         end %set.parameters
+%     end
 end
