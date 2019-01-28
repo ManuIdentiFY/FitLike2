@@ -35,7 +35,6 @@ classdef MonoexpAbs < Zone2Disp & DataFit
     end
     
     methods
-
         % fill in the starting point of the model
         function this = evaluateStartPoint(this, xdata, ydata)
             ydata = abs(ydata);

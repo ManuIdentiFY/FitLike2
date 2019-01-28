@@ -18,6 +18,7 @@ classdef BiexponentialT1 < Zone2Disp & DataFit
        minValue = [-Inf -Inf -Inf -Inf -Inf];               % array of values, minimum values reachable for each parameter, respective to the order of parameterName
        maxValue = [Inf Inf Inf Inf Inf];               % array of values, maximum values reachable for each parameter, respective to the order of parameterName
        startPoint = [1 1 1 1 1];             % array of values, starting point for each parameter, respective to the order of parameterName
+       valueToReturn = [0 0 1 0 1];          % set which fit parameters must be returned by the function
        visualisationFunction@cell = {};
    end
     
@@ -30,14 +31,6 @@ classdef BiexponentialT1 < Zone2Disp & DataFit
     end
     
     methods
-        % dummy function. Can be improved by adding new property DataIndex
-        % or something similar [Manu]
-        function data = formatFitData(this, model)
-            % collect result from fit
-            data.y =  [model.bestValue(3), model.bestValue(5)];
-            data.dy = [model.errorBar(3),  model.errorBar(5)];
-        end %formatFitData
-        
         % fill in the starting point of the model
         function this = evaluateStartPoint(this, xdata, ydata)  
             ydata = abs(ydata);

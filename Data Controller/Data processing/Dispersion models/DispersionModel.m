@@ -8,6 +8,10 @@ classdef DispersionModel < DataUnit2DataUnit & DataFit
         legendTag@cell = {''};          % cell of strings, contain the legend associated with the data processed
     end 
     
+    properties
+        valueToReturn = []; % no value to returned after dispersion fit (no childObj created)
+    end
+    
     methods
         function this = DispersionModel
             % call superclass constructor
