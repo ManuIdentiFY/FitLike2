@@ -6,8 +6,8 @@ classdef DataFit < ProcessDataUnit%DataModel
     properties (Abstract)
         modelName;          % character string, name of the model, as appearing in the figure legend
         modelEquation;      % character string, equation that relates the Larmor frequency (Hz) to the parameters to R1 (s^{-1})
-        variableName;  % List of characters, name of the variables appearing in the equation
-        parameterName; % List of characters, name of the parameters appearing in the equation
+        variableName;       % List of characters, name of the variables appearing in the equation
+        parameterName;      % List of characters, name of the parameters appearing in the equation
         isFixed;            % List of array of booleans, set to 1 if the corresponding parameter is fixed, 0 if they are to be optimised by the fit. 
         minValue;           % array of values, minimum values reachable for each parameter, respective to the order of parameterName
         maxValue;           % array of values, maximum values reachable for each parameter, respective to the order of parameterName
@@ -155,7 +155,10 @@ classdef DataFit < ProcessDataUnit%DataModel
         
         % evaluate the function over the range of values provided by the
         % array x
-        function y = evaluate(this,x)
+        % call this in DataUnit directly to custom data access between
+        % Bloc, Zone, Dispersion [Manu]
+        % OR let this function here but call 
+        function y = evaluate(this, x)
             y = this.modelHandle(this.bestValue,x);
         end
         
@@ -165,11 +168,12 @@ classdef DataFit < ProcessDataUnit%DataModel
             y = evaluate(this,x);
         end
         
-        function numberOfInputs(this)
-        end
-        
-        function numberOfOutputs(this)
-        end
+        % should be in Pipeline probably
+%         function numberOfInputs(this)
+%         end
+%         
+%         function numberOfOutputs(this)
+%         end
     end
 end
 
