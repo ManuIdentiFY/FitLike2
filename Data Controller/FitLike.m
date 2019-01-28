@@ -679,88 +679,52 @@ classdef FitLike < handle
                     % get data
                     tf = strcmp({this.RelaxData.fileID}, relaxObj(k).fileID);
                     data = getData(this.RelaxData(tf), 'Bloc');
- 
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    % Could be replace by getData('Bloc')[Manu]
-                    % Need to think about a smart way to avoid delete data
-                    % unecessary. Maybe just keep both data until the end:
-                    % 1. If bad processing: destroy relaxObj
-                    % 2. If good processing: destroy bloc [Manu] 
-                    
-                    % create copy to avoid processing error
-                    data_copy = copy(data);
-%                     % get the ancestor
-%                     bloc = this.RelaxData(indx(1)); %take the first one
-%                     while ~isempty(bloc.parent)
-%                         bloc = bloc.parent;
-%                     end
-%                     % create a copy of the object, for the process
-%                     relaxObj = copy(bloc);
-%                     if ~isempty(relaxObj.children)
-%                         remove(relaxObj.children); % remove children
-%                     end                  
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     
                     % apply the pipeline
                     for j = 1:numel(ProcessArray) 
-                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                         % check if new process or not
-                        if isequal(data(1).processingMethod, ProcessArray(j))
-                            data = [data.children]; continue;
-                        end
-                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                         if ~isempty(data(1).processingMethod)
+%                             if isequal(data.processingMethod, ProcessArray(j))
+%                                 data = [data.children]; continue;
+%                             end                
+%                         end
                         % assign the process
-                        assignProcessingFunction(data, ProcessArray(j));
+                        %assignProcessingFunction(data, ProcessArray(j));                       
                         % apply the process
                         warning off
-                        data = processData(data);
+                        data = processData(data, ProcessArray(j));
                         warning on
                     end   
                     
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    % No need to destroy RelaxObj. Choose between delete
-                    % relaxobj or bloc and replace data in RelaxObj [Manu]
-                    remove(data); this.RelaxData(tf).data = data_copy;
-                    % replace the new relaxObj in the main array
-%                     delete(this.RelaxData(indx)); this.RelaxData(indx) = [];
-%                     this.RelaxData = [this.RelaxData, relaxObj];
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                                        
-                    drawnow; %EDT
-                    % replace the new relaxObj in the main array
+                    % Check if data has children and delete them if true.
+                    % Avoid to keep old children from previous process
+                    for j = 1:numel(data)
+                        if ~isempty(data(j).children)
+                        data(j).children = remove(data(j).children);
+                        end
+                    end
+                    
+                    % replace the highest object created in relaxObj
+                    this.RelaxData(tf).data = data;
+
+                    % update FileManager
                     setTree(this.FileManager, class(data));
-                    
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    % Take filename from RelaxObj, not DataUnit
-                    updateData(this.FileManager, relaxObj(k));
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    
-                    drawnow;
-                    if isa(relaxObj, 'Dispersion')
+                    updateData(this.FileManager, relaxObj(k));                  
+
+                    if isa(data, 'Dispersion')
                         idxZone = repelem(NaN, numel(data));
                     else
                         idxZone = repelem(1,numel(data));
                     end
-                    pause(0.005);
                     
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    % Same as before, take info from RelaxObj
-                    checkData(this.FileManager, data, idxZone, 1);
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    
+                    drawnow;
+                    checkData(this.FileManager, data, idxZone, 1);                    
                     drawnow; %EDT
                     
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    % Should be changed if DataUnit class do not fit with
-                    % the current tab in DisplayManager: open another one?
-                    % [Manu]
-                    % In this case, how to deal with FileManager update...
-                    
                     % try to plot
-                    addPlot(this.DisplayManager, data, idxZone);
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                                       
+                    addPlot(this.DisplayManager, data, idxZone);                                       
                     drawnow % EDT
+                    
                     event.txt = [sprintf('%d/%d',k,numel(relaxObj)),'\n'];
                     throwMessage(this, [], event);
                 end %for
