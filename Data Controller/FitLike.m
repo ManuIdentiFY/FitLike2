@@ -333,7 +333,7 @@ classdef FitLike < handle
             relaxObj = getSelectedFile(this.FileManager);
             % remove files in RelaxData 
             [~,idx,~] = intersect({this.RelaxData.fileID}, {relaxObj.fileID});
-            delete(this.RelaxData(idx)); this.RelaxData(idx) = [];
+            remove(this.RelaxData, idx);
             % update FileManager
             deleteFile(this.FileManager);
             % throw message
@@ -720,7 +720,7 @@ classdef FitLike < handle
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % No need to destroy RelaxObj. Choose between delete
                     % relaxobj or bloc and replace data in RelaxObj [Manu]
-                    delete(data); this.RelaxData(tf).data = data;
+                    remove(data); this.RelaxData(tf).data = data_copy;
                     % replace the new relaxObj in the main array
 %                     delete(this.RelaxData(indx)); this.RelaxData(indx) = [];
 %                     this.RelaxData = [this.RelaxData, relaxObj];
