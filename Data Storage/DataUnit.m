@@ -190,7 +190,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         end %unlink
         
         % dummy function to get x-values (redefined in subclasses)
-        function x = getXData(this)            
+        function x = getXData(this) 
+            x = [];
         end %getXData
 
         % wrapper function to start the processing of the data unit
