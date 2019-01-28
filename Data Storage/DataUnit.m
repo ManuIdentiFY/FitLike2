@@ -143,6 +143,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     
     methods (Access = public)
         
+        % Should be in Pipeline [Manu]
         function [this,processObj] = addprocess(this,processObj)
             if isempty(this.processingMethod)
                 this.processingMethod = processObj;
@@ -151,15 +152,16 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             end
         end
         
-        % assign a processing function to the data object
-        function [this,processList] = assignProcessingFunction(this,processObj)
-%             [this,processList] = arrayfun(@(s)addprocess(s,copy(processObj)),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
-            [this,processList] = arrayfun(@(s)addprocess(s,processObj),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
-            this = [this{:}];   
-            processList = [processList{:}];
-%             processList = arrayfun(@(s) addInputData(processList,s),this,'UniformOutput',1); % associate each data unit with its processing method
-        end %assignProcessingFunction
-        
+%         % assign a processing function to the data object
+%         function [this,processList] = assignProcessingFunction(this,processObj)
+% %             [this,processList] = arrayfun(@(s)addprocess(s,copy(processObj)),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
+%             [this,processList] = arrayfun(@(s)addprocess(s,processObj),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
+%             this = [this{:}];   
+%             processList = [processList{:}];
+% %             processList = arrayfun(@(s) addInputData(processList,s),this,'UniformOutput',1); % associate each data unit with its processing method
+%         end %assignProcessingFunction
+
+        % Should be in Pipeline [Manu]
         % remove or clear a list of processing functions for a given
         % object or list of objects
         function this = removeProcessingFunction(this,processObj)
@@ -194,15 +196,27 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             x = [];
         end %getXData
 
+%         % wrapper function to start the processing of the data unit
+%         function [childDataUnit,this] = processData(this)
+%             if sum(arrayfun(@(s)isempty(s.processingMethod),this))
+%                 error('One or more data object are not assigned to a processing function.')
+%             end
+%             [childDataUnit,~] = arrayfun(@(o)processData(o.processingMethod, o),this,'UniformOutput',0); % If called from here, processData processes each DataUnit objects one by one
+%             childDataUnit = [childDataUnit{:}];
+% %             [this.processingMethod] = deal(processMethod);
+%         end        
+        
         % wrapper function to start the processing of the data unit
-        function [childDataUnit,this] = processData(this)
-            if sum(arrayfun(@(s)isempty(s.processingMethod),this))
-                error('One or more data object are not assigned to a processing function.')
+        function [childDataUnit,this] = processData(this, processObj)
+            % check input
+            if ~isa(processObj, 'ProcessDataUnit')
+                childDataUnit = []; return
             end
-            [processMethod,childDataUnit,~] = arrayfun(@(o)processData(o.processingMethod),this,'UniformOutput',0); % If called from here, processData processes each DataUnit objects one by one
+            % processData processes each DataUnit objects one by one
+            [childDataUnit, ~] = arrayfun(@(o)processData(processObj, o),...
+                this,'UniformOutput',0);
             childDataUnit = [childDataUnit{:}];
-%             [this.processingMethod] = deal(processMethod);
-        end        
+        end  
         
         % collect the display names from all the parents in order to get
         % the entire history of the processing chain, for precise legends
@@ -322,28 +336,14 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 val = []; return;
             end
             
-            fld = fieldnames(this);
-            tf = strcmpi(fieldnames(this), prop);
-            
-            if all(tf ==0)
-                % get the prop if possible
-                fld = fieldnames(this.relaxObj);
-                tf = strcmpi(fieldnames(this.relaxObj), prop);
-
-                if all(tf ==0) % the property was not found in the RelaxObj fields
-                    fld = fieldnames(this.relaxObj.parameter.paramList);  % try with the sequence parameters
-                    tf = strcmpi(fieldnames(this.relaxObj.parameter.paramList), prop);
-
-                    if all(tf ==0) % the property was not found in the sequence properties either
-                        error('getRelaxProp: Unknown property') % give up the search
-                    else
-                        val = this.relaxObj.parameter.paramList.(fld{tf});
-                    end
-                else
-                    val = this.relaxObj.(fld{tf});
-                end
-            else
-                val = this.(fld{tf});
+            % try/catch. If not another solution could be the use of
+            % RelaxObj's method to get the complete list of property
+            % (including hidden ones!) to check 'prop' before the call
+            % [Manu]
+            try
+                val = this.relaxObj.(prop);
+            catch
+                error('getRelaxProp: Unknown property') % give up the search
             end
         end %get.meta
         
