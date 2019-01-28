@@ -7,6 +7,8 @@ classdef MonoexpAbs < Zone2Disp & DataFit
         labelY@char = 'R_1 (s^{-1})';                   % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution field (MHz)';          % string, labels the X-axis data in graphs
         legendTag@cell = {'T1'};
+        InputChildClass@char; 	% defined in DataUnit2DataUnit
+        OutputChildClass@char;	% defined in DataUnit2DataUnit
     end
     
     properties

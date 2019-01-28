@@ -153,10 +153,11 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         
         % assign a processing function to the data object
         function [this,processList] = assignProcessingFunction(this,processObj)
-            [this,processList] = arrayfun(@(s)addprocess(s,copy(processObj)),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
+%             [this,processList] = arrayfun(@(s)addprocess(s,copy(processObj)),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
+            [this,processList] = arrayfun(@(s)addprocess(s,processObj),this,'UniformOutput',0); %#ok<*SFLD> associate the data and the processing method
             this = [this{:}];   
             processList = [processList{:}];
-            processList = arrayfun(@(s) addInputData(processList,s),this,'UniformOutput',1); % associate each data unit with its processing method
+%             processList = arrayfun(@(s) addInputData(processList,s),this,'UniformOutput',1); % associate each data unit with its processing method
         end %assignProcessingFunction
         
         % remove or clear a list of processing functions for a given

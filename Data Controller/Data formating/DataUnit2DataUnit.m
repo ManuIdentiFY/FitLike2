@@ -33,7 +33,7 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
     
     % Do not define these properties as Abstract because it will change
     % DataUnit2DataUnit as Abstract class [Manu]
-    properties %(Abstract)
+    properties (Abstract)
         InputChildClass@char
         OutputChildClass@char %define the class of the child object
     end
