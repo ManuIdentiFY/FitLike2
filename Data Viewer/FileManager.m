@@ -289,6 +289,7 @@ classdef FileManager  < handle
        function this = updateData(this, relaxObj)
            % get data info
             displayName = getDataInfo(relaxObj, this.SelectedTree.Tag);
+            displayName = displayName.(this.SelectedTree.Tag);
             
            if ~isempty(displayName)
                % set icon
@@ -307,7 +308,7 @@ classdef FileManager  < handle
                        relaxObj.filename, this.FileIcon, 'filename',...
                        'UserData', relaxObj);
                    % add relaxObj
-                   addRelaxObj(this, hFile, icon, nZone);
+                   addRelaxObj(this, hFile, icon, displayName, nZone);
                else
                    % check if the file exists
                    hFile = root.Children;
@@ -319,7 +320,7 @@ classdef FileManager  < handle
                            relaxObj.filename, this.FileIcon, 'filename',...
                           'UserData', relaxObj);
                        % add relaxObj
-                       addRelaxObj(this, hFile, icon, nZone);
+                       addRelaxObj(this, hFile, icon, displayName, nZone);
                    else
                        % get the file node
                        hFile = hFile(tf_file);
