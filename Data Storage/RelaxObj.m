@@ -66,6 +66,8 @@ classdef RelaxObj < handle
                 if ~all(cellfun(@length,varargin(2:2:end)) == n)
                     error('Size input is not consistent for array of struct.')
                 else
+                    % init object
+                    this(1,n) = RelaxObj;
                     for k = n:-1:1
                         % fill arguments
                         for ind = 1:2:nargin
@@ -136,12 +138,25 @@ classdef RelaxObj < handle
             end
         end
         
-        function this = remove(this,dataunit)
+        function this = removeDataUnit(this, dataunit)
             for i = 1:length(this)
                 index = arrayfun(@(d) isequal(d,dataunit),this(i).data);
                 this(i).data(index) = [];
             end
         end
+        
+        function this = remove(this, idx)
+            % check input
+            if nargin < 2
+                idx = 1:numel(this);
+            end
+            % remove properly RelaxObj
+            for k = 1:numel(idx)
+                delete(this(idx(k)));
+            end
+            % remove deleted handle
+            this = this(setdiff(1:numel(this),idx));
+        end %remove
         
         % Data formating: mergeFile()
         % merge several objects, considering only the DataUnit at the level
@@ -308,23 +323,6 @@ classdef RelaxObj < handle
                     dataUnit = getData(this,'Bloc');
                 end                
             end
-        end
-    end
-    
-    % set/get
-    methods
-        
-        function val = get.filename(this)
-            val = this.filename;
-        end
-        
-        % No idea why warning [Manu]
-        function this = set.filename(this, val)
-            % notify that filename has changed
-%             event = EventFile('OldName', this.filename, 'NewName', val);
-%             notify(this, 'FileHasChanged', event);
-%             % set the new value
-%             this.filename = val;
         end
     end
 end
