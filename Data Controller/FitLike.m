@@ -705,22 +705,22 @@ classdef FitLike < handle
                     for j = 1:numel(ProcessArray) 
                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                         % check if new process or not
-                        if isequal(data_copy(1).processingMethod, ProcessArray(j))
-                            data_copy = [data_copy.children]; continue;
+                        if isequal(data(1).processingMethod, ProcessArray(j))
+                            data = [data.children]; continue;
                         end
                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                         % assign the process
-                        assignProcessingFunction(data_copy, ProcessArray(j));
+                        assignProcessingFunction(data, ProcessArray(j));
                         % apply the process
                         warning off
-                        data_copy = processData(data_copy);
+                        data = processData(data);
                         warning on
                     end   
                     
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % No need to destroy RelaxObj. Choose between delete
                     % relaxobj or bloc and replace data in RelaxObj [Manu]
-                    delete(data); this.RelaxData(tf).data = data_copy;
+                    delete(data); this.RelaxData(tf).data = data;
                     % replace the new relaxObj in the main array
 %                     delete(this.RelaxData(indx)); this.RelaxData(indx) = [];
 %                     this.RelaxData = [this.RelaxData, relaxObj];
@@ -728,7 +728,7 @@ classdef FitLike < handle
                                         
                     drawnow; %EDT
                     % replace the new relaxObj in the main array
-                    setTree(this.FileManager, class(data_copy));
+                    setTree(this.FileManager, class(data));
                     
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % Take filename from RelaxObj, not DataUnit
@@ -737,15 +737,15 @@ classdef FitLike < handle
                     
                     drawnow;
                     if isa(relaxObj, 'Dispersion')
-                        idxZone = repelem(NaN, numel(data_copy));
+                        idxZone = repelem(NaN, numel(data));
                     else
-                        idxZone = repelem(1,numel(data_copy));
+                        idxZone = repelem(1,numel(data));
                     end
                     pause(0.005);
                     
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % Same as before, take info from RelaxObj
-                    checkData(this.FileManager, data_copy, idxZone, 1);
+                    checkData(this.FileManager, data, idxZone, 1);
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     
                     drawnow; %EDT
@@ -757,7 +757,7 @@ classdef FitLike < handle
                     % In this case, how to deal with FileManager update...
                     
                     % try to plot
-                    addPlot(this.DisplayManager, data_copy, idxZone);
+                    addPlot(this.DisplayManager, data, idxZone);
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                                        
                     drawnow % EDT

@@ -272,7 +272,11 @@ classdef RelaxObj < handle
             % loop over the class
             for k = 1:numel(cc)
                 tf = strcmp(c, cc{k});
-                displayName.(cc{k}) = {obj(tf).displayName};
+                if isvalid(obj(tf)) % check if the handle is not deleted
+                    displayName.(cc{k}) = {obj(tf).displayName};
+                else
+                    displayName.(cc{k}) = 'Invalid object';
+                end
             end            
         end %getDataInfo
         
@@ -287,6 +291,24 @@ classdef RelaxObj < handle
         function this = setfield(this, field, val)
             this.parameter = setfield(this.parameter, field, val); %#ok<SFLD>
         end %setfield
+        
+        % return the list of DataUnit objects of highest level found, for each of
+        % the relax objects
+        function dataUnit = getHighestDataUnit(this)
+            if length(this)>1
+                dataUnit = arrayfun(@(t) getHighestDataUnit(t),this, 'UniformOutput',0);
+                dataUnit = [dataUnit{:}];
+            else
+                content = arrayfun(@(d) class(d), this.data, 'UniformOutput',0);
+                if sum(strcmp(content,'Dispersion'))
+                    dataUnit = getData(this,'Dispersion');
+                elseif sum(strcmp(content,'Zone'))
+                    dataUnit = getData(this,'Zone');
+                else
+                    dataUnit = getData(this,'Bloc');
+                end                
+            end
+        end
     end
     
     % set/get

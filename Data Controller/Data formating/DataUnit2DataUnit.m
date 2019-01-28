@@ -66,6 +66,11 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
             if ~isa(DataUnit,'DataUnit')
                 data_formated = []; return
             end
+            if length(this)>1
+                data_formated = arrayfun(@(t) getProcessData(t, DataUnit),this,'UniformOutput',0);
+                data_formated = [data_formated{:}];
+                return
+            end
             
             % get data dim
             dim = size(DataUnit.y);

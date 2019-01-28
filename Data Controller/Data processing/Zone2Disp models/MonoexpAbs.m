@@ -3,12 +3,12 @@ classdef MonoexpAbs < Zone2Disp & DataFit
 %non-linear regression using iterative least-squares estimation and returned the
 %time constant of the equation y = f(x) with its error as well as the model used.
     properties
+        InputChildClass@char;
+        OutputChildClass@char;
         functionName@char = 'Monoexponential Abs fit';      % character string, name of the model, as appearing in the figure legend
         labelY@char = 'R_1 (s^{-1})';                   % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution field (MHz)';          % string, labels the X-axis data in graphs
         legendTag@cell = {'T1'};
-        InputChildClass@char; 	% defined in DataUnit2DataUnit
-        OutputChildClass@char;	% defined in DataUnit2DataUnit
     end
     
     properties
@@ -22,10 +22,9 @@ classdef MonoexpAbs < Zone2Disp & DataFit
        minValue = [-Inf -Inf -Inf -Inf];               % array of values, minimum values reachable for each parameter, respective to the order of parameterName
        maxValue = [Inf Inf Inf Inf];               % array of values, maximum values reachable for each parameter, respective to the order of parameterName
        startPoint = [1 1 1 1];             % array of values, starting point for each parameter, respective to the order of parameterName
+       valueToReturn = [0 0 1 0];          % set which fit parameters must be returned by the function
        visualisationFunction@cell = {};
-   end
-%         numberOfOutputs = 1;	% defined in DataModel
-%         numberOfInputs  = 1;	% defined in DataModel
+    end
 
     methods
         function this = MonoexpAbs
@@ -36,13 +35,6 @@ classdef MonoexpAbs < Zone2Disp & DataFit
     end
     
     methods
-        % dummy function. Can be improved by adding new property DataIndex
-        % or something similar [Manu]
-        function data = formatFitData(this, model)
-            % collect result from fit
-            data.y =  model.bestValue(3);
-            data.dy = model.errorBar(3);
-        end %formatFitData
 
         % fill in the starting point of the model
         function this = evaluateStartPoint(this, xdata, ydata)

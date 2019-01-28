@@ -3,6 +3,8 @@ classdef BiexponentialT1Abs < Zone2Disp & DataFit
 %non-linear regression using iterative least-squares estimation and returned the
 %time constant of the equation y = f(x) with its error as well as the model used.
     properties
+        InputChildClass@char;
+        OutputChildClass@char;
         functionName@char = 'Biexponential Abs fit';      % character string, name of the model, as appearing in the figure legend
         labelY@char = 'R_1 (s^{-1})';                   % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution field (MHz)';          % string, labels the X-axis data in graphs
