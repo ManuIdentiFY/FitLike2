@@ -129,6 +129,9 @@ classdef DispersionTab < EmptyTab
             % check if duplicates
             if isempty(this.hData) || all(strcmp(getPlotID(this),...
                     getPlotID(this, hData, idxZone)) == 0) 
+                 % set plot specification
+                getPlotSpec(this, hData);
+                
                 % append data
                 this.hData = [this.hData hData];
                 this.idxZone = [this.idxZone idxZone];
@@ -145,8 +148,6 @@ classdef DispersionTab < EmptyTab
 %                             @(src, event) updateLegend(this, src, event));
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 this.ls = [this.ls, l];
-                % set plot specification
-                getPlotSpec(this, hData);
             end
             
             % + data
@@ -706,10 +707,9 @@ classdef DispersionTab < EmptyTab
         % hDispersion object according to the possible Color, Marker and
         % Style defined in properties.
         % All these properties are stored in a structure.
-        % NOTE: LINESTYLE IS NOT IMPLEMENTED YET
         function this = getPlotSpec(this, hData)
             % set properties
-            if numel(this.hData) == 1
+            if isempty(this.hData)
                 this.PlotSpec(1).Color = this.Color(1,:);
                 this.PlotSpec(1).DataMarker = this.DataMarkerStyle{1};
             else
