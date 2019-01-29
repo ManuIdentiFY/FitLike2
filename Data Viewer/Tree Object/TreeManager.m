@@ -300,7 +300,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                 % Not the best method but easy to set
                 if strcmp(type, 'filename')
                     % check UserData
-                    tf = isequal(get(hParent.Children,'UserData'), varargin{2});
+                    tf = isequal(varargin{2}, get(hParent.Children,'UserData'));
                     if ~all(tf == 0)
                         hChildren = hParent.Children(tf); return
                     end
