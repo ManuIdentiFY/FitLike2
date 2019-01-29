@@ -670,7 +670,7 @@ classdef FitLike < handle
                     event.txt = 'Processing...'; throwMessage(this, [], event);
                     
                     % get data
-                    tf = strcmp({this.RelaxData.fileID}, relaxObj(k).fileID);
+                    tf = isequal(relaxObj(k), this.RelaxData);
                     data = getData(this.RelaxData(tf), 'Bloc');
                     
                     % apply the pipeline
@@ -747,7 +747,7 @@ classdef FitLike < handle
                     event.txt = 'Fitting...'; throwMessage(this, [], event);
                     
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    tf = strcmp({this.RelaxData.fileID}, fileID{k});
+                    tf = isequal({this.RelaxData.fileID}, fileID{k});
                     dispersion = getData(this.RelaxData(tf), 'Dispersion', legendTag{k});
                     % Replace by getData('Dispersion') [Manu]
                     % check for correspondance (same data file)
