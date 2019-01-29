@@ -53,8 +53,8 @@ classdef ModelManager < handle
                 @(src, event) updateResultTable(this));
             
             % Add listener to the Dispersion tree
-            addlistener(this.FitLike.FileManager.gui.treedata(1),...
-                'TreeHasChanged',@(src, event) updateFilePopup(this));
+            %addlistener(this.FitLike.FileManager.gui.treedata(1),...
+             %   'TreeHasChanged',@(src, event) updateFilePopup(this));
         end %ModelManager
         
         % Destructor
