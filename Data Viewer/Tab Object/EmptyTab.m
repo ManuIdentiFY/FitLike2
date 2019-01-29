@@ -85,5 +85,18 @@ classdef EmptyTab < uix.Container & handle
             return
         end
     end   
+    
+    methods (Static)               
+        % getIdxZone
+        function idxZone = getIdxZone(hData)
+            % check input
+            if isempty(hData)
+                idxZone = [];
+            else
+                str = strsplit(hData.Tag,'@');
+                idxZone = str{3};
+            end
+        end
+    end
 end
 

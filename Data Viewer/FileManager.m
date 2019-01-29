@@ -180,28 +180,35 @@ classdef FileManager  < handle
                % get the node
                hNode = search(this.gui.treefile, relaxObj(k));
                % check and add data
-               addData(this, [hNode.UserData]);
+               addData(this, hNode);
                hNode.Checked = 1;
            end
        end %checkFile
        
        % add data. OK [14/01/19]
-       function this = addData(this, relaxObj)
+       function this = addData(this, fileNode)
            % set icon for selected tree
            icon = this.RelaxObjIcon{this.gui.treedata == this.SelectedTree};
            % loop over the input
-           for k = 1:numel(relaxObj)
+           for k = 1:numel(fileNode)
                % get the data info: displayName
-               hData = getData(relaxObj(k), this.SelectedTree.Tag);
+               hData = getData(fileNode(k).UserData, this.SelectedTree.Tag);
                
                if ~isempty(hData)
-                   % add file
-                   hParent = TreeManager.addNode(this.SelectedTree.Root,...
-                        relaxObj(k).filename, this.FileIcon, 'filename',...
-                        'UserData',relaxObj(k));
+                   % check if this file is already plotted
+                   tf = isequal(fileNode(k).UserData, this.SelectedTree.Root.Children.UserData);
+                   % copy node if required
+                   if all(tf == 0)
+                       hParent = copy(fileNode(k), this.SelectedTree.Root);
+                   else
+                       hParent = this.SelectedTree.Root.Children(tf);
+                   end
+%                    hParent = TreeManager.addNode(this.SelectedTree.Root,...
+%                         relaxObj(k).filename, this.FileIcon, 'filename',...
+%                         'UserData',relaxObj(k));
                    % if not dispersion tab, add the zone index
                    if ~strcmp(this.SelectedTree.Tag, 'Dispersion')
-                       nZone = numel(getfield(relaxObj(k),'BR')); %#ok<GFLD>
+                       nZone = numel(getfield(fileNode(k).UserData,'BR')); %#ok<GFLD>
                    else
                        nZone = [];
                    end
@@ -419,7 +426,7 @@ classdef FileManager  < handle
                removeData(this, [hFile.UserData]);
             else
                % add data to the data panel
-               addData(this, [hFile.UserData]);
+               addData(this, hFile);
             end
             drawnow nocallbacks
             %src.Enable = 'on';
@@ -495,7 +502,7 @@ classdef FileManager  < handle
            hFile = TreeManager.getEndChild(this.gui.treefile.CheckedNodes);
            
            if ~isempty(hFile)
-               addData(this, [hFile.UserData]);
+               addData(this, hFile);
                % notify
                notify(this.SelectedTree, 'TreeHasChanged');
                drawnow nocallbacks

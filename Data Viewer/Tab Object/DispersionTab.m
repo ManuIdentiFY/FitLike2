@@ -16,6 +16,10 @@ classdef DispersionTab < EmptyTab
     % M.Petit - 11/2018
     % manuel.petit@inserm.fr
     
+    properties 
+        hGroup % handle to the hggroups containing graphical objects
+    end
+    
     % Display properties
     properties (Access = public)
         % Dispersion data settings

@@ -10,16 +10,17 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     % SEE ALSO BLOC, ZONE, DISPERSION
     
     % file data
-    properties (Access = public)
-        x@double = [];          % main measure X (time, Bevo,...)
-        xLabel@char = '';       % name of the  variable X ('time','Bevo',...)
-        y@double = [];          % main measure Y ('R1','fid',...)
-        dy@double = [];         % error bars on Y
-        yLabel@char = '';       % name of the variable Y ('R1','fid',...)
-        mask@logical = true(0);           % mask the X and Y arrays
-%         sequence@char;
-%         parameter@ParamObj; 
+    properties (Access = public, SetObservable)
+        x@double = [];              % main measure X (time, Bevo,...)
+        y@double = [];              % main measure Y ('R1','fid',...)
+        dy@double = [];             % error bars on Y
+        mask@logical = true(0);     % mask the X and Y arrays
     end   
+    
+    properties (Access = public)
+        xLabel@char = '';           % name of the  variable X ('time','Bevo',...)
+        yLabel@char = '';           % name of the variable Y ('R1','fid',...)
+    end
     
     % file processing
     properties (Access = public)
@@ -38,6 +39,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         parent@DataUnit          % parent of the object
         children@DataUnit        % children of the object
         parameters@ParamObj;     % redirects towards relaxobj parameters
+%         ls;                      % listener
     end
     
     events
@@ -81,6 +83,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 end
                 % set displayName
                 setname(this);
+%                 % add listener
+%                 this.ls = addlistener(this,{'x','y','dy','mask'},'PostSet',@DataUnit.dataHasChanged);
             else
                 % array of struct
                 % check for cell sizes
@@ -119,6 +123,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         end
                         % set displayName
                         setname(this(k));
+%                         % add listener
+%                         this(k).ls = addlistener(this(k),{'x','y','dy','mask'},'PostSet',@DataUnit.dataHasChanged);
                     end
                 end
             end   
@@ -138,6 +144,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             delete(this.children(isvalid(this.children)));
             this.children(:) = [];
             this.parent(:) = [];
+%             % delete listener
+%             delete(this.ls);
         end
     end
     
@@ -410,23 +418,16 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % Should be modify to handle plot options without GUI [Manu]
         % Need to be simplify by using varargin for optional input [Manu]
         % plot data function
-        function h = plotData(this, idxZone, plotID, axe, color, style, mrk, mrksize)
+        function h = plotData(this, idxZone, varargin)
             % get data
             [xp,yp,~,maskp] = getData(this, idxZone);
-            % get legend
-            leg = getLegend(this, idxZone, 'Data', 0);
+            % check if legend is required
+            if all(strcmp('DisplayName',varargin) == 0)
+                varargin{end+1} = 'DisplayName';
+                varargin{end+1} = getLegend(this, idxZone, 'Data', 0);
+            end
             % plot
-            h = errorbar(xp(maskp),...
-                    yp(maskp),...
-                    [],...
-                    'DisplayName', leg,...
-                    'Color',color,...
-                    'LineStyle',style,...
-                    'Marker',mrk,...
-                    'MarkerSize',mrksize,...
-                    'MarkerFaceColor','auto',...
-                    'Tag',plotID,...
-                    'parent', axe); 
+            h = errorbar(xp(maskp), yp(maskp), [], varargin{:}); 
          end %plotData
          
          % Add error to an existing errorbar. 
@@ -440,20 +441,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          % Should be modify to handle plot options without GUI [Manu]
          % Need to be simplify by using varargin for optional input [Manu]
          % Plot Masked data
-         function h = plotMaskedData(this, idxZone, plotID, axe, color, mrk, mrksize)
+         function h = plotMaskedData(this, idxZone, varargin)
              % get data
              [xp,yp,~,maskp] = getData(this, idxZone);
              % check if data to plot
              if ~isempty(yp(~maskp))
                  % plot
-                 h = scatter(axe,...
-                     xp(~maskp),...
-                     yp(~maskp),...
-                     'MarkerEdgeColor', color,...
-                     'Marker', mrk,...
-                     'SizeData',mrksize,...
-                     'MarkerFaceColor','auto',...
-                     'Tag', plotID);
+                 h = scatter(axe, xp(~maskp), yp(~maskp), varargin{:});
                  % remove this plot from legend
                  set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
              end
@@ -462,39 +456,31 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          % Plot Fit
          % Should be modify to handle plot options without GUI [Manu]
          % Need to be simplify by using varargin for optional input [Manu]
-         function h = plotFit(this, idxZone, plotID, axe, color, style, mrk)
+         function h = plotFit(this, idxZone, varargin)
              % get data
              [xfit, yfit] = getFit(this, idxZone, []);
              % check if possible to plot fit
              if ~isempty(yfit)
-                 % get legend
-                 leg = getLegend(this, idxZone, 'Fit', 0);
+                 % check if legend is required
+                 if all(strcmp('DisplayName',varargin) == 0)
+                     varargin{end+1} = 'DisplayName';
+                     varargin{end+1} = getLegend(this, idxZone, 'Fit', 0);
+                 end
                  % plot
-                 h = plot(axe, xfit, yfit,...
-                     'DisplayName', leg,...
-                     'Color', color,...
-                     'LineStyle', style,...
-                     'Marker', mrk,...
-                     'Tag', plotID);
+                 h = plot(axe, xfit, yfit,varargin{:});
              end
          end %plotFit
          
          % Plot Residual
          % Should be modify to handle plot options without GUI [Manu]
          % Need to be simplify by using varargin for optional input [Manu]
-         function h = plotResidual(this, idxZone, plotID, axe, color, style, mrk, mrksize)
+         function h = plotResidual(this, idxZone, varargin)
               % get data
               [xr,yr,~,maskr] = getData(this, idxZone);
               [~, yfit] = getFit(this, idxZone, xr(maskr));
              % check if possible to plot fit
              if ~isempty(yfit) && ~isempty(yr)
-                 h = plot(axe, xr(maskr), yr(maskr) - yfit,...
-                     'LineStyle',style,...
-                     'Color',color,...
-                     'Marker',mrk,...
-                     'MarkerFaceColor',color,...
-                     'MarkerSize', mrksize,...
-                     'Tag',plotID);
+                 h = plot(axe, xr(maskr), yr(maskr) - yfit, varargin{:});
              end
          end %plotResidual
         %%% -------------------------------------------- %%%
@@ -524,6 +510,43 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
            this.legendTag = val;
            setname(this);
        end
+       
+%        % set y-values
+%        function self = set.y(self,value)
+% %            if ~isempty(self.subUnitList)
+% %                % distribute the values to the sub-units
+% %                self = distributeSubData(self,'y',value);
+% %            end
+%             % check if different from before
+%             self.y = value;
+%        end
+%        
+%        % set x-values
+%        function self = set.dy(self,value)
+% %            if ~isempty(self.subUnitList)
+% %                % distribute the values to the sub-units
+% %                self = distributeSubData(self,'dy',value);
+% %            end
+%            self.dy = value;
+%        end
+%        
+%        % set mask
+%        function self = set.mask(self,value)
+% %             if ~isempty(self.subUnitList) %#ok<*MCSUP>
+% %                 % distribute the values to the sub-units
+% %                 self = distributeSubData(self,'mask',value);
+% %             end
+%             self.mask = value;
+%        end
+%         
+%        % set x
+%        function self = set.x(self,value)
+% %             if ~isempty(self.subUnitList) %#ok<*MCSUP>
+% %                 % distribute the values to the sub-units
+% %                 self = distributeSubData(self,'mask',value);
+% %             end
+%             self.x = value;
+%         end
     end
 %         % check that new objects added to the list are of the same type as
 %         % the main object
@@ -578,13 +601,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 %             end
 %         end
 %         
-%         function self = set.y(self,value)
-%             if ~isempty(self.subUnitList)
-%                 % distribute the values to the sub-units
-%                 self = distributeSubData(self,'y',value);
-%             end
-%             self.y = value;
-%         end
+
 %         
 %         function y = get.y(self)
 %             if ~isempty(self.subUnitList)
@@ -594,13 +611,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 %             end
 %         end
 %         
-%         function self = set.dy(self,value)
-%             if ~isempty(self.subUnitList)
-%                 % distribute the values to the sub-units
-%                 self = distributeSubData(self,'dy',value);
-%             end
-%             self.dy = value;
-%         end
+
 %         
 %         function dy = get.dy(self)
 %             if ~isempty(self.subUnitList)
@@ -610,13 +621,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 %             end
 %         end
 %         
-%         function self = set.mask(self,value)
-%             if ~isempty(self.subUnitList) %#ok<*MCSUP>
-%                 % distribute the values to the sub-units
-%                 self = distributeSubData(self,'mask',value);
-%             end
-%             self.mask = value;
-%         end
+
 %         
 %         function mask = get.mask(self)            
 %             if ~isempty(self.subUnitList)
