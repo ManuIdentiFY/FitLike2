@@ -735,36 +735,88 @@ classdef FitLike < handle
                 event.txt = 'Warning: You need to select dispersion data to run fit\n!';
                 throwMessage(this, [], event);
                 return
-            elseif this.ModelManager.gui.BatchRadioButton.Value
+            end
+            
+            if this.ModelManager.gui.BatchRadioButton.Value
                 event.txt = 'Starting to fit file...\n';
                 throwMessage(this, [], event);
                 % Batch mode
                 tab = this.ModelManager.gui.tab.SelectedTab.Children;
                 % get the process array
                 ModelArray = tab.ModelArray;
-                 % loop over the file
+                % loop over the file
                 for k = 1:numel(dataObj)
                     event.txt = 'Fitting...'; throwMessage(this, [], event);
-                    
                     % apply the process
-                    processData(dataObj(k), ModelArray(1)); 
-                    
+                    processData(dataObj(k), ModelArray(1));
+                    % throw message
+                    event.txt = [sprintf('%d/%d',k,numel(dataObj)),'\n'];
+                end
+                
+                % notify
+                event.txt = [sprintf('%d/%d',k,numel(fileID)),'\n'];
+                throwMessage(this, [], event);
+                drawnow;
+                %updateResultTable(this.ModelManager);
+            else % simulation mode
+                
+            end
+            
+            
+            
+%             
+%             % according to the mode process, run it
+%             if isempty(fileID)
+%                 event.txt = 'Warning: You need to select dispersion data to run fit\n!';
+%                 throwMessage(this, [], event);
+%                 return
+%             elseif this.ModelManager.gui.BatchRadioButton.Value
+%                 event.txt = 'Starting to fit file...\n';
+%                 throwMessage(this, [], event);
+%                 % Batch mode
+%                 tab = this.ModelManager.gui.tab.SelectedTab.Children;
+%                 % get the process array
+%                 ModelArray = tab.ModelArray;
+%                  % loop over the file
+%                 for k = 1:numel(fileID)
+%                     event.txt = 'Fitting...'; throwMessage(this, [], event);
+%                     
+%                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     tf = isequal({this.RelaxData.fileID}, fileID{k});
+%                     dispersion = getData(this.RelaxData(tf), 'Dispersion', legendTag{k});
+%                     % Replace by getData('Dispersion') [Manu]
+%                     % check for correspondance (same data file)
+% %                     tf = strcmp(strcat({this.RelaxData.fileID},...
+% %                         {this.RelaxData.displayName}), strcat(fileID{k},...
+% %                         legendTag{k}));
+%                     % check if dispersion
+%                     if isempty(dispersion); continue; end
+%                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     
+%                     % apply the fit to the file
+%                     procObj = DispersionLsqCurveFit;
+%                     procObj = addModel(procObj,ModelArray);
+%                     assignProcessingFunction(dispersion, procObj);
+%                     % apply the process
+%                     processData(dispersion); 
+%                     
 %                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                     % Use Wrapper? [Manu]
 %                     % update model name
 %                     dispersion.processingMethod.model.modelName = tab.Parent.Title;
 %                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    
-                    % throw message
-                    event.txt = [sprintf('%d/%d',k,numel(dataObj)),'\n'];
-                    throwMessage(this, [], event);
-                end
-                drawnow;
-                %updateResultTable(this.ModelManager);
-                drawnow;
-            else
-                % Simualation mode
-            end
+%                     
+%                     % notify
+%                     notify(dispersion, 'DataHasChanged', EventData(NaN)) 
+%                     event.txt = [sprintf('%d/%d',k,numel(fileID)),'\n'];
+%                     throwMessage(this, [], event);
+%                 end
+%                 drawnow;
+%                 updateResultTable(this.ModelManager);
+%                 drawnow;
+%             else
+%                 % Simualation mode
+%             end
         end %runFit
     end
     %% ------------------ AcquisitionManager Callback ------------------ %%
