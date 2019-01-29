@@ -38,7 +38,11 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
         end
     
         % main process function
-        function [childObj, parentObj] = processData(this, parentObj)
+        function [childObj, parentObj] = processData(this, parentObj)  
+            % check data size to confirm process
+%             if ~checkProcessData(this, parentObj)
+%                 childObj = []; return
+%             end
             
             % get data
             data = getProcessData(this, parentObj);
