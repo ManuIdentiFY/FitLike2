@@ -190,5 +190,12 @@ end
 % convert the parameter to ParamV1 object then cell array
 parameter = ParamV1(parameter);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Will be remove in a future release (with new parameter format)
+% change some fieldnames
+for k = 1:numel(parameter)
+    parameter(k) = changeFieldName(parameter(k),'ZONE','BR');
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 end
 

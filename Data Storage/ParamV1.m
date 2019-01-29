@@ -11,8 +11,6 @@ classdef ParamV1 < ParamObj
         function this = ParamV1(varargin)
             % call superclass constructor
             this@ParamObj(varargin{:});
-            % change some fieldnames
-            changeFieldName(this,'ZONE','BR')
         end %ParamV1
             
         % GETZONEAXIS(SELF) generates the inversion time values based on
