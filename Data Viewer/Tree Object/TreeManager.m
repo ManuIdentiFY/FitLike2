@@ -295,13 +295,28 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
         function hChildren = addNode(hParent, name, icon, type, varargin)
             % check if children
             if ~isempty(hParent.Children)
-                % check if the wanted name corresponds to a children in the
-                % parent container
-                tf = strcmp(get(hParent.Children,'Name'), name);
-                if ~all(tf == 0)
-                    hChildren = hParent.Children(tf); return
+                % check if filename
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                % Not the best method but easy to set
+                if strcmp(type, 'filename')
+                    % check UserData
+                    tf = isequal(get(hParent.Children,'UserData'), varargin{2});
+                    if ~all(tf == 0)
+                        hChildren = hParent.Children(tf); return
+                    end
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                
+                else               
+                    % check if the wanted name corresponds to a children in the
+                    % parent container
+                    tf = strcmp(get(hParent.Children,'Name'), name);
+                    if ~all(tf == 0)
+                        hChildren = hParent.Children(tf); return
+                    end
                 end
             end
+            
+
+            
             % add checkbox               
             hChildren = uiextras.jTree.CheckboxTreeNode('Parent', hParent,...
                                          'Checked',0,...
