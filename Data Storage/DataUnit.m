@@ -418,23 +418,16 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % Should be modify to handle plot options without GUI [Manu]
         % Need to be simplify by using varargin for optional input [Manu]
         % plot data function
-        function h = plotData(this, idxZone, plotID, axe, color, style, mrk, mrksize)
+        function h = plotData(this, idxZone, varargin)
             % get data
             [xp,yp,~,maskp] = getData(this, idxZone);
-            % get legend
-            leg = getLegend(this, idxZone, 'Data', 0);
+            % check if legend is required
+            if all(strcmp('DisplayName',varargin) == 0)
+                varargin{end+1} = 'DisplayName';
+                varargin{end+1} = getLegend(this, idxZone, 'Data', 0);
+            end
             % plot
-            h = errorbar(xp(maskp),...
-                    yp(maskp),...
-                    [],...
-                    'DisplayName', leg,...
-                    'Color',color,...
-                    'LineStyle',style,...
-                    'Marker',mrk,...
-                    'MarkerSize',mrksize,...
-                    'MarkerFaceColor','auto',...
-                    'Tag',plotID,...
-                    'parent', axe); 
+            h = errorbar(xp(maskp), yp(maskp), [], varargin{:}); 
          end %plotData
          
          % Add error to an existing errorbar. 
@@ -448,20 +441,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          % Should be modify to handle plot options without GUI [Manu]
          % Need to be simplify by using varargin for optional input [Manu]
          % Plot Masked data
-         function h = plotMaskedData(this, idxZone, plotID, axe, color, mrk, mrksize)
+         function h = plotMaskedData(this, idxZone, varargin)
              % get data
              [xp,yp,~,maskp] = getData(this, idxZone);
              % check if data to plot
              if ~isempty(yp(~maskp))
                  % plot
-                 h = scatter(axe,...
-                     xp(~maskp),...
-                     yp(~maskp),...
-                     'MarkerEdgeColor', color,...
-                     'Marker', mrk,...
-                     'SizeData',mrksize,...
-                     'MarkerFaceColor','auto',...
-                     'Tag', plotID);
+                 h = scatter(axe, xp(~maskp), yp(~maskp), varargin{:});
                  % remove this plot from legend
                  set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
              end
@@ -470,39 +456,31 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          % Plot Fit
          % Should be modify to handle plot options without GUI [Manu]
          % Need to be simplify by using varargin for optional input [Manu]
-         function h = plotFit(this, idxZone, plotID, axe, color, style, mrk)
+         function h = plotFit(this, idxZone, varargin)
              % get data
              [xfit, yfit] = getFit(this, idxZone, []);
              % check if possible to plot fit
              if ~isempty(yfit)
-                 % get legend
-                 leg = getLegend(this, idxZone, 'Fit', 0);
+                 % check if legend is required
+                 if all(strcmp('DisplayName',varargin) == 0)
+                     varargin{end+1} = 'DisplayName';
+                     varargin{end+1} = getLegend(this, idxZone, 'Fit', 0);
+                 end
                  % plot
-                 h = plot(axe, xfit, yfit,...
-                     'DisplayName', leg,...
-                     'Color', color,...
-                     'LineStyle', style,...
-                     'Marker', mrk,...
-                     'Tag', plotID);
+                 h = plot(axe, xfit, yfit,varargin{:});
              end
          end %plotFit
          
          % Plot Residual
          % Should be modify to handle plot options without GUI [Manu]
          % Need to be simplify by using varargin for optional input [Manu]
-         function h = plotResidual(this, idxZone, plotID, axe, color, style, mrk, mrksize)
+         function h = plotResidual(this, idxZone, varargin)
               % get data
               [xr,yr,~,maskr] = getData(this, idxZone);
               [~, yfit] = getFit(this, idxZone, xr(maskr));
              % check if possible to plot fit
              if ~isempty(yfit) && ~isempty(yr)
-                 h = plot(axe, xr(maskr), yr(maskr) - yfit,...
-                     'LineStyle',style,...
-                     'Color',color,...
-                     'Marker',mrk,...
-                     'MarkerFaceColor',color,...
-                     'MarkerSize', mrksize,...
-                     'Tag',plotID);
+                 h = plot(axe, xr(maskr), yr(maskr) - yfit, varargin{:});
              end
          end %plotResidual
         %%% -------------------------------------------- %%%
