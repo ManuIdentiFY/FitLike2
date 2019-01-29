@@ -201,7 +201,7 @@ classdef FileManager  < handle
                         'UserData',relaxObj(k));
                    % if not dispersion tab, add the zone index
                    if ~strcmp(this.SelectedTree.Tag, 'Dispersion')
-                       nZone = numel(getfield(relaxObj(k),'ZONE')); %#ok<GFLD>
+                       nZone = numel(getfield(relaxObj(k),'BR')); %#ok<GFLD>
                    else
                        nZone = [];
                    end
@@ -296,7 +296,7 @@ classdef FileManager  < handle
                icon = this.RelaxObjIcon{this.gui.treedata == this.SelectedTree};
                % if not dispersion tab, add the zone index
                if ~strcmp(this.SelectedTree.Tag, 'Dispersion')
-                   nZone = numel(getfield(relaxObj,'ZONE')); %#ok<GFLD>
+                   nZone = numel(getfield(relaxObj,'BR')); %#ok<GFLD>
                else
                    nZone = [];
                end
@@ -403,7 +403,7 @@ classdef FileManager  < handle
                    % if not dispersion tab, notify for each index
                    if ~strcmp(this.SelectedTree.Tag, 'Dispersion')
                        % get the number of zone
-                       nZone = numel(getfield(hFile(k).UserData,'ZONE')); %#ok<GFLD>
+                       nZone = numel(getfield(hFile(k).UserData,'BR')); %#ok<GFLD>
                        idxZone = repmat(1:nZone,1,numel(hData));
                        hData = repelem(hData, nZone);
                    else
