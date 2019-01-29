@@ -729,9 +729,10 @@ classdef FitLike < handle
         % Run Fit
         function runFit(this) %%%%% WARNINNNNG %%%%
             % check if data are selected
-            [~, fileID, legendTag, ~] = getSelectedData(this.FileManager,[]); %%%%% WARNINNNNG %%%%
-            % according to the mode process, run it
-            if isempty(fileID)
+%             [~, fileID, legendTag, ~] = getSelectedData(this.FileManager,[]); %%%%% WARNINNNNG %%%%
+            
+            [hData, idxZone]= getSelectedData(this.FileManager,[]);
+            if isempty(hData) % hData should contain the list of dispersion objects
                 event.txt = 'Warning: You need to select dispersion data to run fit\n!';
                 throwMessage(this, [], event);
                 return
@@ -742,46 +743,87 @@ classdef FitLike < handle
                 tab = this.ModelManager.gui.tab.SelectedTab.Children;
                 % get the process array
                 ModelArray = tab.ModelArray;
-                 % loop over the file
-                for k = 1:numel(fileID)
-                    event.txt = 'Fitting...'; throwMessage(this, [], event);
-                    
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    tf = isequal({this.RelaxData.fileID}, fileID{k});
-                    dispersion = getData(this.RelaxData(tf), 'Dispersion', legendTag{k});
-                    % Replace by getData('Dispersion') [Manu]
-                    % check for correspondance (same data file)
-%                     tf = strcmp(strcat({this.RelaxData.fileID},...
-%                         {this.RelaxData.displayName}), strcat(fileID{k},...
-%                         legendTag{k}));
-                    % check if dispersion
-                    if isempty(dispersion); continue; end
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    
+                for dataindex = 1:numel(hData)
                     % apply the fit to the file
-                    procObj = DispersionLsqCurveFit;
-                    procObj = addModel(procObj,ModelArray);
-                    assignProcessingFunction(dispersion, procObj);
+                    procObj = DispersionModel;
+                    procObj = addModel(procObj,ModelArray); % update the model window in the GUI
+                    assignProcessingFunction(hData(dataindex), procObj);
                     % apply the process
-                    processData(dispersion); 
-                    
+                    processData(hData(dataindex)); 
+
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % Use Wrapper? [Manu]
                     % update model name
-                    dispersion.processingMethod.model.modelName = tab.Parent.Title;
+                    hData(dataindex).processingMethod.model.modelName = tab.Parent.Title;
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    
+
                     % notify
-                    notify(dispersion, 'DataHasChanged', EventData(NaN)) 
+                    notify(hData(dataindex), 'DataHasChanged', EventData(NaN)) 
                     event.txt = [sprintf('%d/%d',k,numel(fileID)),'\n'];
                     throwMessage(this, [], event);
+                    drawnow;
                 end
-                drawnow;
                 updateResultTable(this.ModelManager);
                 drawnow;
-            else
-                % Simualation mode
+            else % simulation mode
+                
             end
+            
+            
+            
+%             
+%             % according to the mode process, run it
+%             if isempty(fileID)
+%                 event.txt = 'Warning: You need to select dispersion data to run fit\n!';
+%                 throwMessage(this, [], event);
+%                 return
+%             elseif this.ModelManager.gui.BatchRadioButton.Value
+%                 event.txt = 'Starting to fit file...\n';
+%                 throwMessage(this, [], event);
+%                 % Batch mode
+%                 tab = this.ModelManager.gui.tab.SelectedTab.Children;
+%                 % get the process array
+%                 ModelArray = tab.ModelArray;
+%                  % loop over the file
+%                 for k = 1:numel(fileID)
+%                     event.txt = 'Fitting...'; throwMessage(this, [], event);
+%                     
+%                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     tf = isequal({this.RelaxData.fileID}, fileID{k});
+%                     dispersion = getData(this.RelaxData(tf), 'Dispersion', legendTag{k});
+%                     % Replace by getData('Dispersion') [Manu]
+%                     % check for correspondance (same data file)
+% %                     tf = strcmp(strcat({this.RelaxData.fileID},...
+% %                         {this.RelaxData.displayName}), strcat(fileID{k},...
+% %                         legendTag{k}));
+%                     % check if dispersion
+%                     if isempty(dispersion); continue; end
+%                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     
+%                     % apply the fit to the file
+%                     procObj = DispersionLsqCurveFit;
+%                     procObj = addModel(procObj,ModelArray);
+%                     assignProcessingFunction(dispersion, procObj);
+%                     % apply the process
+%                     processData(dispersion); 
+%                     
+%                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     % Use Wrapper? [Manu]
+%                     % update model name
+%                     dispersion.processingMethod.model.modelName = tab.Parent.Title;
+%                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                     
+%                     % notify
+%                     notify(dispersion, 'DataHasChanged', EventData(NaN)) 
+%                     event.txt = [sprintf('%d/%d',k,numel(fileID)),'\n'];
+%                     throwMessage(this, [], event);
+%                 end
+%                 drawnow;
+%                 updateResultTable(this.ModelManager);
+%                 drawnow;
+%             else
+%                 % Simualation mode
+%             end
         end %runFit
     end
     %% ------------------ AcquisitionManager Callback ------------------ %%

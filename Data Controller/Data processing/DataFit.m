@@ -116,6 +116,9 @@ classdef DataFit < ProcessDataUnit%DataModel
             opList = {'^','*','/'};
             for indParam = 1:length(opList)
                 op = opList{indParam};
+                if isempty(this.modelEquation)
+                    return
+                end
                 pos = regexp(this.modelEquation,['[^.]\' op]); % find when the operators are not preceded by a dot
                 % make the replacements
                 for indsub = length(pos):-1:1
@@ -141,7 +144,7 @@ classdef DataFit < ProcessDataUnit%DataModel
             this.modelHandle = str2func(str);
         end
         
-        % set the fixed parameters for a given 
+        % set the fixed parameters for a given model
         function fhfixed = setFixedParameter(this, fh) %#ok<INUSD>
             paramlist = '';
             n = 0;
@@ -187,6 +190,11 @@ classdef DataFit < ProcessDataUnit%DataModel
             this.parameter = struct('fitAlgorithm', this.solver.options,...
                                     'modelOption', modelOption);           
         end %addParameter
+        
+        % add a model to the list of sub-models
+        function this = addModel(this,model)
+            % TO DO
+        end
         
         % should be in Pipeline probably
 %         function numberOfInputs(this)

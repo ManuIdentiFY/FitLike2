@@ -8,6 +8,15 @@ classdef DispersionModel < DataUnit2DataUnit & DataFit
         labelY@char = '';             % string, labels the Y-axis data in graphs
         labelX@char = '';             % string, labels the X-axis data in graphs
         legendTag@cell = {''};          % cell of strings, contain the legend associated with the data processed
+        modelName;            	% defined in DataFit
+        modelEquation;        	% defined in DataFit
+        variableName;         	% defined in DataFit
+        parameterName;        	% defined in DataFit
+        isFixed;              	% defined in DataFit
+        minValue;             	% defined in DataFit
+        maxValue;             	% defined in DataFit
+        startPoint;           	% defined in DataFit
+        visualisationFunction@cell;	% defined in DataFit
     end 
     
     properties
