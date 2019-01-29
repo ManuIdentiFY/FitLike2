@@ -25,6 +25,11 @@ classdef ParamV1 < ParamObj
                     ' an array of object. Use the following syntax instead: '...
                     'arrayfun(@(x) getZoneAxis(x), self, ''UniformOutput'', 0);'])
             end
+            
+            % check if possible to send invtime
+            if this.paramList.NBLK == 1
+                invtime = 0; return
+            end
             % get parameters
             BGRD = this.paramList.BGRD;
             T1MX = this.paramList.T1MX; %#ok<NASGU>
