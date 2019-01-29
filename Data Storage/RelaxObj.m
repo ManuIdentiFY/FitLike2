@@ -145,18 +145,48 @@ classdef RelaxObj < handle
             end
         end
         
-        function this = remove(this, idx)
+        % remove some relaxObj from a relaxObj array. tf can be a logical
+        % array or an index array
+        function this = remove(this, tf)
             % check input
             if nargin < 2
-                idx = 1:numel(this);
+                tf = true(size(this));
+            elseif isempty(tf)
+                return
             end
-            % remove properly RelaxObj
-            for k = 1:numel(idx)
-                delete(this(idx(k)));
+            % check if logical array
+            if ~islogical(tf)
+                n = numel(this);
+                % remove properly RelaxObj
+                delete(this(tf)); this = this(setdiff(1:n, tf));
+            else
+                % remove properly RelaxObj
+                delete(this(tf)); this = this(~tf);
             end
-            % remove deleted handle
-            this = this(setdiff(1:numel(this),idx));
         end %remove
+        
+        % compare a given relaxObj with one or several other relaxObj.
+        % Override the isequal() built-in function to check only the fileID
+        % property
+        function tf = isequal(this, relaxObj)
+            % check input
+            if isempty(relaxObj); tf = 0; return; end
+            
+            % check if cell array instead of array of object
+            if iscell(relaxObj); relaxObj = [relaxObj{:}]; end
+            % compare fileID
+            tf = strcmp(this.fileID, {relaxObj.fileID});
+        end %isequal
+        
+        % Override the intersect struct. Check which object in this are in
+        % relaxObj
+        function idx = intersect(this, relaxObj)
+            % check input
+            if isempty(relaxObj); idx = []; return; end
+            
+            % check intersection of array
+            [~,idx,~] = intersect({this.fileID}, {relaxObj.fileID});            
+        end %intersect
         
         % Data formating: mergeFile()
         % merge several objects, considering only the DataUnit at the level
