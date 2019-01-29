@@ -688,8 +688,7 @@ classdef FitLike < handle
 %                                 data = [data.children]; continue;
 %                             end                
 %                         end
-                        % assign the process
-                        %assignProcessingFunction(data, ProcessArray(j));                       
+                     
                         % apply the process
                         warning off
                         data = processData(data, ProcessArray(j));
@@ -710,16 +709,14 @@ classdef FitLike < handle
                     % update FileManager
                     setTree(this.FileManager, class(data));
                     updateData(this.FileManager, relaxObj(k));                  
-
+                    drawnow; pause(0.005);
+                    
                     if isa(data, 'Dispersion')
                         idxZone = repelem(NaN, numel(data));
                     else
                         idxZone = repelem(1,numel(data));
-                    end
-                    
-                    drawnow;
+                    end                   
                     checkData(this.FileManager, data, idxZone, 1);                    
-                    drawnow; %EDT
                     
                     % try to plot
                     addPlot(this.DisplayManager, data, idxZone);                                       
