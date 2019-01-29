@@ -332,7 +332,7 @@ classdef FitLike < handle
             % check the selected files in FileManager
             relaxObj = getSelectedFile(this.FileManager);
             % remove files in RelaxData 
-            [~,idx,~] = intersect({this.RelaxData.fileID}, {relaxObj.fileID});
+            idx = intersect(this.RelaxData, relaxObj);
             remove(this.RelaxData, idx);
             % update FileManager
             deleteFile(this.FileManager);
@@ -344,31 +344,24 @@ classdef FitLike < handle
         % Export function: allow to export data (dispersion, model)
         function export(this, src)
             % get selected data
-            fileID = getSelectedFile(this.FileManager);
+            relaxObj = getSelectedFile(this.FileManager);
             % check input
             if strcmp(src.Tag,'Export_Dispersion')
                 % get save folder
                 path = uigetdir(pwd, 'Export Dispersion data');
                 % loop over the files
-                for k = 1:numel(fileID)
+                for k = 1:numel(relaxObj)
                     % get dispersion data
-                    tf = strcmp({this.RelaxData.fileID}, fileID{k});
+                    tf = isequal(relaxObj(k), this.RelaxData);
+                    hData = getData(this.RelaxData(tf),'Dispersion');
                     % check if dispersion
                     if ~isa(this.RelaxData(tf), 'Dispersion')
-                        event.txt = [sprintf('Error: Cannot export this file...%d/%d',k,numel(fileID)),'\n'];
+                        event.txt = [sprintf('Error: Cannot export this file...%d/%d',k,numel(relaxObj)),'\n'];
                         throwMessage(this, [], event);
                     else
-                        
-                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                        % Need to modify export_data to handle array of
-                        % DataUnit object [Manu] --> maybe set this
-                        % function in Dispersion??
-                        hData = getData(this.RelaxData(tf),'Dispersion');
                         export_data(hData, path);
-                        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                        
                     end
-                    event.txt = [sprintf('Files exported...%d/%d',k,numel(fileID)),'\n'];
+                    event.txt = [sprintf('Files exported...%d/%d',k,numel(relaxObj)),'\n'];
                     throwMessage(this, [], event);
                 end
             else
