@@ -292,6 +292,16 @@ classdef FileManager  < handle
                     end
                 end
             end 
+            % notify
+            % create event
+            if flag
+                event = EventFileManager('Action','Select',...
+                    'Data',dataObj,'idxZone',idxZone);
+            else
+                event = EventFileManager('Action','Deselect',...
+                    'Data',dataObj,'idxZone',idxZone); 
+            end
+            notify(this, 'DataSelected', event);
        end % checkData
        
        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
