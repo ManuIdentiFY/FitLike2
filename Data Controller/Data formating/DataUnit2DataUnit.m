@@ -193,11 +193,11 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
                            val = data{2*k}(1:nChild);
                            [DataUnit_child.(fld{k})] = val{:};
                            % remove used data
-                           data{2*k}(1:nChild) = [];
+                           data{2*k} = data{2*k}(nChild+1:end);
                        end
                        % add new data
-                       DataUnit_child = fh('parent',...
-                           repmat({DataUnit_parent},1,n-nChild), data{:});
+                       DataUnit_child = [DataUnit_child, fh('parent',...
+                           repmat({DataUnit_parent},1,n-nChild), data{:})];
                    elseif nChild > n
                        % remove some children
                        DataUnit_child = remove(DataUnit_child, 1:nChild-n);
