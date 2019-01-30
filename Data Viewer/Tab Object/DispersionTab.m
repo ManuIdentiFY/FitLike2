@@ -214,22 +214,23 @@ classdef DispersionTab < EmptyTab
             for k = 1:numel(idx)
                 % get group of plot and their associated idxZone
                 hgg = this.hGroup(idx(k));
-                idxZone = EmptyTab.getIdxZone(hgg);
+                idxZone = EmptyTab.getIdxZone(this.hGroup(idx(k)));
                 plotID = getPlotID(this, src, idxZone);
                 
                 % +ID
-                if ~strcmp(hgg.Tag, plotID)
-                    hgg.Tag = plotID;
+                if ~strcmp(this.hGroup(idx(k)).Tag, plotID)
+                    this.hGroup(idx(k)).Tag = plotID;
                 end
                 
                 % +data
-                tf_data = strcmp(get(hgg.hPlot,'Tag'), 'Data');
-                hPlot = hgg.hPlot(tf_data);
-                
-                if isempty(hPlot)
-                    % plot data
-                    tf_data = [tf_data 1]; % for residual flag
-                    h = plotData(this.hData(idx(k)), this.idxZone(idx(k)),...
+                if this.optsButton.DataCheckButton.Value
+                    tf_data = strcmp(get(this.hGroup(idx(k)).hPlot,'Tag'), 'Data');
+                    hPlot = this.hGroup(idx(k)).hPlot(tf_data);
+                    
+                    if isempty(hPlot)
+                        % plot data
+                        tf_data = [tf_data 1]; %#ok<AGROW> % for residual flag
+                        h = plotData(this.hData(idx(k)), this.idxZone(idx(k)),...
                             'Color',this.PlotSpec(idx(k)).Color,...
                             'LineStyle',this.DataLineStyle,...
                             'Marker',this.PlotSpec(idx(k)).Marker,...
@@ -237,108 +238,114 @@ classdef DispersionTab < EmptyTab
                             'MarkerSize',this.DataMarkerSize,...
                             'Tag','Data',...
                             'Parent',this.axe);
-                    if ~isempty(h)
-                        this = addPlotObj(this, idx(k), h);
-                        set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-                        % add callback to dispersion 
-                        set(h,'ButtonDownFcn',@(s,e) selectData(this,s,e));
+                        if ~isempty(h)
+                            this = addPlotObj(this, idx(k), h);
+                            set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+                            % add callback to dispersion
+                            set(h,'ButtonDownFcn',@(s,e) selectData(this,s,e));
+                        end
+                    elseif isempty(src.y(src.mask))
+                        % remove plot
+                        delete(hPlot); this = clearGroup(this, this.hGroup(idx(k)));
+                    elseif ~isequal(src.y(src.mask), hPlot.YData')
+                        % update
+                        hPlot.XData = src.x(src.mask);
+                        hPlot.YData = src.y(src.mask);
+                        % + error
+                        if ~isempty(hPlot(tf_data).YNegativeDelta)
+                            hPlot.YNegativeDelta = -src.dy(src.mask);
+                            hPlot.YPositiveDelta = +src.dy(src.mask);
+                        end
                     end
-                elseif isempty(src.y(src.mask))
-                    % remove plot
-                    delete(hPlot); this = clearGroup(this, hgg);
-                elseif src.y(src.mask) ~= hPlot.YData
-                    % update
-                    hPlot.XData = src.x(src.mask);
-                    hPlot.YData = src.y(src.mask);
-                    % + error
-                    if ~isempty(hPlot(tf_data).YNegativeDelta)
-                        hPlot.YNegativeDelta = -src.dy(src.mask);
-                        hPlot.YPositiveDelta = +src.dy(src.mask);
-                    end                 
                 end
                 
                 %+mask
-                tf_mask = strcmp(get(hgg.hPlot,'Tag'), 'Mask');
-                hPlot = hgg.hPlot(tf_mask);
-                
-                if isempty(hPlot)
-                    % plot masked data
-                    h = plotMaskedData(this.hData(idx(k)), this.idxZone(idx(k)),...
-                        'Color',this.PlotSpec(idx(k)).Color,...
-                        'LineStyle',this.FitLineStyle,...
-                        'Marker',this.DataMaskedMarkerStyle,...
-                        'MarkerSize',this.DataMarkerSize,...
-                        'Tag','Mask',...
-                        'Parent',this.axe);
-                    if ~isempty(h)
-                        this = addPlotObj(this, idx(k), h);
-                        set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-                    end
-                elseif isempty(src.y(~src.mask)) 
-                    % remove plot
-                    delete(hPlot); this = clearGroup(this, hgg);
-                elseif src.y(~src.mask) ~= hPlot.YData
-                    % update
-                    hPlot.XData = src.x(~src.mask);
-                    hPlot.YData = src.y(~src.mask);               
-                 end
-                
-                %+fit
-                tf_fit = strcmp(get(hgg.hPlot,'Tag'), 'Fit');
-                hPlot = hgg.hPlot(tf_fit);
-                % get data
-                [xfit, yfit] = getFit(src, idxZone,[]);
-                
-                if isempty(hPlot) && ~isempty(yfit)
-                    tf_fit = [tf_fit 1]; % for residual flag
-                    % plot fit
-                    h = plotFit(this.hData(idx(k)), this.idxZone(idx(k)),...
-                        'LineStyle',this.FitLineStyle,...
-                        'Color',this.PlotSpec(idx(k)).Color,...
-                        'Marker',this.FitMarkerStyle,...
-                        'Tag','Fit',...
-                        'Parent',this.axe);
-                    if ~isempty(h)
-                        this = addPlotObj(this, idx(k), h);
-                        set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
-                    end
-                else                    
-                    if isempty(yfit)
-                        % remove plot
-                        delete(hPlot); this = clearGroup(this, hgg);
-                    else
-                        % update
-                        hPlot.XData = xfit;
-                        hPlot.YData = yfit;  
-                    end
-                end 
-                 
-                %+residuals 
-                if ~isempty(this.axeres) && any(tf_data ~= 0) && any(tf_fit ~= 0)
-                    tf_hist = 1;
-                    hPlot = strcmp(get(hgg.hPlot,'Tag'), 'Residual');
-                    % get residual data
-                    [x,y,~,mask] = getData(src, idxZone);
-                    yres = y(mask) - yfit;
-                    if isempty(hPlot) && ~isempty(yres)
-                        % plot
-                        h = plotResidual(this.hData(idx(k)), this.idxZone(idx(k)),...
-                            'Color', this.PlotSpec(idx(k)).Color,...
-                            'LineStyle', this.ResidualStyle,...
-                            'Marker', this.PlotSpec(idx(k)).Marker,...
-                            'MarkerFaceColor',this.PlotSpec(idx(k)).Color,...  
-                            'MarkerSize', this.ResidualSize,...                                                    
-                            'Tag', 'Residual',...
-                            'Parent', this.axeres);
+                if this.optsButton.MaskCheckButton.Value
+                    tf_mask = strcmp(get(this.hGroup(idx(k)).hPlot,'Tag'), 'Mask');
+                    hPlot = this.hGroup(idx(k)).hPlot(tf_mask);
+                    
+                    if isempty(hPlot)
+                        % plot masked data
+                        h = plotMaskedData(this.hData(idx(k)), this.idxZone(idx(k)),...
+                            'Color',this.PlotSpec(idx(k)).Color,...
+                            'LineStyle',this.DataLineStyle,...
+                            'Marker',this.DataMaskedMarkerStyle,...
+                            'MarkerSize',this.DataMarkerSize,...
+                            'Tag','Mask',...
+                            'Parent',this.axe);
                         if ~isempty(h)
                             this = addPlotObj(this, idx(k), h);
                             set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
                         end
-                    elseif ~isempty(yres)
-                        set(hPlot,'XData',x(mask),'YData',yres);
+                    elseif isempty(src.y(~src.mask))
+                        % remove plot
+                        delete(hPlot); this = clearGroup(this, this.hGroup(idx(k)));
+                    elseif ~isequal(src.y(~src.mask), hPlot.YData')
+                        % update
+                        hPlot.XData = src.x(~src.mask);
+                        hPlot.YData = src.y(~src.mask);
+                    end
+                end
+                %+fit
+                if this.optsButton.FitCheckButton.Value
+                    tf_fit = strcmp(get(this.hGroup(idx(k)).hPlot,'Tag'), 'Fit');
+                    hPlot = this.hGroup(idx(k)).hPlot(tf_fit);
+                    % get data
+                    [xfit, yfit] = getFit(src, idxZone,[]);
+                    
+                    if isempty(hPlot) && ~isempty(yfit) && this.optsButton.FitCheckButton.Value
+                        tf_fit = [tf_fit 1]; %#ok<AGROW> % for residual flag
+                        % plot fit
+                        h = plotFit(this.hData(idx(k)), this.idxZone(idx(k)),...
+                            'LineStyle',this.FitLineStyle,...
+                            'Color',this.PlotSpec(idx(k)).Color,...
+                            'Marker',this.FitMarkerStyle,...
+                            'Tag','Fit',...
+                            'Parent',this.axe);
+                        if ~isempty(h)
+                            this = addPlotObj(this, idx(k), h);
+                            set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+                        end
                     else
-                        % clear
-                        delete(hPlot); this = clearGroup(this, hgg);
+                        if isempty(yfit)
+                            % remove plot
+                            delete(hPlot); this = clearGroup(this, this.hGroup(idx(k)));
+                        else
+                            % update
+                            hPlot.XData = xfit;
+                            hPlot.YData = yfit;
+                        end
+                    end
+                end
+                 
+                %+residuals 
+                if this.optsButton.ResidualCheckButton.Value
+                    if ~isempty(this.axeres) && any(tf_data ~= 0) && any(tf_fit ~= 0)
+                        tf_hist = 1;
+                        hPlot = strcmp(get(this.hGroup(idx(k)).hPlot,'Tag'), 'Residual');
+                        % get residual data
+                        [x,y,~,mask] = getData(src, idxZone);
+                        yres = y(mask) - yfit;
+                        if isempty(hPlot) && ~isempty(yres)
+                            % plot
+                            h = plotResidual(this.hData(idx(k)), this.idxZone(idx(k)),...
+                                'Color', this.PlotSpec(idx(k)).Color,...
+                                'LineStyle', this.ResidualStyle,...
+                                'Marker', this.PlotSpec(idx(k)).Marker,...
+                                'MarkerFaceColor',this.PlotSpec(idx(k)).Color,...
+                                'MarkerSize', this.ResidualSize,...
+                                'Tag', 'Residual',...
+                                'Parent', this.axeres);
+                            if ~isempty(h)
+                                this = addPlotObj(this, idx(k), h);
+                                set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+                            end
+                        elseif ~isempty(yres)
+                            set(hPlot,'XData',x(mask),'YData',yres);
+                        else
+                            % clear
+                            delete(hPlot); this = clearGroup(this, hthis.hGroup(idx(k)));
+                        end
                     end
                 end
             end %fot loop
@@ -478,7 +485,7 @@ classdef DispersionTab < EmptyTab
                     if isempty(findobj(this.hGroup(k).hPlot ,'Tag','Mask'))
                         h = plotMaskedData(this.hData(k), this.idxZone(k),...
                                     'Color',this.PlotSpec(k).Color,...
-                                    'LineStyle',this.FitLineStyle,...
+                                    'LineStyle',this.DataLineStyle,...
                                     'Marker',this.DataMaskedMarkerStyle,...
                                     'MarkerSize',this.DataMarkerSize,...
                                     'Tag','Mask',...
@@ -962,7 +969,7 @@ classdef DispersionTab < EmptyTab
             else
                 % find the corresponding group and remove invalid handle
                 for k = 1:numel(hGroup)
-                    tf = this.hGroup == hGroup(k);
+                    tf = strcmp({this.hGroup.Tag}, hGroup(k).Tag);
                     this.hGroup(tf).hPlot = this.hGroup(tf).hPlot(isvalid(this.hGroup(tf).hPlot));
                 end
             end
