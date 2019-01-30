@@ -196,10 +196,15 @@ classdef FileManager  < handle
                
                if ~isempty(hData)
                    % check if this file is already plotted
-                   tf = isequal(fileNode(k).UserData, this.SelectedTree.Root.Children.UserData);
+                   if isempty(this.SelectedTree.Root.Children)
+                       tf = 0;
+                   else
+                        tf = isequal(fileNode(k).UserData, [this.SelectedTree.Root.Children.UserData]);
+                   end
                    % copy node if required
                    if all(tf == 0)
                        hParent = copy(fileNode(k), this.SelectedTree.Root);
+                       hParent.Checked = 0;
                    else
                        hParent = this.SelectedTree.Root.Children(tf);
                    end
@@ -247,15 +252,13 @@ classdef FileManager  < handle
            if isempty(this.SelectedTree.Root.Children)
                return
            end
-           % loop over the fileID
-           for k = 1:numel(relaxObj)
-               %search and delete
-               nodes = this.SelectedTree.Root.Children;
-               tf = arrayfun(@(x) isequal(x.UserData, relaxObj), nodes);
-               if ~all(tf == 0)
-                   delete(nodes(tf));
-               end
-           end         
+
+           % delete nodes
+           nodes = this.SelectedTree.Root.Children;
+           idx = intersect([nodes.UserData], relaxObj);
+           if ~isempty(idx)
+               delete(nodes(idx));
+           end   
        end %removeData
        
        % check data. dataObj is a DataUnit object.
@@ -467,9 +470,8 @@ classdef FileManager  < handle
             end
             % notify
             notify(this, 'DataSelected', event);
-            notify(this.SelectedTree, 'TreeHasChanged');
             %src.Enable = 'on';
-            drawnow nocallbacks
+            drawnow %nocallbacks
         end %selectData
        
        % set the selected tree  OK [14/01/19]
@@ -525,7 +527,7 @@ classdef FileManager  < handle
         % Throw the DataUnit selected and their zone index  OK [14/01/19]
         function [hData, idxZone] = getSelectedData(this, hNodes)
             % get checked nodes
-            if nargin < 1 || isempty(hNodes)
+            if nargin == 1
                 hNodes = this.SelectedTree.CheckedNodes;
             end
             % check input
