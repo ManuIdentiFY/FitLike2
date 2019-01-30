@@ -57,8 +57,8 @@ classdef ModelManager < handle
                 @(src, event) updateResultTable(this));
             
             % Add listener to the Dispersion tree
-            addlistener(this.FitLike.FileManager,...
-               'DataSelected',@(src, event) updateFilePopup(this, src, event));
+%             addlistener(this.FitLike.FileManager,...
+%                'DataSelected',@(src, event) updateFilePopup(this, src, event));
         end %ModelManager
         
         % Destructor
@@ -224,6 +224,9 @@ classdef ModelManager < handle
                 return
             end
             
+            % check format
+            if size(event.Data,1) > 1; event.Data = event.Data'; end
+            
             % form output name and ID
             for k = numel(event.Data):-1:1
                 new_name{k} = [getRelaxProp(event.Data(k), 'filename'),...
@@ -248,7 +251,7 @@ classdef ModelManager < handle
                 if isempty(hPopup.UserData)
                     lisflag = 0;
                     hPopup.Value = 1;
-                    hPopup.String = {'Select a dispersion data:'};  
+                    hPopup.String = 'Select a dispersion data:';  
                 else
                     hPopup.String = hPopup.String(idx);
                 end
