@@ -333,8 +333,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 % invert the mask according to the range
                 this.mask(dim{:}(range)) = ~this.mask(dim{:}(range));
             end
-            % notify
-            notify(this, 'DataUpdate', EventFileManager('idxZone',idxZone));
         end %setMask
         
         % Wrapper to get RelaxObj property from DataUnit
@@ -427,7 +425,11 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 varargin{end+1} = getLegend(this, idxZone, 'Data', 0);
             end
             % plot
-            h = errorbar(xp(maskp), yp(maskp), [], varargin{:}); 
+            if ~isempty(yp(maskp))
+                h = errorbar(xp(maskp), yp(maskp), [], varargin{:}); 
+            else
+                h = [];
+            end
          end %plotData
          
          % Add error to an existing errorbar. 
@@ -447,9 +449,11 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
              % check if data to plot
              if ~isempty(yp(~maskp))
                  % plot
-                 h = scatter(axe, xp(~maskp), yp(~maskp), varargin{:});
+                 h = plot(xp(~maskp), yp(~maskp), varargin{:});
                  % remove this plot from legend
                  set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
+             else
+                 h = [];
              end
          end %plotMaskedData
          
@@ -483,6 +487,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
              % check if possible to plot fit
              if ~isempty(yfit) && ~isempty(yr)
                  h = plot(xr(maskr), yr(maskr) - yfit, varargin{:});
+             else
+                 h = [];
              end
          end %plotResidual
         %%% -------------------------------------------- %%%
