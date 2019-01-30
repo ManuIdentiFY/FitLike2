@@ -52,9 +52,9 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             
             % format output
             new_data = formatData(this, new_data);
-            this = formatModel(this, model);
-                        
-            % assign process in parentObj (to test, Manu)
+            this = formatModel(this, model);         
+            
+            % add processObj
             parentObj.processingMethod = this;
             
             % gather data and create childObj
@@ -93,11 +93,18 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
         % add other properties (xLabel, yLabel, legendTag
         function childObj = addOtherProp(this, childObj)
             % add xLabel and yLabel
-            [childObj.xLabel] = deal(this.labelX);
-            [childObj.yLabel] = deal(this.labelY);
+            if ~isempty(this.labelX)
+                [childObj.xLabel] = deal(this.labelX);
+            end
             
+            if ~isempty(this.labelY)
+                [childObj.yLabel] = deal(this.labelY);
+            end
             % add legendTag
-            [childObj.legendTag] = this.legendTag{:};
+            % do not add empty legeng (listener!)
+            if ~isempty(this.legendTag{1})
+                [childObj.legendTag] = this.legendTag{:};
+            end
         end %addOtherProp
     end
     
