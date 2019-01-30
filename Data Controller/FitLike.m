@@ -708,7 +708,7 @@ classdef FitLike < handle
                     pause(0.005);
                     % update FileManager
                     setTree(this.FileManager, class(data));
-                    pause(0.005);
+                    drawnow; pause(0.005);
                     updateData(this.FileManager, this.RelaxData(tf));                  
                     drawnow; pause(0.005);
                     
