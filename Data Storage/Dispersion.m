@@ -50,57 +50,22 @@ classdef Dispersion < DataUnit
             end
         end %getDim
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Can be simplify by using smart dimension indexing! [Manu]
-        % These functions should be set in DataUnit whereas only dimension
-        % access should be set here!
-        
-%         % Set mask according to a [x,y] range. the new mask is added to the
-%         % current mask. Can be called with only two input to reset the mask.
-%         function this = setMask(this, idxZone, xrange, yrange)
-%             % check input
-%             if isnan(idxZone)
-%                 if nargin > 3
-%                     this.mask = this.mask &...
-%                         ~((xrange(1) < this.x & this.x < xrange(2))&...
-%                           (yrange(1) < this.y & this.y < yrange(2)));
-%                 else
-%                     this.mask = true(size(this.mask));
-%                 end
-%             else
-%                 if nargin > 3
-%                     this.mask(idxZone) = this.mask(idxZone) &...
-%                         ~((xrange(1) < this.x(idxZone) & this.x(idxZone) < xrange(2))&...
-%                           (yrange(1) < this.y(idxZone) & this.y(idxZone) < yrange(2)));
-%                 else
-%                     this.mask(idxZone) = true;
-%                 end
-%             end
-%         end %setMask
-        
-%         % get the dispersion data
-%         function [x,y,dy,mask] = getData(this, idxZone)
-%             % check input
-%             if ~isnan(idxZone)
-%                x = this.x(idxZone); y = this.y(idxZone); dy = this.dy(idxZone);
-%                mask = this.mask(idxZone);
-%             else
-%                x = this.x; y = this.y; dy = this.dy; mask = this.mask;
-%             end
-%         end %getData
+        % evaluate the fit function if present, for display purposes
+        function y = evaluate(this, x)
+            if isempty(this.processingMethod); y = []; return; end
+            
+            model = this.processingMethod.modelHandle;
+            x = [num2cell(this.processingMethod.bestValue{1}), {x}];
+            y = model(x{:});
+        end
         
         % get the dispersion fit data
         function [xfit, yfit] = getFit(this, idxZone, xfit)
-            % check if fitobj
-            if isempty(this.processingMethod)
-                xfit = []; yfit = [];
-                return
-            end
             % check input
             if ~isnan(idxZone)
                x = this.x(idxZone); mask = this.mask(idxZone);
                xfit = x(mask);
-               yfit = evaluate(this.processingMethod, xfit);
+               yfit = evaluate(this, xfit);
             else
                 if isempty(xfit)
                     % resample x data
@@ -111,7 +76,7 @@ classdef Dispersion < DataUnit
                     xfit = sort([x; x(1:end-1)+x_add]); %add it
                 end
                 % get y-values
-                yfit = evaluate(this.processingMethod, xfit);
+                yfit = evaluate(this, xfit);
             end
         end %getFit
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -140,8 +105,8 @@ classdef Dispersion < DataUnit
                     end
                 case 'Fit'
                     leg = sprintf('%s (r² = %.3f)',...
-                            this.processingMethod.model.modelName,...
-                            this.processingMethod.model.gof.rsquare);
+                            this.processingMethod.modelName,...
+                            this.processingMethod.gof{1}.rsquare);
                     
                     if extend == -1
                         return
