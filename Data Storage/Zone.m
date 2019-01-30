@@ -41,16 +41,12 @@ classdef Zone < DataUnit
 %             end
 %         end
                        
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Need to be simplify to get fitting data from processing method
-        % instead of parameter! [Manu]
-        % Need to modify the Zone2Disp storage pipeline! [Manu]
         % evaluate the fit function if present, for display purposes
-        function y = evaluate(this, zoneIndex, x)
-            model = this.parameter.paramList.modelHandle{zoneIndex};
-            y = model(this.parameter.paramList.coeff(zoneIndex,:), x);
+        function y = evaluate(this, idxZone, x)
+            model = this.processingMethod.modelHandle;
+            x = [num2cell(this.processingMethod.bestValue{idxZone,:}), {x}];
+            y = model(x{:});
         end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         % define dimension indexing for data selection. If idxZone is a NaN
         % all the data are collected.
@@ -155,7 +151,7 @@ classdef Zone < DataUnit
                         % error ?
                     else
                         leg = sprintf('%s  (r² = %.3f)',leg,...
-                            this.parameter.paramList.gof{idxZone}.rsquare);
+                            this.processingMethod.gof{idxZone}.rsquare);
                                                                                      
                         if extend                        
                             leg = sprintf('%s: Zone %d - %s', leg, idxZone, this.relaxObj.filename);
