@@ -170,7 +170,7 @@ classdef RelaxObj < handle
         % property
         function tf = isequal(this, relaxObj)
             % check input
-            if isempty(relaxObj); tf = 0; return; end
+            if isempty(relaxObj) || isempty(this); tf = 0; return; end
             
             % check if cell array instead of array of object
             if iscell(relaxObj); relaxObj = [relaxObj{:}]; end
