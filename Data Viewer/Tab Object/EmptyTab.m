@@ -94,7 +94,7 @@ classdef EmptyTab < uix.Container & handle
                 idxZone = [];
             else
                 str = strsplit(hData.Tag,'@');
-                idxZone = str{3};
+                idxZone = str2double(str{3});
             end
         end
     end
