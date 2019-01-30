@@ -10,7 +10,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     % SEE ALSO BLOC, ZONE, DISPERSION
     
     % file data
-    properties (Access = public, SetObservable)
+    properties (Access = public, SetObservable, AbortSet)
         x@double = [];              % main measure X (time, Bevo,...)
         y@double = [];              % main measure Y ('R1','fid',...)
         dy@double = [];             % error bars on Y
@@ -467,7 +467,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                      varargin{end+1} = getLegend(this, idxZone, 'Fit', 0);
                  end
                  % plot
-                 h = plot(axe, xfit, yfit,varargin{:});
+                 h = plot(xfit, yfit,varargin{:});
+             else
+                 h = [];
              end
          end %plotFit
          
@@ -480,7 +482,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
               [~, yfit] = getFit(this, idxZone, xr(maskr));
              % check if possible to plot fit
              if ~isempty(yfit) && ~isempty(yr)
-                 h = plot(axe, xr(maskr), yr(maskr) - yfit, varargin{:});
+                 h = plot(xr(maskr), yr(maskr) - yfit, varargin{:});
              end
          end %plotResidual
         %%% -------------------------------------------- %%%
