@@ -8,6 +8,10 @@ classdef ModelManager < handle
         FitLike % Presenter
     end
     
+    properties
+        ls %handle to listener
+    end
+    
     methods
         % Constructor
         function this = ModelManager(FitLike)
@@ -53,8 +57,8 @@ classdef ModelManager < handle
                 @(src, event) updateResultTable(this));
             
             % Add listener to the Dispersion tree
-            %addlistener(this.FitLike.FileManager.gui.treedata(1),...
-             %   'TreeHasChanged',@(src, event) updateFilePopup(this));
+            addlistener(this.FitLike.FileManager,...
+               'DataSelected',@(src, event) updateFilePopup(this, src, event));
         end %ModelManager
         
         % Destructor
@@ -163,32 +167,19 @@ classdef ModelManager < handle
         
         % Check file callback
         function this = updateResultTable(this)
+            % handle popup
+            hPopup = this.gui.FileSelectionPopup;
             % get the selected file
-            if ischar(this.gui.FileSelectionPopup.String)
+            if isempty(hPopup.UserData)
                 return               
-            elseif isempty(this.gui.FileSelectionPopup.String{this.gui.FileSelectionPopup.Value})
-                return
             end
+            
             % get the file selected
-            fileID = this.gui.FileSelectionPopup.UserData{this.gui.FileSelectionPopup.Value};
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % check if multiple dispersion data
-            dispersion = getData(this.FitLike, fileID, 'Dispersion');
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % How to handle files with multiple dispersion data? [Manu]
-            % get model data
-            if numel(dispersion)
-                % compare the string in the file popup
-                str = this.gui.FileSelectionPopup.String{this.gui.FileSelectionPopup.Value};
-                str = strrep(str, dispersion(1).filename, '');
-                tf = contains({dispersion.displayName}, str);
-                dispersion = dispersion(tf);
-            end
-            model = dispersion.processingMethod; % replace by a wrapper? [Manu]
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            ID = hPopup.UserData{hPopup.Value};
+            ID = strsplit(ID,'@');
+
+            % get dispersion data
+            dataObj = getData(this.FitLike, ID{1}, ID{2});
             
             % remove previous results
             nRow = this.gui.jtable.getRowCount();
@@ -197,18 +188,24 @@ classdef ModelManager < handle
                    % see https://undocumentedmatlab.com/blog/matlab-and-the-event-dispatch-thread-edt
                    javaMethodEDT('removeRow',this.gui.jtable,0);
             end
-            % check if model available
-            if isempty(model)
+            % check if data are available
+            if isempty(dataObj)
                 return
             end
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Need to finish submodel architecture in DataFit!
+            if 1; disp('ModelManager: OK!'); return; end
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
             % add new results
-            modelName = model.model.modelName;
+            modelName = processObj.modelName;
             for k = 1:numel(model.subModel)
                 % add by submodel
-                submodelName = model.subModel(k).modelName;
-                parameter = strcat(model.subModel(k).parameterName);
-                bestValue = single([model.subModel(k).bestValue]);
-                error = single([model.subModel(k).errorBar]);
+                submodelName = processObj.subModel(k).modelName;
+                parameter = strcat(processObj.subModel(k).parameterName);
+                bestValue = single([processObj.subModel(k).bestValue]);
+                error = single([processObj.subModel(k).errorBar]);
                 for i = 1:numel(parameter)
                        row = {modelName, submodelName, parameter{i}, bestValue(i), error(i)};
                        % here we use the javaMethodEDT to handle EDT
@@ -219,26 +216,56 @@ classdef ModelManager < handle
         end
         
         % File checked in tree callback
-        function this = updateFilePopup(this)
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % get the selected fileID;
-            [leg, fileID] = getLegend(this.FitLike);
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            
-            % get the corresponding data
-            if ~isempty(leg)
-                if numel(leg) < this.gui.FileSelectionPopup.Value
-                    this.gui.FileSelectionPopup.Value = numel(leg);
-                end
-                % update file popup
-                this.gui.FileSelectionPopup.String = leg;
-                this.gui.FileSelectionPopup.UserData = fileID;
-            else
-                % reset filepopup
-                this.gui.FileSelectionPopup.String = {''};
-                this.gui.FileSelectionPopup.UserData = [];
+        function this = updateFilePopup(this,~,event)
+            % check if data are dispersion
+            if ~isa(event.Data ,'Dispersion')
+                return
             end
+            
+            % form output name and ID
+            for k = numel(event.Data):-1:1
+                new_name{k} = [getRelaxProp(event.Data(k), 'filename'),...
+                    ' (',event.Data(k).displayName,')'];
+                ID{k} = [getRelaxProp(event.Data(k),...
+                    'fileID'),'@',event.Data(k).displayName];
+            end
+            
+            lisflag = 1; %flag for listener
+            % check if we add new item or remove one
+            hPopup = this.gui.FileSelectionPopup;
+            if strcmp(event.Action, 'Select')
+                if strcmp(hPopup.String, 'Select a dispersion data:')
+                    hPopup.String = new_name;
+                    hPopup.UserData = ID;
+                else
+                    hPopup.String = [hPopup.String new_name];
+                    hPopup.UserData = [hPopup.UserData ID];
+                end
+            else
+                [~,idx] = setdiff(hPopup.String, new_name);
+                hPopup.UserData = hPopup.UserData(idx);
+                
+                if isempty(hPopup.UserData)
+                    lisflag = 0;
+                    hPopup.Value = 1;
+                    hPopup.String = {'Select a dispersion data:'};  
+                else
+                    hPopup.String = hPopup.String(idx);
+                end
+            end
+            
+            % remove previous listener
+            if ~isempty(this.ls); delete(this.ls); end
+            
+            if lisflag                
+                % add new one
+                ID = hPopup.UserData{hPopup.Value};
+                ID = strsplit(ID,'@');
+                dataObj = getData(this.FitLike, ID{1}, ID{2});
+                this.ls = addlistener(dataObj,{'processingMethod'},'PostSet',...
+                    @(src, event) updateResultTable(this));
+            end
+            drawnow;
             updateResultTable(this);
             drawnow;
         end %updateFilePopup
