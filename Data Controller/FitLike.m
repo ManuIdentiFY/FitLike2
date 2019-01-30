@@ -720,8 +720,8 @@ classdef FitLike < handle
                     checkData(this.FileManager, data, idxZone, 1);                    
                     drawnow; pause(0.005);
                     % try to plot
-                    addPlot(this.DisplayManager, data, idxZone);                                       
-                    drawnow % EDT
+%                     addPlot(this.DisplayManager, data, idxZone);                                       
+%                     drawnow % EDT
                     
                     event.txt = [sprintf('%d/%d',k,numel(relaxObj)),'\n'];
                     throwMessage(this, [], event);
