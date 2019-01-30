@@ -166,7 +166,7 @@ classdef ModelManager < handle
         end %switchProcessMode
         
         % Check file callback
-        function this = updateResultTable(this)
+        function this = updateResultTable(this, src , event)
             % handle popup
             hPopup = this.gui.FileSelectionPopup;
             % get the selected file
@@ -174,13 +174,9 @@ classdef ModelManager < handle
                 return               
             end
             
-            % get the file selected
-            ID = hPopup.UserData{hPopup.Value};
-            ID = strsplit(ID,'@');
+            % get the data associated
+            dataObj = hPopup.UserData(hPopup.Value);
 
-            % get dispersion data
-            dataObj = getData(this.FitLike, ID{1}, ID{2});
-            
             % remove previous results
             nRow = this.gui.jtable.getRowCount();
             for k = 1:nRow
@@ -215,6 +211,12 @@ classdef ModelManager < handle
             end
         end
         
+        % Need to add move listener from updateResultTable to
+        % updateFilePopup to respond to runProcess() call. [Manu]
+        % Could pass data to the updateResultTable directly, avoiding the
+        % need to do multiple call to FitLike to get data (just store
+        % handle in UserData!)
+        
         % File checked in tree callback
         function this = updateFilePopup(this,~,event)
             % check if data are dispersion
@@ -226,8 +228,6 @@ classdef ModelManager < handle
             for k = numel(event.Data):-1:1
                 new_name{k} = [getRelaxProp(event.Data(k), 'filename'),...
                     ' (',event.Data(k).displayName,')'];
-                ID{k} = [getRelaxProp(event.Data(k),...
-                    'fileID'),'@',event.Data(k).displayName];
             end
             
             lisflag = 1; %flag for listener
@@ -236,10 +236,10 @@ classdef ModelManager < handle
             if strcmp(event.Action, 'Select')
                 if strcmp(hPopup.String, 'Select a dispersion data:')
                     hPopup.String = new_name;
-                    hPopup.UserData = ID;
+                    hPopup.UserData = event.Data;
                 else
                     hPopup.String = [hPopup.String new_name];
-                    hPopup.UserData = [hPopup.UserData ID];
+                    hPopup.UserData = [hPopup.UserData event.Data];
                 end
             else
                 [~,idx] = setdiff(hPopup.String, new_name);
@@ -259,13 +259,11 @@ classdef ModelManager < handle
             
             if lisflag                
                 % add new one
-                ID = hPopup.UserData{hPopup.Value};
-                ID = strsplit(ID,'@');
-                dataObj = getData(this.FitLike, ID{1}, ID{2});
+                dataObj = hPopup.UserData(hPopup.Value);
                 this.ls = addlistener(dataObj,{'processingMethod'},'PostSet',...
                     @(src, event) updateResultTable(this));
             end
-            drawnow;
+            drawnow; pause (0.005);
             updateResultTable(this);
             drawnow;
         end %updateFilePopup
