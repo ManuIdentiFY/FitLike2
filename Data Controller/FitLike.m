@@ -685,6 +685,7 @@ classdef FitLike < handle
                         % apply the process
                         warning off
                         data = processData(data, ProcessArray(j));
+                        pause(0.005);
                         warning on
                     end   
                     
@@ -696,12 +697,19 @@ classdef FitLike < handle
                         end
                     end
                     
+                    % Check if data has processingMethod and delete if true
+                    tf_oldprocess = ~arrayfun(@(x) isempty(x.processingMethod), data);
+                    if any(tf_oldprocess ~= 0)
+                        [data(tf_oldprocess).processingMethod] = deal([]);
+                    end
+                    
                     % replace the highest object created in relaxObj
                     this.RelaxData(tf).data = data;
-
+                    pause(0.005);
                     % update FileManager
                     setTree(this.FileManager, class(data));
-                    updateData(this.FileManager, relaxObj(k));                  
+                    pause(0.005);
+                    updateData(this.FileManager, this.RelaxData(tf));                  
                     drawnow; pause(0.005);
                     
                     if isa(data, 'Dispersion')
@@ -710,7 +718,7 @@ classdef FitLike < handle
                         idxZone = repelem(1,numel(data));
                     end                   
                     checkData(this.FileManager, data, idxZone, 1);                    
-                    
+                    drawnow; pause(0.005);
                     % try to plot
                     addPlot(this.DisplayManager, data, idxZone);                                       
                     drawnow % EDT
@@ -729,7 +737,7 @@ classdef FitLike < handle
         % Run Fit
         function runFit(this) %%%%% WARNINNNNG %%%%
             % check if data are selected
-            [dataObj, ~] = getSelectedData(this.FileManager,[]); %%%%% WARNINNNNG %%%%
+            [dataObj, ~] = getSelectedData(this.FileManager); %%%%% WARNINNNNG %%%%
             % according to the mode process, run it
             if isempty(dataObj)
                 event.txt = 'Warning: You need to select dispersion data to run fit\n!';
@@ -744,19 +752,19 @@ classdef FitLike < handle
                 tab = this.ModelManager.gui.tab.SelectedTab.Children;
                 % get the process array
                 ModelArray = tab.ModelArray;
+                
+                if isempty(ModelArray); return; end
+                
                 % loop over the file
                 for k = 1:numel(dataObj)
                     event.txt = 'Fitting...'; throwMessage(this, [], event);
                     % apply the process
-                    processData(dataObj(k), ModelArray(1));
+                    dataObj(k) = processData(dataObj(k), ModelArray(1));
                     % throw message
                     event.txt = [sprintf('%d/%d',k,numel(dataObj)),'\n'];
+                    throwMessage(this, [], event);
                 end
-                
-                % notify
-                event.txt = [sprintf('%d/%d',k,numel(fileID)),'\n'];
-                throwMessage(this, [], event);
-                drawnow;
+                drawnow; %EDT
                 %updateResultTable(this.ModelManager);
             else % simulation mode
                 
@@ -818,6 +826,19 @@ classdef FitLike < handle
 %                 % Simualation mode
 %             end
         end %runFit
+        
+        % send model to the ModelManager
+        function dataObj = getData(this, fileID, displayName)
+            % check input
+            if isempty(fileID); dataObj = []; return; end
+            
+            % get the corresponding relaxObj
+            tf = strcmp(fileID, {this.RelaxData.fileID});
+            
+            if all(tf ==0); dataObj = []; return; end
+            
+            dataObj = getData(this.RelaxData(tf), 'Dispersion', displayName);
+        end %getModel
     end
     %% ------------------ AcquisitionManager Callback ------------------ %%
     methods (Access = public)
