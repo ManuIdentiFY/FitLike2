@@ -13,7 +13,7 @@ classdef Monoexp < Zone2Disp & DataFit
        
     properties
        modelName = 'Monoexponential T1';          % character string, name of the model, as appearing in the figure legend
-       modelEquation = '(M0-Minf)*exp(-x*R1)+Minf';      % character string, equation that relates the Larmor frequency (Hz) to the parameters to R1 (s^{-1})
+       modelEquation = '(M0-Minf)*exp(-t*R1)+Minf';      % character string, equation that relates the Larmor frequency (Hz) to the parameters to R1 (s^{-1})
        variableName = {'t'};                                  % List of characters, name of the variables appearing in the equation
        parameterName = {'M0','Minf','R1'};        % List of characters, name of the parameters appearing in the equation
        isFixed = [0 0 0];                               % List of array of booleans, set to 1 if the corresponding parameter is fixed, 0 if they are to be optimised by the fit.
