@@ -155,7 +155,7 @@ classdef DisplayManager < handle
                 % send error
                 msg = ['Error: Input data (',class(hData),') does not fit'...
                        ' the current tab (',this.gui.tab.SelectedTab.Children.inputType,')\n'];
-                throwWrapMessage(this, msg)
+                throwWrapMessage(this, msg);
                 return
             end
             % call addPlot method of this tab
