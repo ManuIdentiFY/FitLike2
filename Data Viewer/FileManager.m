@@ -344,21 +344,20 @@ classdef FileManager  < handle
                    else
                        % get the file node
                        hFile = hFile(tf_file);
-                       hRelax = hFile.Children;
+                       n = numel(hFile.Children);
                        % check how many relaxObj are inside the file node
                        % remove or add some relaxObj
-                       if numel(hRelax) > numel(displayName)
+                       if n > numel(displayName)
                            % remove some relaxObj
-                           delete(hRelax(numel(displayName)+1:end));
-                           hRelax(numel(displayName)+1:end) = []; %clear
+                           delete(hFile.Children(numel(displayName)+1:end));
                            %hRelaxObj = hRelaxObj(1:nOldRelax); %clear
-                       elseif numel(hRelax) < numel(displayName)
+                       elseif n < numel(displayName)
                            % add some relaxObj
                            addRelaxObj(this, hFile, icon,...
-                               repmat({''},1,1:numel(displayName)-numel(hRelax)), nZone);
+                               repmat({''},1,1:numel(displayName)- n), nZone);
                        end
                        % set new name
-                       [hRelax.Name] = displayName{:};
+                       [hFile.Children.Name] = displayName{:};
                    end
                end
                % expand
