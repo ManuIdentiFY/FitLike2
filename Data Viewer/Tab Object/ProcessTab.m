@@ -189,7 +189,8 @@ classdef ProcessTab < uix.Container & handle
         % Display a window where the user can select a process
         function [name, intype, outtype, parameter, processObj] = processdlg()
             % define subclass to list
-            PROCESS_CLASS = {'Bloc2Zone','Zone2Disp'}; %name of the class to list
+%             PROCESS_CLASS = {'Bloc2Bloc','Bloc2Zone','Zone2Zone','Zone2Disp','Disp2Disp','Disp2Exp','Exp2Exp'}; %name of the class to list
+            PROCESS_CLASS = {'Bloc2Zone','Zone2Disp'};
             process_tb = [];
             fitlikeDir = fileparts(which('FitLike.m'));
             % loop 
@@ -197,7 +198,12 @@ classdef ProcessTab < uix.Container & handle
                 % get subclass
                 tb = getSubclasses(PROCESS_CLASS{k}, fitlikeDir);
                 tb = tb(2:end,:); % remove superclass
-                % add input/output 
+%                 % add input/output 
+%                 oh = str2func(PROCESS_CLASS{k});
+%                 obj = oh(); % create an instance of the object
+%                 in = obj.InputChildClass;
+%                 out=  obj.OutputChildClass;
+%                 
                 switch PROCESS_CLASS{k}
                     case 'Bloc2Zone'
                         in = 'bloc';
