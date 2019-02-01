@@ -1,0 +1,47 @@
+classdef MergeBloc < Bloc2Bloc & ProcessDataUnit
+    
+    properties
+        InputChildClass@char; 	% defined in DataUnit2DataUnit
+        OutputChildClass@char;	% defined in DataUnit2DataUnit
+        functionName@char = '';     % character string, name of the model, as appearing in the figure legend
+        labelY@char = '';       % string, labels the Y-axis data in graphs
+        labelX@char = '';             % string, labels the X-axis data in graphs
+        legendTag@cell = {'Merged'};         % tag appearing in the legend of data derived from this object
+    end
+        
+    methods
+        % Constructor
+        function this = MergeBloc()
+            % call both superclass constructor
+            this = this@Bloc2Bloc;
+            this = this@ProcessDataUnit;
+            % set the ForceDataCat flag to true. Allow to get all the 3D
+            % bloc matrix.
+            % Warning: output data should be formated as:
+            % new_data.x = NBLK x BRLX matrix
+            % new_data.y = NBLK x BRLX matrix
+            % ...
+            %
+            this.ForceDataCat = true;
+        end % AverageAbs
+    end
+    
+    methods
+        % Define abstract method applyProcess(). See ProcessDataUnit.
+        function [model, new_data] = applyProcess(this, data)
+            % get data size
+            [~, NBLK, BRLX] = size(data.y);
+            % get absolute y-values and replace unwanted values by nan (masked).
+            y = abs(data.y);
+            y((y == data.mask)) = nan;
+            
+            % apply absolute average on the first dimension and avoid nan
+            % values. Reshape to get NBLK x BRLX matrix
+            new_data.y = reshape(mean(y,1,'omitnan'),[NBLK, BRLX]);
+            new_data.dy = reshape(std(y,[],1,'omitnan'),[NBLK, BRLX]);
+            
+            % dummy
+            model = [];
+        end %applyProcess
+    end
+end
