@@ -1,8 +1,8 @@
 classdef MergeBloc < Bloc2Bloc & ProcessDataUnit
     
     properties
-        InputChildClass@char; 	% defined in DataUnit2DataUnit
-        OutputChildClass@char;	% defined in DataUnit2DataUnit
+        %InputChildClass@char; 	% defined in DataUnit2DataUnit
+        %OutputChildClass@char;	% defined in DataUnit2DataUnit
         functionName@char = '';     % character string, name of the model, as appearing in the figure legend
         labelY@char = '';       % string, labels the Y-axis data in graphs
         labelX@char = '';             % string, labels the X-axis data in graphs
