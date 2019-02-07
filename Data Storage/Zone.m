@@ -145,6 +145,8 @@ classdef Zone < DataUnit
                         leg = [leg,' (',this.displayName,')'];
                     end
                 case 'Fit'
+                    if isempty(this.processingMethod); leg = []; return; end
+                    
                     leg = sprintf('%s', this.processingMethod.functionName);
                     
                     if isnan(idxZone)

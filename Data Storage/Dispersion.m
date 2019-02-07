@@ -104,6 +104,8 @@ classdef Dispersion < DataUnit
                         leg = [leg,' (',this.displayName,')'];
                     end
                 case 'Fit'
+                    if isempty(this.processingMethod); leg = []; return; end
+                    
                     leg = sprintf('%s (r² = %.3f)',...
                             this.processingMethod.modelName,...
                             this.processingMethod.gof{1}.rsquare);
