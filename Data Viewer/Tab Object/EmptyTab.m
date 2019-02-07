@@ -9,8 +9,14 @@ classdef EmptyTab < uix.Container & handle
     properties (Access = public)
         hData     % handle data
         idxZone   % zone index
-        inputType % input type accepted
+    end
+    
+    % plot
+    properties
+        Legend    % handle to the legend
+        hGroup    % contain handle of the plot object
         PlotSpec  % structure containing the display specifications
+        inputType % input type accepted
     end
     
     % list of the components

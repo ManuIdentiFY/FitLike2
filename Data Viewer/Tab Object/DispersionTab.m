@@ -16,12 +16,6 @@ classdef DispersionTab < EmptyTab
     % M.Petit - 11/2018
     % manuel.petit@inserm.fr
     
-    properties 
-        hGroup % structure gathering plot object according to their DataUnit
-               % also contain the plotID of the group of plot object(s) for
-               % fast identification
-    end
-    
     % Display properties
     properties (Access = public)
         % Dispersion data settings
@@ -67,7 +61,7 @@ classdef DispersionTab < EmptyTab
     methods (Access = public)
         % Constructor
         function this = DispersionTab(DisplayManager, tab)
-            % call the superclass constructor and set the Presenter
+            % call the superclass constructor
             this = this@EmptyTab(DisplayManager, tab);
             % set the name of the subtab
             this.Parent.Title = 'Dispersion';
@@ -144,6 +138,20 @@ classdef DispersionTab < EmptyTab
                 
                 this.hGroup = [this.hGroup struct('hPlot',[],...
                                       'Tag', getPlotID(this, hData, idxZone))];
+                                  
+                % check if other plot need to be update (legend)
+                if numel(this.PlotSpec) > 1
+                    [~,idx,~] = intersect(vertcat(this.PlotSpec(1:end-1).Color),...
+                        this.PlotSpec(end).Color,'rows');
+                    if numel(idx) == 1
+                        % get all the plot of this group and update the legend
+                        for k = 1:numel(this.hGroup(idx).hPlot)
+                            leg = getLegend(this.hData(idx),this.idxZone(idx),...
+                                this.hGroup(idx).hPlot(k).Tag,1);
+                            this.hGroup(idx).hPlot(k).DisplayName = leg;
+                        end
+                    end
+                end
 
                 % add listener 
                 l(1,1) = addlistener(hData,{'y','dy','mask','processingMethod'},...
@@ -175,16 +183,19 @@ classdef DispersionTab < EmptyTab
         % Remove plot.
         function this = deletePlot(this, hData, idxZone)
             % check input
-            if nargin < 3
-                tf = this.hData == hData;
-                %idxZone = NaN;
-                %plotID = [getRelaxProp(hData, 'fileID'),'@',hData.displayName];
-            elseif isnan(idxZone)
-                tf = this.hData == hData;
-                %plotID = [getRelaxProp(hData, 'fileID'),'@',hData.displayName];
+            tf = this.hData == hData;
+            if nargin > 2 && ~isnan(idxZone)
+                tf = tf & this.idxZone == idxZone;
+            end
+            
+            if all(tf == 0); return; end
+            % Prepare legend update depending on the hData deleted. Check
+            % if other plot has same color
+            if ~isempty([this.PlotSpec(~tf).Color])
+                [~,idx,~] = intersect(vertcat(this.PlotSpec(~tf).Color),...
+                        this.PlotSpec(find(tf,1,'first')).Color,'rows');
             else
-                tf = this.hData == hData & this.idxZone == idxZone;
-                %plotID = getPlotID(this, hData, idxZone);
+                idx = [];
             end
             
             % get all plot corresponding to the hData and delete them
@@ -198,7 +209,15 @@ classdef DispersionTab < EmptyTab
             this.idxZone = this.idxZone(~tf);   
             delete(this.ls(:,tf)); this.ls = this.ls(:,~tf);
             
-            % update legend according to the hData deleted
+            % update leg if needed
+            if numel(idx) == 1
+                % get all the plot of this group and simplify the legend
+                for k = 1:numel(this.hGroup(idx).hPlot)
+                    leg = getLegend(this.hData(idx),this.idxZone(idx),...
+                        this.hGroup(idx).hPlot(k).Tag,0);
+                    this.hGroup(idx).hPlot(k).DisplayName = leg;
+                end
+            end
             
             % notify
             notify(this, 'UpdateHist');
@@ -213,7 +232,6 @@ classdef DispersionTab < EmptyTab
             
             for k = 1:numel(idx)
                 % get group of plot and their associated idxZone
-                hgg = this.hGroup(idx(k));
                 idxZone = EmptyTab.getIdxZone(this.hGroup(idx(k)));
                 plotID = getPlotID(this, src, idxZone);
                 
@@ -226,6 +244,16 @@ classdef DispersionTab < EmptyTab
                 if this.optsButton.DataCheckButton.Value
                     tf_data = strcmp(get(this.hGroup(idx(k)).hPlot,'Tag'), 'Data');
                     hPlot = this.hGroup(idx(k)).hPlot(tf_data);
+                    % +legend
+                    if numel(this.PlotSpec) == 1
+                       leg = getLegend(this.hData(idx(k)),this.idxZone(idx(k)),'Data',0); 
+                    elseif isempty(intersect(vertcat(this.PlotSpec([1:idx(k)-1,idx(k)+1:end]).Color),...
+                            this.PlotSpec(idx(k)).Color,'rows'))
+                        leg = getLegend(this.hData(idx(k)),this.idxZone(idx(k)),'Data',0);
+                    else
+                        % generate more accurate legend
+                        leg = getLegend(this.hData(idx(k)),this.idxZone(idx(k)),'Data',1);
+                    end
                     
                     if isempty(hPlot)
                         % plot data
@@ -236,11 +264,11 @@ classdef DispersionTab < EmptyTab
                             'Marker',this.PlotSpec(idx(k)).Marker,...
                             'MarkerFaceColor','auto',...
                             'MarkerSize',this.DataMarkerSize,...
+                            'DisplayName',leg,...
                             'Tag','Data',...
                             'Parent',this.axe);
                         if ~isempty(h)
                             this = addPlotObj(this, idx(k), h);
-                            set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
                             % add callback to dispersion
                             set(h,'ButtonDownFcn',@(s,e) selectData(this,s,e));
                         end
@@ -255,6 +283,10 @@ classdef DispersionTab < EmptyTab
                         if ~isempty(hPlot(tf_data).YNegativeDelta)
                             hPlot.YNegativeDelta = -src.dy(src.mask);
                             hPlot.YPositiveDelta = +src.dy(src.mask);
+                        end
+                        % +legend
+                        if ~strcmp(hPlot(tf_data).DisplayName,leg)
+                            hPlot(tf_data).DisplayName = leg;
                         end
                     end
                 end
@@ -275,7 +307,6 @@ classdef DispersionTab < EmptyTab
                             'Parent',this.axe);
                         if ~isempty(h)
                             this = addPlotObj(this, idx(k), h);
-                            set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
                         end
                     elseif isempty(src.y(~src.mask))
                         % remove plot
@@ -290,6 +321,16 @@ classdef DispersionTab < EmptyTab
                 if this.optsButton.FitCheckButton.Value
                     tf_fit = strcmp(get(this.hGroup(idx(k)).hPlot,'Tag'), 'Fit');
                     hPlot = this.hGroup(idx(k)).hPlot(tf_fit);
+                    % +legend
+                    if numel(this.PlotSpec) == 1
+                        leg = getLegend(this.hData(idx(k)),this.idxZone(idx(k)),'Fit',0);
+                    elseif isempty(intersect(vertcat(this.PlotSpec([1:idx(k)-1,idx(k)+1:end]).Color),...
+                            this.PlotSpec(idx(k)).Color,'rows'))
+                        leg = getLegend(this.hData(idx(k)),this.idxZone(idx(k)),'Fit',0);
+                    else
+                        % generate more accurate legend
+                        leg = getLegend(this.hData(idx(k)),this.idxZone(idx(k)),'Fit',1);
+                    end
                     % get data
                     [xfit, yfit] = getFit(src, idxZone,[]);
                     
@@ -300,11 +341,11 @@ classdef DispersionTab < EmptyTab
                             'LineStyle',this.FitLineStyle,...
                             'Color',this.PlotSpec(idx(k)).Color,...
                             'Marker',this.FitMarkerStyle,...
+                            'DisplayName',leg,...
                             'Tag','Fit',...
                             'Parent',this.axe);
                         if ~isempty(h)
                             this = addPlotObj(this, idx(k), h);
-                            set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
                         end
                     else
                         if isempty(yfit)
@@ -314,6 +355,10 @@ classdef DispersionTab < EmptyTab
                             % update
                             hPlot.XData = xfit;
                             hPlot.YData = yfit;
+                            % +legend
+                            if ~strcmp(hPlot(tf_fit).DisplayName,leg)
+                                hPlot(tf_fit).DisplayName = leg;
+                            end
                         end
                     end
                 end
@@ -354,10 +399,6 @@ classdef DispersionTab < EmptyTab
             if tf_hist
                 notify(this, 'UpdateHist');
             end
-            
-            drawnow;
-%             showLegend(this);
-%             checkLegend(this, src);
             drawnow;
         end %updateData
         
@@ -382,28 +423,34 @@ classdef DispersionTab < EmptyTab
         function this = showData(this)
             % check input
             if this.optsButton.DataCheckButton.Value
-%                 % get ID
-%                 plotID = getPlotID(this);
                 for k = 1:numel(this.hData)
-                    % check plot existence
-%                     h = ;
+                    % check existence
                     if isempty(findobj(this.hGroup(k).hPlot ,'Tag','Data'))
+                        % check if other plot has same color
+                        if numel(this.PlotSpec) == 1
+                            leg = getLegend(this.hData(k),this.idxZone(k),'Data',0);
+                        elseif isempty(intersect(vertcat(this.PlotSpec([1:k-1,k+1:end]).Color),...
+                                this.PlotSpec(k).Color,'rows'))
+                            leg = getLegend(this.hData(k),this.idxZone(k),'Data',0);
+                        else
+                            % generate more accurate legend
+                            leg = getLegend(this.hData(k),this.idxZone(k),'Data',1);
+                        end
+                        % plot
                         h = plotData(this.hData(k), this.idxZone(k),...
                                     'Color',this.PlotSpec(k).Color,...
                                     'LineStyle',this.DataLineStyle,...
                                     'Marker',this.PlotSpec(k).Marker,...
                                     'MarkerFaceColor','auto',...
                                     'MarkerSize',this.DataMarkerSize,...
+                                    'DisplayName',leg,...
                                     'Tag','Data',...
                                     'Parent',this.axe);
                         if ~isempty(h)
                             this = addPlotObj(this, k, h);
-                            set(get(get(h,'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
                             % add callback to select dispersion point
                             set(h,'ButtonDownFcn',@(s,e) selectData(this,s,e));
                         end
-                        % update legend
-                        %checkLegend(this, this.hData(k));
                     end
                 end
                 showError(this);
@@ -441,26 +488,30 @@ classdef DispersionTab < EmptyTab
         function this = showFit(this)
             % check input
             if this.optsButton.FitCheckButton.Value
-                % get ID
-                %plotID = getPlotID(this);
                 for k = 1:numel(this.hData)
                     % check plot existence
-                    %hParent = findobj(this.axe.Children,'Type','hggroup',...
-                    %    'Tag',plotID{k});
-                    %h = findobj(hParent.Children ,'Tag','Fit');
-                    if isempty(findobj(this.hGroup(k).hPlot ,'Tag','Fit'))                        
+                    if isempty(findobj(this.hGroup(k).hPlot ,'Tag','Fit')) 
+                        % check if other plot has same color
+                        if numel(this.PlotSpec) == 1
+                            leg = getLegend(this.hData(k),this.idxZone(k),'Fit',0);
+                        elseif isempty(intersect(vertcat(this.PlotSpec([1:k-1,k+1:end]).Color),...
+                                this.PlotSpec(k).Color,'rows'))
+                            leg = getLegend(this.hData(k),this.idxZone(k),'Fit',0);
+                        else
+                            % generate more accurate legend
+                            leg = getLegend(this.hData(k),this.idxZone(k),'Fit',1);
+                        end
+                        % plot
                         h = plotFit(this.hData(k), this.idxZone(k),...
                                     'LineStyle',this.FitLineStyle,...
                                     'Color',this.PlotSpec(k).Color,...
                                     'Marker',this.FitMarkerStyle,...
+                                    'DisplayName',leg,...
                                     'Tag','Fit',...
                                     'Parent',this.axe);
                         if ~isempty(h)
                             this = addPlotObj(this, k, h);
-                            set(get(get(h, 'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
                         end
-                        % update legend
-                        %checkLegend(this, this.hData(k));
                     end
                 end
             else
@@ -475,13 +526,8 @@ classdef DispersionTab < EmptyTab
         function this = showMask(this)
             % check input
             if this.optsButton.MaskCheckButton.Value
-                % get ID
-                %plotID = getPlotID(this);
                 for k = 1:numel(this.hData)
                     % check plot existence
-                    %hParent = findobj(this.axe.Children,'Type','hggroup',...
-                    %    'Tag',plotID{k});
-                    %h = findobj(hParent.Children ,'Tag','Mask');
                     if isempty(findobj(this.hGroup(k).hPlot ,'Tag','Mask'))
                         h = plotMaskedData(this.hData(k), this.idxZone(k),...
                                     'Color',this.PlotSpec(k).Color,...
@@ -492,7 +538,6 @@ classdef DispersionTab < EmptyTab
                                     'Parent',this.axe);
                          if ~isempty(h)
                             this = addPlotObj(this, k, h);
-                            set(get(get(h, 'Annotation'),'LegendInformation'),'IconDisplayStyle','off');
                          end
                     end
                 end
@@ -511,11 +556,9 @@ classdef DispersionTab < EmptyTab
                 if isempty(this.axeres)
                     createResidualAxis(this);            
                 end
-                % get ID
-                %plotID = getPlotID(this);
+
                 for k = 1:numel(this.hData)
                     % check plot existence
-                    %h = findobj(this.axeres.Children, 'Tag', plotID{k});
                     if isempty(findobj(this.hGroup(k).hPlot ,'Tag','Residual'))
                         h = plotResidual(this.hData(k), this.idxZone(k),...
                             'Color', this.PlotSpec(k).Color,...
@@ -559,7 +602,6 @@ classdef DispersionTab < EmptyTab
                else                  
                    legend(this.axe, 'show');
                    set(this.axe.Legend,'Interpreter','none');
-                   sortChildren(this);
                end
            else
                legend(this.axe, 'off');
