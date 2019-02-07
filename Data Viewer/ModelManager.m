@@ -8,8 +8,9 @@ classdef ModelManager < handle
         FitLike % Presenter
     end
     
-    properties
-        ls %handle to listener
+    properties (Hidden)
+        ls_table %listener to update fit results
+        ls_popup  %listener to update popup if DataUnit is deleted
     end
     
     methods
@@ -57,8 +58,8 @@ classdef ModelManager < handle
                 @(src, event) updateResultTable(this));
             
             % Add listener to the Dispersion tree
-%             addlistener(this.FitLike.FileManager,...
-%                'DataSelected',@(src, event) updateFilePopup(this, src, event));
+            addlistener(this.FitLike.FileManager,...
+               'DataSelected',@(src, event) updateFilePopup(this, src, event));
         end %ModelManager
         
         % Destructor
@@ -219,19 +220,21 @@ classdef ModelManager < handle
         
         % File checked in tree callback
         function this = updateFilePopup(this,~,event)
+            return
             % check if data are dispersion
             if ~isa(event.Data ,'Dispersion')
                 return
             end
-            
-            % check format
-            if size(event.Data,1) > 1; event.Data = event.Data'; end
             
             % form output name and ID
             for k = numel(event.Data):-1:1
                 new_name{k} = [getRelaxProp(event.Data(k), 'filename'),...
                     ' (',event.Data(k).displayName,')'];
             end
+            
+            % check format
+            if size(event.Data,1) > 1; event.Data = event.Data'; end
+            if size(new_name,1) > 1; new_name = new_name'; end
             
             lisflag = 1; %flag for listener
             % check if we add new item or remove one
@@ -241,8 +244,10 @@ classdef ModelManager < handle
                     hPopup.String = new_name;
                     hPopup.UserData = event.Data;
                 else
-                    hPopup.String = [hPopup.String new_name];
-                    hPopup.UserData = [hPopup.UserData event.Data];
+                    % check if duplicates
+                    [~,idx] = setdiff(new_name, hPopup.String);
+                    hPopup.String = [hPopup.String new_name(idx)];
+                    hPopup.UserData = [hPopup.UserData event.Data(idx)];
                 end
             else
                 [~,idx] = setdiff(hPopup.String, new_name);
@@ -251,25 +256,40 @@ classdef ModelManager < handle
                 if isempty(hPopup.UserData)
                     lisflag = 0;
                     hPopup.Value = 1;
-                    hPopup.String = 'Select a dispersion data:';  
+                    hPopup.String = 'Select a dispersion data:'; 
                 else
                     hPopup.String = hPopup.String(idx);
                 end
             end
             
-            % remove previous listener
-            if ~isempty(this.ls); delete(this.ls); end
-            
-            if lisflag                
-                % add new one
-                dataObj = hPopup.UserData(hPopup.Value);
-                this.ls = addlistener(dataObj,{'processingMethod'},'PostSet',...
-                    @(src, event) updateResultTable(this));
+            % update popup listener
+            if isempty(this.ls_popup)
+                this.ls_popup = addlistener([hPopup.UserData],'DataDeletion',...
+                    @(src, event) onDataDeletion(this, src, event));
+            else
+                delete(this.ls_popup); this.ls_popup = [];
+                this.ls_popup = addlistener([hPopup.UserData],'DataDeletion',...
+                    @(src, event) onDataDeletion(this, src, event));
             end
-            drawnow; pause (0.005);
-            updateResultTable(this);
-            drawnow;
+            
+%             % remove previous listener
+%             if ~isempty(this.ls); delete(this.ls); end
+%             
+%             if lisflag                
+%                 % add new one
+%                 dataObj = hPopup.UserData(hPopup.Value);
+%                 this.ls_table = addlistener(dataObj,{'processingMethod'},'PostSet',...
+%                     @(src, event) updateResultTable(this));
+%             end
+%             drawnow; pause (0.005);
+%             updateResultTable(this);
+%             drawnow;
         end %updateFilePopup
+        
+        % function fires when a DataUnit is deleted 
+        function this = onDataDeletion(this, src, event)
+            h = 1;            
+        end %onDataDeletion
         
         % Wrapper to throw messages in the console or in the terminal in
         % function of FitLike input.
