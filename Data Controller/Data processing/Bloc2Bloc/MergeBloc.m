@@ -3,7 +3,7 @@ classdef MergeBloc < Bloc2Bloc & ProcessDataUnit
     properties
         %InputChildClass@char; 	% defined in DataUnit2DataUnit
         %OutputChildClass@char;	% defined in DataUnit2DataUnit
-        functionName@char = '';     % character string, name of the model, as appearing in the figure legend
+        functionName@char = 'Merge blocs';     % character string, name of the model, as appearing in the figure legend
         labelY@char = '';       % string, labels the Y-axis data in graphs
         labelX@char = '';             % string, labels the X-axis data in graphs
         legendTag@cell = {'Merged'};         % tag appearing in the legend of data derived from this object
@@ -28,20 +28,66 @@ classdef MergeBloc < Bloc2Bloc & ProcessDataUnit
     
     methods
         % Define abstract method applyProcess(). See ProcessDataUnit.
-        function [model, new_data] = applyProcess(this, data)
-            % get data size
-            [~, NBLK, BRLX] = size(data.y);
-            % get absolute y-values and replace unwanted values by nan (masked).
-            y = abs(data.y);
-            y((y == data.mask)) = nan;
+        function [model, new_data] = applyProcess(this, data, dataList, fitlikeHandle)
             
-            % apply absolute average on the first dimension and avoid nan
-            % values. Reshape to get NBLK x BRLX matrix
-            new_data.y = reshape(mean(y,1,'omitnan'),[NBLK, BRLX]);
-            new_data.dy = reshape(std(y,[],1,'omitnan'),[NBLK, BRLX]);
-            
-            % dummy
             model = [];
+            new_data.y = [];
+            new_data.dy = [];
+            
+            % only perform the merge operation once
+            if ~isequal(data.y,dataList(1).y)                
+                return
+            end
+            
+            % make sure this is the very first data set of the
+            % selection (to run this process only once)
+            relaxObj = getSelectedFile(fitlikeHandle.FileManager);
+            bloclist = getData(relaxObj(1), 'Bloc');
+            firstdata = getProcessData(this, bloclist(1));
+            if ~isequal(data.y,firstdata.y)
+                return
+            end
+            
+            % at this point, we know we are running this function for the
+            % first time after the user invoked the merge function. We can
+            % then proceed with the merging of all similar files.
+            % merge all PP and NP acquisitions from similar files
+            filename = unique({relaxObj.filename});
+            while ~isempty(filename)
+                indexMerge = strcmp(filename{1},{relaxObj.filename});
+                if sum(indexMerge)>1  % ignore files containing only one type of pulse sequences
+                    % make the merged item
+                    bloclist = getData(relaxObj(indexMerge), 'Bloc');
+                    mergedbloc = merge(bloclist);
+                    paramlist = [relaxObj(indexMerge).parameter];
+                    mergedparam = merge(paramlist);
+                    % add the merged item to the FitLike handle
+                    mergedRelaxObj = RelaxObj('data',         mergedbloc,...
+                                              'parameter',    mergedparam,...
+                                              'label',        relaxObj(indexMerge(1)).label,...
+                                              'filename',     filename{1},...
+                                              'sequence',     '',...
+                                              'dataset',      getRelaxProp(bloclist(1),'dataset'));
+                    mergedbloc.relaxObj = mergedRelaxObj;
+                    fitlikeHandle.RelaxData(end+1) = mergedRelaxObj;
+                    addFile(fitlikeHandle.FileManager, mergedRelaxObj); % add the new object to the file manager
+                    mergedRelaxObj.subRelaxObj = relaxObj(indexMerge); % keep the old objects to allow un-merge
+                    % remove the old files from the tree manager to avoid
+                    % re-processing the initial blocs during the next
+                    % algorithm
+                    inddelete = find(indexMerge);
+                    for indref = 1:numel(inddelete)
+                        indrem = find(arrayfun(@(r) isequal(r,relaxObj(inddelete(indref))),fitlikeHandle.RelaxData));
+                        deleteFile(fitlikeHandle.FileManager,fitlikeHandle.RelaxData(indrem));
+                        remove(fitlikeHandle.RelaxData,indrem);
+                    end
+                end
+                % make sure we don't process a dataset twice
+                filename(1) = [];
+                % select the new files instead of the old ones
+                % TO DO
+            end
+            
         end %applyProcess
     end
 end

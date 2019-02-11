@@ -684,7 +684,7 @@ classdef FitLike < handle
                      
                         % apply the process
                         warning off
-                        data = processData(data, ProcessArray(j));
+                        data = processData(data, ProcessArray(j),this);
                         pause(0.005);
                         warning on
                     end   

@@ -256,8 +256,13 @@ classdef RelaxObj < handle
         % in RelaxObj named 'Zone (Abs)'
         function data = getData(this, varargin)
             % init and check if data are available
-            data = [];            
-            if isempty(this.data); return; end
+            data = [];   
+            if numel(this)>1
+                data = arrayfun(@(t) getData(t,varargin{:}),this); % deal with arrays of RelaxObj
+                return
+            elseif isempty(this.data) % deal with empty inputs
+                return
+            end
             
             obj = this.data;
             % check if we need to find a particular type of object

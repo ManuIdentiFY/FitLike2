@@ -190,7 +190,7 @@ classdef ProcessTab < uix.Container & handle
         function [name, intype, outtype, parameter, processObj] = processdlg()
             % define subclass to list
 %             PROCESS_CLASS = {'Bloc2Bloc','Bloc2Zone','Zone2Zone','Zone2Disp','Disp2Disp','Disp2Exp','Exp2Exp'}; %name of the class to list
-            PROCESS_CLASS = {'Bloc2Zone','Zone2Disp'};
+            PROCESS_CLASS = {'Bloc2Zone','Bloc2Bloc','Zone2Disp'};
             process_tb = [];
             fitlikeDir = fileparts(which('FitLike.m'));
             % loop 
@@ -211,6 +211,9 @@ classdef ProcessTab < uix.Container & handle
                     case 'Zone2Disp'
                         in = 'zone';
                         out = 'dispersion';
+                    case 'Bloc2Bloc'
+                        in = 'bloc';
+                        out = 'bloc';
                 end
                 
                 tb.from = repmat({in},height(tb),1);

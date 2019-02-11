@@ -39,6 +39,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         parent@DataUnit          % parent of the object
         children@DataUnit        % children of the object
         parameters@ParamObj;     % redirects towards relaxobj parameters
+        subUnitList@DataUnit;    % lists the data that were merged to create this object, if any
 %         ls;                      % listener
     end
     
@@ -215,13 +216,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 %         end        
         
         % wrapper function to start the processing of the data unit
-        function [childDataUnit,this] = processData(this, processObj)
+        function [childDataUnit,this] = processData(this, processObj, fitlikeHandle)
             % check input
             if ~isa(processObj, 'ProcessDataUnit')
                 childDataUnit = []; return
             end
             % processData processes each DataUnit objects one by one
-            [childDataUnit, ~] = arrayfun(@(o)processData(processObj, o),...
+            [childDataUnit, ~] = arrayfun(@(o)processData(processObj, o, fitlikeHandle),...
                 this,'UniformOutput',0);
             childDataUnit = [childDataUnit{:}];
         end  
@@ -245,16 +246,16 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             end
         end %copy
 
-%         % merging function, merges a list of the same data object type
-%         function mergedUnit = merge(selfList)
-%             % check that object are homonegeous
-%             fh = str2func(class(selfList));
-%             if strcmp(fh, 'DataUnit')
-%                 mergedUnit = [];
-%                 return
-%             else
-%                 % call constructor with the first merged filename (avoid
-%                 % returning null object)
+        % merging function, merges a list of the same data object type
+        function mergedUnit = merge(selfList)
+            % check that object are homonegeous
+            fh = str2func(class(selfList));
+            if strcmp(fh, 'DataUnit')
+                mergedUnit = [];
+                return
+            else
+                % call constructor with the first merged filename (avoid
+                % returning null object)
 %                 mergedUnit = fh('filename',[selfList(1).filename,' (merged)'],...
 %                                 'sequence',selfList(1).sequence,'dataset',...
 %                                 selfList(1).dataset, 'displayName',...
@@ -262,9 +263,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 %                                 selfList(1).legendTag,'xLabel',...
 %                                 selfList(1).xLabel,'yLabel',...
 %                                 selfList(1).yLabel);
-%                 mergedUnit.subUnitList = selfList;
-%             end
-%         end
+                mergedUnit = fh('displayName',   selfList(1).displayName,...
+                                'legendTag',     selfList(1).legendTag,...
+                                'xLabel',        selfList(1).xLabel,...
+                                'yLabel',        selfList(1).yLabel);
+                mergedUnit.subUnitList = selfList;
+            end
+        end
 
 %         % reverse operation 
 %         function dataList = unMerge(self)
@@ -555,89 +560,89 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 % %             end
 %             self.x = value;
 %         end
-    end
-%         % check that new objects added to the list are of the same type as
-%         % the main object
-%         function self = set.subUnitList(self,objArray) %#ok<*MCSV,*MCHC,*MCHV2>
-%             test = arrayfun(@(o)isa(o,class(self)),objArray);
-%             if ~prod(test) % all the objects must have the correct type
-%                 error('Merged objects must be of the same type as the object container.')
-%             end
-%             self.subUnitList = objArray;
-%         end
-%         
-%         % function that gathers the data from the sub-units and place them
-%         % in the correct field. Always concatenate over the last
-%         % significant dimension (dispersions)
-%         function value = gatherSubData(self,fieldName)
-%             sze = size(self.subUnitList(1).(fieldName));
-%             n = ndims(self.subUnitList(1).(fieldName));
-%             if (n == 2) && (sze(2)==1)
-%                 n = 1;
-%             end                
-%             value = cat(n,self.subUnitList.(fieldName));
-% %             self.(fieldName) = value;
-%         end
-%         
-%         % function that spreads the data from the contained object to the
-%         % sub-units
-%         function self = distributeSubData(self,fieldName,value)
-%             % list the number of element needed in each sub-object
-%             lengthList = arrayfun(@(o)length(o.(fieldName)),self.subUnitList);
-%             endList = cumsum(lengthList);
-%             startList = [1 endList(1:end-1)+1];
-%             s = arrayfun(@(o,s,e)setfield(o,fieldName,value(s:e)),self.subUnitList,startList,endList,'UniformOutput',0); 
-%             self.subUnitList = [s{:}];
-%         end
-%         
-%         % functions used to make sure that merged objects behave
-%         % consistently with their own object type. (see Matlab help on
-%         % 'Modify Property Values with Access Methods')
-%         function self = set.x(self,value)
-%             if ~isempty(self.subUnitList)
-%                 % distribute the values to the sub-units
-%                 self = distributeSubData(self,'x',value);
-%             end
-%             self.x = value;
-%         end
-%         
-%         function x = get.x(self)
-%             if ~isempty(self.subUnitList)
-%                 x = gatherSubData(self,'x');
-%             else
-%                 x = self.x;
-%             end
-%         end
-%         
+    
+        % check that new objects added to the list are of the same type as
+        % the main object
+        function self = set.subUnitList(self,objArray) %#ok<*MCSV,*MCHC,*MCHV2>
+            test = arrayfun(@(o)isa(o,class(self)),objArray);
+            if ~prod(test) % all the objects must have the correct type
+                error('Merged objects must be of the same type as the object container.')
+            end
+            self.subUnitList = objArray;
+        end
+        
+        % function that gathers the data from the sub-units and place them
+        % in the correct field. Always concatenate over the last
+        % significant dimension (dispersions)
+        function value = gatherSubData(self,fieldName)
+            sze = size(self.subUnitList(1).(fieldName));
+            n = ndims(self.subUnitList(1).(fieldName));
+            if (n == 2) && (sze(2)==1)
+                n = 1;
+            end                
+            value = cat(n,self.subUnitList.(fieldName));
+%             self.(fieldName) = value;
+        end
+        
+        % function that spreads the data from the contained object to the
+        % sub-units
+        function self = distributeSubData(self,fieldName,value)
+            % list the number of element needed in each sub-object
+            lengthList = arrayfun(@(o)length(o.(fieldName)),self.subUnitList);
+            endList = cumsum(lengthList);
+            startList = [1 endList(1:end-1)+1];
+            s = arrayfun(@(o,s,e)setfield(o,fieldName,value(s:e)),self.subUnitList,startList,endList,'UniformOutput',0); 
+            self.subUnitList = [s{:}];
+        end
+        
+        % functions used to make sure that merged objects behave
+        % consistently with their own object type. (see Matlab help on
+        % 'Modify Property Values with Access Methods')
+        function self = set.x(self,value)
+            if ~isempty(self.subUnitList)
+                % distribute the values to the sub-units
+                self = distributeSubData(self,'x',value);
+            end
+            self.x = value;
+        end
+        
+        function x = get.x(self)
+            if ~isempty(self.subUnitList)
+                x = gatherSubData(self,'x');
+            else
+                x = self.x;
+            end
+        end
+        
 
-%         
-%         function y = get.y(self)
-%             if ~isempty(self.subUnitList)
-%                 y = gatherSubData(self,'y');
-%             else
-%                 y = self.y;
-%             end
-%         end
-%         
+        
+        function y = get.y(self)
+            if ~isempty(self.subUnitList)
+                y = gatherSubData(self,'y');
+            else
+                y = self.y;
+            end
+        end
+        
 
-%         
-%         function dy = get.dy(self)
-%             if ~isempty(self.subUnitList)
-%                 dy = gatherSubData(self,'dy');
-%             else
-%                 dy = self.dy;
-%             end
-%         end
-%         
+        
+        function dy = get.dy(self)
+            if ~isempty(self.subUnitList)
+                dy = gatherSubData(self,'dy');
+            else
+                dy = self.dy;
+            end
+        end
+        
 
-%         
-%         function mask = get.mask(self)            
-%             if ~isempty(self.subUnitList)
-%                 mask = gatherSubData(self,'mask');
-%             else
-%                 mask = self.mask;
-%             end
-%         end
+        
+        function mask = get.mask(self)            
+            if ~isempty(self.subUnitList)
+                mask = gatherSubData(self,'mask');
+            else
+                mask = self.mask;
+            end
+        end
 %         
 %         function param = get.parameter(self)
 %             if ~isempty(self.subUnitList)
@@ -656,7 +661,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 %                 self.parameter = value;
 %             end
 %         end
-%     end
+    end
      
 end
 
