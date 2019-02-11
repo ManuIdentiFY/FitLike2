@@ -143,20 +143,31 @@ classdef DataFit < ProcessDataUnit%DataModel
         
         % set the fixed parameters for a given 
         function fhfixed = setFixedParameter(this, fh) %#ok<INUSD>
-            paramlist = '';
-            n = 0;
-            for i = 1:length(this.isFixed)
-                if ~this.isFixed(i)
-                    n = n+1;
-                    paramlist = [paramlist 'c(' num2str(n) ')'];
-                else
-                    paramlist = [paramlist num2str(this.startPoint(i))];
-                end
-                if i ~=length(this.isFixed)
-                    paramlist = [paramlist ','];
-                end
+%             paramlist = '';
+%             n = 0;
+%             for i = 1:length(this.isFixed)
+%                 if ~this.isFixed(i)
+%                     n = n+1;
+%                     paramlist = [paramlist 'c(' num2str(n) ')'];
+%                 else
+%                     paramlist = [paramlist num2str(this.startPoint(i))];
+%                 end
+%                 if i ~=length(this.isFixed)
+%                     paramlist = [paramlist ','];
+%                 end
+%             end
+%             fhfixed = eval(['@(c,x) fh([' paramlist '],x)']);
+            
+            fhfixed = @(c,x)localFunction(c,x);
+            
+            % using nested functions allows creating permanent function
+            % handles from custom equations
+            function y = localFunction(c,x)
+                par = this.bestValue;
+                par(~this.isFixed) = c;
+                par = num2cell(par);
+                y = fh(par{:},x);
             end
-            fhfixed = eval(['@(c,x) fh([' paramlist '],x)']);
         end
         
         % fill in the starting point of the model
@@ -169,7 +180,10 @@ classdef DataFit < ProcessDataUnit%DataModel
         % Bloc, Zone, Dispersion [Manu]
         % OR let this function here but call 
         function y = evaluate(this, x)
-            y = this.modelHandle(this.bestValue,x);
+            % update function handle
+            fun = setFixedParameter(this, this.modelHandle);
+            
+            y = fun(this.bestValue,x);
         end
         
         % evaluate n points from x1 to x2, for easy and nice plotting

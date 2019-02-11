@@ -37,8 +37,18 @@ classdef MonoexpAbs < Zone2Disp & DataFit
     methods
         % fill in the starting point of the model
         function this = evaluateStartPoint(this, xdata, ydata)
-            ydata = abs(ydata);
-            this.startPoint = [ydata(1), -ydata(end), 4/xdata(end), min(ydata)/2];
+            [xdata, ord] = sort(xdata);
+            ydata = abs(ydata(ord));
+            
+            % check for zero crossing (must be robust to noise)
+            [ymin,indmin] = min(ydata);
+            [ymax,indmax] = max(ydata);
+            if (indmin == 1)||(indmin == length(ydata))  % case when there is no 0-crossing
+                this.startPoint = [ydata(1), ydata(end), 4/xdata(end), min(ydata)/2];
+            else
+                this.startPoint = [ydata(1), -ydata(end), 4/xdata(end), min(ydata)/2];
+            end                
+            
         end
     end %evaluateStartPoint
 

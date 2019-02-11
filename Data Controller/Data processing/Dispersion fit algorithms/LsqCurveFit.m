@@ -41,17 +41,17 @@ classdef LsqCurveFit < FitAlgorithm
                 switch this.options.Weight
                     case 'none'
                         % apply fit 
-                        [coeff,resnorm,residuals,~,~,~,jacobian] = lsqcurvefit(fun,...
+                        [coeff,resnorm,residuals,exitflag,~,~,jacobian] = lsqcurvefit(fun,...
                             x0, xdata, ydata, lb, ub, opts);
                     case 'data'
                         % apply fit with 1./(dydata.^2) weight
-                        [coeff,resnorm,residuals,~,~,~,jacobian] = lsqnonlin(@wfun,...
+                        [coeff,resnorm,residuals,exitflag,~,~,jacobian] = lsqnonlin(@wfun,...
                             x0, ub, lb, opts, xdata, ydata, 1./(dydata.^2)); 
                     otherwise
                         % apply robust fit:
                         % FEX function from J.-A. Adrian (JA)
                         % see https://github.com/JAAdrian/MatlabRobustNonlinLsq/blob/master/robustlsqcurvefit.m
-                        [coeff,resnorm,residuals,~,~,~,jacobian] = robustlsqcurvefit(fun,...
+                        [coeff,resnorm,residuals,exitflag,~,~,jacobian] = robustlsqcurvefit(fun,...
                             x0, xdata, ydata,lb, ub,...
                             this.options.Weight, opts);
                 end           
@@ -59,11 +59,12 @@ classdef LsqCurveFit < FitAlgorithm
                 coeff = x0;
                 error = nan(size(x0));
                 gof = struct('sse',[],'rsquare',[],'adjrsquare',[],'RMSE',[]);
+                exitflag = -1;
                 return
             end
             
             % get gof and error
-            gof = getGOF(coeff, ydata, residual, resnorm);
+            gof = this.getGOF(coeff, ydata, residuals, resnorm);
 
             ci = nlparci(coeff,residuals,'jacobian',jacobian);
             error = coeff' - ci(:,1);
@@ -74,6 +75,10 @@ classdef LsqCurveFit < FitAlgorithm
                 err = weight.*(fun(coeff, xdata) - ydata);
             end
         end % applyFit
+    end
+    
+    methods (Static)
+        
         
         % Calculate the goodness of fit: rsquare, adjrsquare, RMSE, SSE
         function gof = getGOF(coeff, ydata, residual, resnorm)
@@ -88,9 +93,7 @@ classdef LsqCurveFit < FitAlgorithm
             gof.adjrsquare = 1 - ((nData-1)/(nData - nCoeff))*(sse/sst); 
             gof.RMSE = sqrt(resnorm);
         end %getGOF  
-    end
-    
-    methods (Static)
+        
         % Create the options structure (default) or get the possible input
         % for the option structure
         function options = getOptions(flag)
