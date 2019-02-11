@@ -48,7 +48,7 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             data = getProcessData(this, parentObj);
             
             % apply process
-            [model, new_data] = arrayfun(@(d) applyProcess(this, d), data, 'Uniform', 0);
+            [model, new_data] = arrayfun(@(d) applyProcess(this, d, data), data, 'Uniform', 0); % include the whole data, for merging or other purposes (LB 11/2/19)
             
             % format output
             new_data = formatData(this, new_data);

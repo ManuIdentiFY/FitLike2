@@ -45,7 +45,7 @@ classdef DataFit < ProcessDataUnit%DataModel
     
     methods
         % redefine the abstract method applyProcess
-        function [res, new_data] = applyProcess(this, data)
+        function [res, new_data] = applyProcess(this, data, datalist)
             % check data and format them
             % TO COMPLETE + TO BE VECTORISED
             xdata = data.x(data.mask);
