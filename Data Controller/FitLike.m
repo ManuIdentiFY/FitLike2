@@ -684,7 +684,19 @@ classdef FitLike < handle
                      
                         % apply the process
                         warning off
-                        data = processData(data, ProcessArray(j),this);
+                        % Check if the process to be applied must be
+                        % dispatched to each acquisition separately
+                        if ~ProcessArray(j).globalProcess
+                            data = processData(data, ProcessArray(j));
+                        else
+                            % otherwise, this is an operation on the data that
+                            % requires multiple RelaxObj
+                            data = processRelax(ProcessArray(j),data);
+                            % add new relax objects to the list, select
+                            % them and unselect old ones
+                            % TO DO
+                        end
+                        
                         pause(0.005);
                         warning on
                     end   

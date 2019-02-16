@@ -15,6 +15,7 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
     
     properties
         parameter@struct        % structure containing parameters associated with the process (weighted, robust fit, log,...)
+        globalProcess@logical = false;  % set to 0 if the algorithm is distributed to each acquisition independently, 1 if the algorithm is applied to the entire dataset provided as an input
     end
     
     methods
@@ -38,7 +39,7 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
         end
     
         % main process function
-        function [childObj, parentObj] = processData(this, parentObj, fitlikeHandle)  
+        function [childObj, parentObj] = processData(this, parentObj)  
             % check data size to confirm process
 %             if ~checkProcessData(this, parentObj)
 %                 childObj = []; return
@@ -48,7 +49,7 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             data = getProcessData(this, parentObj);
             
             % apply process
-            [model, new_data] = arrayfun(@(d) applyProcess(this, d, data, fitlikeHandle), data, 'Uniform', 0); % include the whole data, for merging or other purposes (LB 11/2/19)
+            [model, new_data] = arrayfun(@(d) applyProcess(this, d), data, 'Uniform', 0); % include the whole data, for merging or other purposes (LB 11/2/19)
             
             % format output
             new_data = formatData(this, new_data);
@@ -70,6 +71,11 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
         function this = formatModel(this, model)
             
         end %formatData
+        
+        % dispatch the merge operation to the corresponding function
+        function [childObj, parentObj] = processRelax(this,relaxList,parentObj)
+            [model, new_data] = applyProcess(this, relaxList, parentObj);
+        end
         
         % compare two process to determine if they are the same. This
         % function only check the necessary fields:

@@ -23,12 +23,13 @@ classdef MergeBloc < Bloc2Bloc & ProcessDataUnit
             % ...
             %
             this.ForceDataCat = true;
+            this.globalProcess = true;
         end % AverageAbs
     end
     
     methods
         % Define abstract method applyProcess(). See ProcessDataUnit.
-        function [model, new_data] = applyProcess(this, data, dataList, fitlikeHandle)
+        function [model, new_data] = applyProcess(this, relaxList, dataList)
             
             model = [];
             new_data.y = [];
