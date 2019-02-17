@@ -99,7 +99,7 @@ classdef FitLike < handle
                         % the value should be provided in the input.
                         
                     % enter dataset
-                    elseif isempty(this.RelaxData)
+                    elseif isempty(this.RelaxData)||sum(~ishandle(this.RelaxData))
                         %%%-------------%%%
                         dataset = inputdlg({'Enter a dataset name:'},...
                             'Create dataset',[1 70],{'myDataset'});
@@ -251,6 +251,8 @@ classdef FitLike < handle
             %%-----------------------------------------------------------%%
             % Check if duplicates are imported
             function relaxObj = checkDuplicates(this, relaxObj)
+                % remove invalid handles from the list if any 
+                this.RelaxData = this.RelaxData(arrayfun(@(r) isvalid(r),this.RelaxData));
                 % check if duplicates have been imported
                 [~,idx,~] = intersect(strcat({relaxObj.dataset},{relaxObj.sequence},...
                     {relaxObj.filename}),strcat({this.RelaxData.dataset},{this.RelaxData.sequence},...
@@ -665,79 +667,176 @@ classdef FitLike < handle
                 ProcessArray = flip(tab.ProcessArray);
                 event.txt = 'Starting to process file...\n';
                 throwMessage(this, [], event);
-                % loop over the file
-                for k = 1:numel(relaxObj)
-                    event.txt = 'Processing...'; throwMessage(this, [], event);
-                    
-                    % get data
-                    tf = isequal(relaxObj(k), this.RelaxData);
-                    data = getData(this.RelaxData(tf), 'Bloc');
-                    
-                    % apply the pipeline
-                    for j = 1:numel(ProcessArray) 
-                        % check if new process or not
-%                         if ~isempty(data(1).processingMethod)
-%                             if isequal(data.processingMethod, ProcessArray(j))
-%                                 data = [data.children]; continue;
-%                             end                
+                
+                % apply the processes
+                warning off
+                for nProc = 1:length(ProcessArray)          
+                    if ~ProcessArray(nProc).globalProcess % case when the process is applied independently to each data acquisition
+                        % loop over the file
+%                         for indFile = 1:numel(relaxObj)
+%                             % collect the data (selection may have changed if data
+%                             % merge operations are included)
+%                             tf = isequal(relaxObj(indFile), this.RelaxData);
+%                             if indFile == 1
+%                                 data = getData(this.RelaxData(tf), ProcessArray(nProc).InputChildClass);
+%                             else
+%                                 data = [data getData(this.RelaxData(tf), ProcessArray(nProc).InputChildClass)];
+%                             end
 %                         end
-                     
-                        % apply the process
-                        warning off
-                        % Check if the process to be applied must be
-                        % dispatched to each acquisition separately
-                        if ~ProcessArray(j).globalProcess
-                            data = processData(data, ProcessArray(j));
-                        else
-                            % otherwise, this is an operation on the data that
-                            % requires multiple RelaxObj
-                            data = processRelax(ProcessArray(j),data);
-                            % add new relax objects to the list, select
-                            % them and unselect old ones
-                            % TO DO
-                        end
+                        data = getData(relaxObj, ProcessArray(nProc).InputChildClass);
+                        data = arrayfun(@(d) processData(d, ProcessArray(nProc)),data); % perform the process
+                    else % case when the process needs to be applied to the entire selection.
+                        data = getData(relaxObj, ProcessArray(nProc).InputChildClass);
+                        data = processDataGroup(ProcessArray(nProc),data);
+                        % find the list of relaxobj corresponding to the
+                        % data objects returned
+                        oldRelaxObj = relaxObj;
+                        relaxObj = unique([data.relaxObj]);
                         
-                        pause(0.005);
-                        warning on
-                    end   
-                    
-                    % Check if data has children and delete them if true.
-                    % Avoid to keep old children from previous process
-                    for j = 1:numel(data)
-                        if ~isempty(data(j).children)
-                        data(j).children = remove(data(j).children);
+                        % find if the new objects are the same as the
+                        % previous ones
+                        changeflag = 1;
+                        if numel(oldRelaxObj)==numel(relaxObj)
+                            testcell = arrayfun(@(old,new) isequal(old,new),oldRelaxObj,relaxObj,'UniformOutput', false);
+                            if all([testcell{:}])
+                                changeflag = 0;
+                            end
                         end
+                                
+                        if changeflag
+
+                            % add new relax objects to the windows manager (if
+                            % any)
+                            addFile(this.FileManager, relaxObj);
+
+                            % find the old relaxObj and unselect them (if any)
+                            % TO DO
+
+                            % update the selection
+                            % TO DO
+                        end                        
+                        
                     end
                     
-                    % Check if data has processingMethod and delete if true
-                    tf_oldprocess = ~arrayfun(@(x) isempty(x.processingMethod), data);
-                    if any(tf_oldprocess ~= 0)
-                        [data(tf_oldprocess).processingMethod] = deal([]);
+                end % process array loop
+                warning on
+                
+                % finalise the data units
+                % Check if data has children and delete them if true.
+                % Avoid to keep old children from previous process
+                for j = 1:numel(data)
+                    if ~isempty(data(j).children)
+                        data(j).children = remove(data(j).children);
                     end
-                    
-                    % replace the highest object created in relaxObj
-                    this.RelaxData(tf).data = data;
-                    pause(0.005);
-                    % update FileManager
-                    setTree(this.FileManager, class(data));
-                    drawnow; pause(0.005);
-                    updateData(this.FileManager, this.RelaxData(tf));                  
-                    drawnow; pause(0.005);
-                    
-                    if isa(data, 'Dispersion')
-                        idxZone = repelem(NaN, numel(data));
-                    else
-                        idxZone = repelem(1,numel(data));
-                    end                   
-                    checkData(this.FileManager, data, idxZone, 1);                    
-                    drawnow; pause(0.005);
-                    % try to plot
-%                     addPlot(this.DisplayManager, data, idxZone);                                       
-%                     drawnow % EDT
-                    
-                    event.txt = [sprintf('%d/%d',k,numel(relaxObj)),'\n'];
-                    throwMessage(this, [], event);
-                end %for
+                end
+
+                % Check if data has processingMethod and delete if true
+                tf_oldprocess = ~arrayfun(@(x) isempty(x.processingMethod), data);
+                if any(tf_oldprocess ~= 0)
+                    [data(tf_oldprocess).processingMethod] = deal([]);
+                end
+
+                % replace the highest object created in relaxObj
+                for indFile = 1:numel(relaxObj)
+                    relaxObj(indFile).data(:) = [];
+                end
+                for indData = 1:numel(data)
+                    data(indData).relaxObj.data(end+1) = data(indData);
+                end
+                pause(0.005); % avoids some bugs with Java delays
+                % update FileManager
+                setTree(this.FileManager, class(data));
+                drawnow; pause(0.005);
+                updateData(this.FileManager, relaxObj);                  
+                drawnow; pause(0.005);
+
+                if isa(data, 'Dispersion')
+                    idxZone = repelem(NaN, numel(data));
+                else
+                    idxZone = repelem(1,numel(data));
+                end                   
+                checkData(this.FileManager, data, idxZone, 1);                    
+                drawnow; pause(0.005);
+                
+%                 
+%                 
+%                 
+%                 
+%                 ndata = numel(relaxObj); % store the initial number of data sets for information
+%                 % loop over the file
+% %                 for k = 1:numel(relaxObj)
+%                 while numel(relaxObj) > 0
+%                     event.txt = 'Processing...'; throwMessage(this, [], event);
+%                     
+%                     % get data
+%                     tf = isequal(relaxObj(1), this.RelaxData);
+%                     data = getData(this.RelaxData(tf), 'Bloc');
+%                     
+%                     % apply the pipeline
+%                     for j = 1:numel(ProcessArray) 
+%                         % check if new process or not
+% %                         if ~isempty(data(1).processingMethod)
+% %                             if isequal(data.processingMethod, ProcessArray(j))
+% %                                 data = [data.children]; continue;
+% %                             end                
+% %                         end
+%                      
+%                         % apply the process
+%                         warning off
+%                         % Check if the process to be applied must be
+%                         % dispatched to each acquisition separately
+%                         if ~ProcessArray(j).globalProcess
+%                             data = processData(data, ProcessArray(j));
+%                         else
+%                             % otherwise, this is an operation on the data that
+%                             % requires multiple RelaxObj
+%                             data = processDataGroup(ProcessArray(j),data);
+%                             % add new relax objects to the list, select
+%                             % them and unselect old ones
+%                             % TO DO
+%                         end
+%                         
+%                         pause(0.005);
+%                         warning on
+%                     end   
+%                     
+%                     % Check if data has children and delete them if true.
+%                     % Avoid to keep old children from previous process
+%                     for j = 1:numel(data)
+%                         if ~isempty(data(j).children)
+%                         data(j).children = remove(data(j).children);
+%                         end
+%                     end
+%                     
+%                     % Check if data has processingMethod and delete if true
+%                     tf_oldprocess = ~arrayfun(@(x) isempty(x.processingMethod), data);
+%                     if any(tf_oldprocess ~= 0)
+%                         [data(tf_oldprocess).processingMethod] = deal([]);
+%                     end
+%                     
+%                     % replace the highest object created in relaxObj
+%                     this.RelaxData(tf).data = data;
+%                     pause(0.005);
+%                     % update FileManager
+%                     setTree(this.FileManager, class(data));
+%                     drawnow; pause(0.005);
+%                     updateData(this.FileManager, this.RelaxData(tf));                  
+%                     drawnow; pause(0.005);
+%                     
+%                     if isa(data, 'Dispersion')
+%                         idxZone = repelem(NaN, numel(data));
+%                     else
+%                         idxZone = repelem(1,numel(data));
+%                     end                   
+%                     checkData(this.FileManager, data, idxZone, 1);                    
+%                     drawnow; pause(0.005);
+%                     % try to plot
+% %                     addPlot(this.DisplayManager, data, idxZone);                                       
+% %                     drawnow % EDT
+%                     
+%                     event.txt = [sprintf('%d/%d',numel(relaxObj)),ndata,'\n'];
+%                     throwMessage(this, [], event);
+%                 end %for
             else
                 % Simulation mode
                 % TO DO

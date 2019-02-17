@@ -324,11 +324,13 @@ classdef FileManager  < handle
                root = this.SelectedTree.Root;
                if numel(root.Children) < 1
                    % add new node
-                   hFile = TreeManager.addNode(root,...
-                       relaxObj.filename, this.FileIcon, 'filename',...
-                       'UserData', relaxObj);
-                   % add relaxObj
-                   addRelaxObj(this, hFile, icon, displayName, nZone);
+                   for ind = 1:numel(relaxObj)
+                       hFile = TreeManager.addNode(root,...
+                           relaxObj(ind).filename, this.FileIcon, 'filename',...
+                           'UserData', relaxObj(ind));
+                       % add relaxObj
+                       addRelaxObj(this, hFile, icon, displayName, nZone);
+                   end
                else
                    % check if the file exists
                    hFile = root.Children;

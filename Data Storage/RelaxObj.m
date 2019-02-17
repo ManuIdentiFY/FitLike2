@@ -258,41 +258,49 @@ classdef RelaxObj < handle
             % init and check if data are available
             data = [];   
             if numel(this)>1
-                data = arrayfun(@(t) getData(t,varargin{:}),this); % deal with arrays of RelaxObj
+                data = arrayfun(@(t) getData(t,varargin{:}),this,'UniformOutput',false); % deal with arrays of RelaxObj
+                data = [data{:}]; % removes the empty outputs at the same time as making it an array
                 return
             elseif isempty(this.data) % deal with empty inputs
                 return
             end
             
-            obj = this.data;
+            data = this.data;
             % check if we need to find a particular type of object
             if nargin > 1                
                 % find all the object corresponding to this class
-                while ~strcmpi(class(obj), varargin{1})
-                    % check if parent are available
-                    if  isempty(obj(1).parent); return; end
-                    % get parent and remove duplicates
-                    obj = unique([obj.parent]);
-                end
+                cl = arrayfun(@(d) class(d),data,'UniformOutput',false);
+                indFind = strcmpi(cl, varargin{1});
+                data = data(indFind);
+                
+%                 while ~strcmpi(class(obj), varargin{1})
+%                     % check if parent are available
+%                     if  isempty(obj(1).parent); break; end
+%                     % get parent and remove duplicates
+%                     obj = unique([obj.parent]);
+%                 end
                 
                 % check if we need to find a particular named obj
                 if nargin > 2
-                    tf = strcmp({obj.displayName}, varargin{2});
+                    dname = arrayfun(@(d) d.displayName,data,'UniformOutput',false);
+                    tf = strcmp(dname, varargin{2});
+                    data = data(tf);
                     
-                    if ~all(tf == 0)
-                        data = obj(tf);
-                    end
-                else
-                    data = obj;
+%                     if ~all(tf == 0)
+%                         data = obj(tf);
+%                     end
+%                 else
+%                     data = obj;
                 end
-            else
-                data = obj;
-                % get all the object
-                while ~isempty(obj(1).parent)
-                    obj = unique([obj.parent]);
-                    data = [data, obj]; %#ok<AGROW>
-                end
+%             else
+%                 data = obj;
+%                 % get all the object
+%                 while ~isempty(obj(1).parent)
+%                     obj = unique([obj.parent]);
+%                     data = [data, obj]; %#ok<AGROW>
+%                 end
             end
+            data= unique(data); % remove doublets
         end %getData
         
         % This function extract the DataUnit meta-data from the RelaxObj.

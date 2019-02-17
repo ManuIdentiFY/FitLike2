@@ -216,13 +216,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 %         end        
         
         % wrapper function to start the processing of the data unit
-        function [childDataUnit,this] = processData(this, processObj, fitlikeHandle)
+        function [childDataUnit,this] = processData(this, processObj)
             % check input
             if ~isa(processObj, 'ProcessDataUnit')
                 childDataUnit = []; return
             end
             % processData processes each DataUnit objects one by one
-            [childDataUnit, ~] = arrayfun(@(o)processData(processObj, o, fitlikeHandle),...
+            [childDataUnit, ~] = arrayfun(@(o)processData(processObj, o),...
                 this,'UniformOutput',0);
             childDataUnit = [childDataUnit{:}];
         end  
@@ -342,6 +342,13 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         
         % Wrapper to get RelaxObj property from DataUnit
         function val = getRelaxProp(this, prop)
+            
+            % treat multiple inputs recursively
+            if numel(this)>1
+               val = arrayfun(@(t) getRelaxProp(t, prop),this,'UniformOutput',false);
+                return
+            end
+            
             % check if RelaxObj exists
             if isempty(this.relaxObj)
                 val = []; return;
@@ -575,11 +582,20 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         % in the correct field. Always concatenate over the last
         % significant dimension (dispersions)
         function value = gatherSubData(self,fieldName)
-            sze = size(self.subUnitList(1).(fieldName));
-            n = ndims(self.subUnitList(1).(fieldName));
-            if (n == 2) && (sze(2)==1)
-                n = 1;
-            end                
+            cl = class(self);
+            switch cl
+                case 'Bloc'
+                    n = 3;
+                case 'Zone'
+                    n = 2;
+                case 'Dispersion'
+                    n = 1;
+            end
+%             sze = size(self.subUnitList(1).(fieldName));
+%             n = ndims(self.subUnitList(1).(fieldName));
+%             if (n == 2) && (sze(2)==1)
+%                 n = 1;
+%             end                
             value = cat(n,self.subUnitList.(fieldName));
 %             self.(fieldName) = value;
         end
