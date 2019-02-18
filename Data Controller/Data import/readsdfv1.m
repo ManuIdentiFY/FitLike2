@@ -194,7 +194,12 @@ parameter = ParamV1(parameter);
 % Will be remove in a future release (with new parameter format)
 % change some fieldnames
 for k = 1:numel(parameter)
-    parameter(k) = changeFieldName(parameter(k),'ZONE','BR');
+    % repeating single experiments may lead to problems with BRLX, this fixes it
+    if numel(parameter(k).paramList.BRLX)~=size(data.real{k},3)
+        parameter(k).paramList.BRLX = repmat(parameter(k).paramList.BRLX,1,size(data.real{k},3));
+    end
+    parameter(k).paramList.BRLX = parameter(k).paramList.BRLX*1.6; % convert from MHz to Hz
+    parameter(k).paramList.BR = parameter(k).paramList.BRLX;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 end

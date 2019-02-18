@@ -100,7 +100,17 @@ for acquisitionNumber = 1:length(posExpHeader)-1  % last element of posExpHeader
     else
         parameter(acquisitionNumber) = paramHeader;
     end
-    parameter(acquisitionNumber).paramList.BRLX = parameter(acquisitionNumber).paramList.BR; % rename some of the fields for compatibility
+    if isnumeric(parameter(acquisitionNumber).paramList.BR)% rename some of the fields for compatibility
+        parameter(acquisitionNumber).paramList.BRLX = parameter(acquisitionNumber).paramList.BR; 
+    elseif ischar(parameter(acquisitionNumber).paramList.BR)
+        c = eval(parameter(acquisitionNumber).paramList.BR);
+        parameter(acquisitionNumber).paramList.BRLX = [c{:}]; 
+    end
+    % make sure that the number of fields corresponds to the number of
+    % relaxation experiments (may be wrong if the experiment has been
+    % interrupted)
+     parameter(acquisitionNumber).paramList.BRLX =  parameter(acquisitionNumber).paramList.BRLX(1:sum(expIndex{acquisitionNumber}));
+    % get the lit of T1 estimations
     parameter(acquisitionNumber) = changeFieldName(parameter(acquisitionNumber),'T1MAX','T1MX');
     % scaling the field and T1MX values to standard units
     parameter(acquisitionNumber).paramList.BRLX = parameter(acquisitionNumber).paramList.BRLX*1e6;
