@@ -196,10 +196,10 @@ classdef ModelManager < handle
             modelName = processObj.modelName;
             for k = 1:numel(processObj.subModel)
                 % add by submodel
-                submodelName = dataObj.processingMethod.subModel(k).modelName;
-                parameter = strcat(dataObj.processingMethod.subModel(k).parameterName);
-                bestValue = single([dataObj.processingMethod.subModel(k).bestValue]);
-                error = single([dataObj.processingMethod.subModel(k).errorBar]);
+                submodelName = processObj.subModel(k).modelName;
+                parameter = strcat(processObj.subModel(k).parameterName);
+                bestValue = single([processObj.subModel(k).bestValue]);
+                error = single([processObj.subModel(k).errorBar]);
                 for i = 1:numel(parameter)
                        row = {modelName, submodelName, parameter{i}, bestValue(i), error(i)};
                        % here we use the javaMethodEDT to handle EDT
