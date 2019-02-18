@@ -74,10 +74,13 @@ classdef DataFit < ProcessDataUnit%DataModel
             
             % gather data and make output structure
             new_data = formatFitData(this, res);            
-            
-            % update best values (take care of the fixed parameters)
-            this.bestValue = this.startPoint;
-            this.bestValue(~this.isFixed) = res.bestValue;
+%             
+%             % update best values (take care of the fixed parameters)
+%             this.bestValue = this.startPoint;
+%             this.bestValue(~this.isFixed) = res.bestValue;
+%             
+%             % update sub-models (if any)
+%             this = updateSubModel(this);
             
         end %applyProcess
                    
@@ -108,12 +111,28 @@ classdef DataFit < ProcessDataUnit%DataModel
                 % fixed)
                 switch fld{k}
                     case 'bestValue'
-                        this.bestValue = {this.startPoint};
-                    case 'errorBar'
-                        this.errorBar = zeros(size(this.startPoint));
+                        if iscell(this.bestValue)  % zone processing may require cells here (to be fixed, only arrays should be used)
+                            this.bestValue = {this.startPoint};
+                            this.bestValue{1}(~this.isFixed) = val{1};
+                        else
+                            this.bestValue = this.startPoint;
+                            this.bestValue(~this.isFixed) = val{1};
+                        end
+                    case 'errorBar' 
+                        if iscell(this.errorBar) % same here
+                            this.errorBar = {zeros(size(this.startPoint))};
+                            this.errorBar{1}(~this.isFixed) = val{1};
+                        else
+                            this.errorBar = zeros(size(this.startPoint));
+                            this.errorBar(~this.isFixed) = val{1};
+                        end
                     otherwise
                         this.(fld{k}) = val;
                 end
+            end
+            % update sub-models (if any)
+            if ~isempty(this.subModel)
+                this = updateSubModel(this);
             end
         end %formatData
         
@@ -183,9 +202,45 @@ classdef DataFit < ProcessDataUnit%DataModel
                 par = this.startPoint;
                 par(~this.isFixed) = c;
                 par = num2cell(par);
-                y = fh([par{:}],x);
+                if nargin(fh)==2
+                    y = fh([par{:}],x);
+                else
+                    y = fh(par{:},x);
+                end
+                    
             end
         end
+        
+        
+        % update the sub models with the best fit values found from the
+        % main model
+        function self = updateSubModel(self)
+            indLim = 0;
+            for indsub = 1:length(self.subModel) % otherwise, pass the other values to the corresponding submodel
+                indStart = indLim + 1;
+                indLim = indLim + length(self.subModel(indsub).parameterName);
+                if length(self.bestValue)>=indLim
+                    self.subModel(indsub).bestValue = self.bestValue(indStart:indLim);
+                end
+                if length(self.errorBar)>=indLim
+                    self.subModel(indsub).errorBar = self.errorBar(indStart:indLim);
+                end
+                self.subModel(indsub).gof = self.gof;
+            end
+        end
+        
+        % make a list of all the names of the parameters used in the model,
+        % to facilitate display. A unique name is also returned to
+        % facilitate the generation of legends
+        function [paramNames, uniqueParamNames] = gatherParameterNames(self)
+            paramNames = [];
+            uniqueParamNames = [];
+            for i = 1:length(self.subModel)
+                paramNames = [paramNames self.subModel(i).parameterName]; 
+                uniqueParamNames = [uniqueParamNames cellfun(@(n)[n '_' num2str(i)],self.subModel(1).parameterName,'UniformOutput',0)]; 
+            end
+        end
+        
         
         % fill in the starting point of the model
         function this = evaluateStartPoint(this, xdata, ydata)

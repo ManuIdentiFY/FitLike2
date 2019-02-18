@@ -41,35 +41,6 @@ classdef Disp2Exp < ProcessDataUnit
             end
         end
                 
-        % update the sub models with the best fit values found from the
-        % main model
-        function self = updateSubModel(self)
-            indLim = 0;
-            for indsub = 1:length(self.subModel) % otherwise, pass the other values to the corresponding submodel
-                indStart = indLim + 1;
-                indLim = indLim + length(self.subModel(indsub).parameterName);
-                if length(self.model.bestValue)>=indLim
-                    self.subModel(indsub).bestValue = self.model.bestValue(indStart:indLim);
-                end
-                if length(self.model.errorBar)>=indLim
-                    self.subModel(indsub).errorBar = self.model.errorBar(indStart:indLim);
-                end
-                self.subModel(indsub).gof = self.model.gof;
-            end
-        end
-        
-        % make a list of all the names of the parameters used in the model,
-        % to facilitate display. A unique name is also returned to
-        % facilitate the generation of legends
-        function [paramNames, uniqueParamNames] = gatherParameterNames(self)
-            paramNames = [];
-            uniqueParamNames = [];
-            for i = 1:length(self.subModel)
-                paramNames = [paramNames self.subModel(i).parameterName]; 
-                uniqueParamNames = [uniqueParamNames cellfun(@(n)[n '_' num2str(i)],self.subModel(1).parameterName,'UniformOutput',0)]; 
-            end
-        end
-        
         
         % redefine the access functions so that any change to the model or
         % submodel list updates the entire object

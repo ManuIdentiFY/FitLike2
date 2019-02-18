@@ -55,8 +55,11 @@ classdef Dispersion < DataUnit
             if isempty(this.processingMethod); y = []; return; end
             
             model = this.processingMethod.modelHandle;
-            x = [num2cell(this.processingMethod.bestValue{1}), {x}];
-            y = model(x{:});
+            if iscell(this.processingMethod.bestValue)
+                this.processingMethod.bestValue = this.processingMethod.bestValue{1};
+            end
+            x = [num2cell(this.processingMethod.bestValue), {x}];
+            y = model([x{1:end-1}],x{end});
         end
         
         % get the dispersion fit data
@@ -105,10 +108,18 @@ classdef Dispersion < DataUnit
                     end
                 case 'Fit'
                     if isempty(this.processingMethod); leg = []; return; end
-                    
-                    leg = sprintf('%s (r² = %.3f)',...
-                            this.processingMethod.modelName,...
-                            this.processingMethod.gof{1}.rsquare);
+                    leg = '';
+                    for indMet = 1:numel(this.processingMethod)
+                        if isempty(this.processingMethod(indMet).gof)
+                            leg = [leg sprintf('%s',this.processingMethod(indMet).modelName)];
+                        else
+
+                            leg = [leg sprintf('%s (rï¿½ = %.3f)',...
+                                    this.processingMethod(indMet).modelName,...
+                                    this.processingMethod(indMet).gof{1}.rsquare)];
+                        end
+                        leg = [leg ' '];
+                    end
                     
                     if extend == -1
                         return

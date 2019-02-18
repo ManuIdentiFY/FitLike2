@@ -12,7 +12,7 @@ classdef PowerLawOneSegment < DispersionModel
         variableName = {'f'};                                           % Characters, name of the variables appearing in the equation (frequency)
         parameterName = {'dl',  'v'};               % List of characters, name of the parameters appearing in the equation
         minValue =      [0,      -2];                  % array of values, minimum values reachable for each parameter, respective to the order of parameterName
-        maxValue =      [100,      0];                  % array of values, maximum values reachable for each parameter, respective to the order of parameterName
+        maxValue =      [1e4,      0];                  % array of values, maximum values reachable for each parameter, respective to the order of parameterName
         startPoint =    [18,    -0.16];                % array of values, starting point for each parameter, respective to the order of parameterName
         isFixed =       [0        0];
         visualisationFunction@cell = {'dl*f.^v'};
