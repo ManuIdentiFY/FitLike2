@@ -1,9 +1,9 @@
-classdef MergePPNPZone < Zone2Zone & ProcessDataUnit
+classdef MergePPNPDisp < Disp2Disp & ProcessDataUnit
     
     properties
         %InputChildClass@char; 	% defined in DataUnit2DataUnit
         %OutputChildClass@char;	% defined in DataUnit2DataUnit
-        functionName@char = 'Merge NP/PP zones';     % character string, name of the model, as appearing in the figure legend
+        functionName@char = 'Merge NP/PP dispersion';     % character string, name of the model, as appearing in the figure legend
         labelY@char = '';       % string, labels the Y-axis data in graphs
         labelX@char = '';             % string, labels the X-axis data in graphs
         legendTag@cell = {'Merged'};         % tag appearing in the legend of data derived from this object
@@ -11,9 +11,9 @@ classdef MergePPNPZone < Zone2Zone & ProcessDataUnit
         
     methods
         % Constructor
-        function this = MergePPNPZone()
+        function this = MergePPNPDisp()
             % call both superclass constructor
-            this = this@Zone2Zone;
+            this = this@Disp2Disp;
             this = this@ProcessDataUnit;
             % set the ForceDataCat flag to true. Allow to get all the 3D
             % bloc matrix.
@@ -29,7 +29,7 @@ classdef MergePPNPZone < Zone2Zone & ProcessDataUnit
     
     methods
         % Define abstract method applyProcess(). See ProcessDataUnit.
-        function mergedList = applyProcess(this, zoneList)
+        function mergedList = applyProcess(this, dispList)
             
             
 %             % only perform the merge operation once
@@ -46,7 +46,14 @@ classdef MergePPNPZone < Zone2Zone & ProcessDataUnit
 %                 return
 %             end
 %            
-            relaxObj = unique([zoneList.relaxObj]);
+            % treat the simple case when the selection does not include
+            % multiple entries
+            if numel(dispList)<2
+                mergedList = dispList;
+                return
+            end
+            
+            relaxObj = unique([dispList.relaxObj]);
             mergedList = DataUnit.empty;
             
             % merge all PP and NP acquisitions from similar files
@@ -59,9 +66,11 @@ classdef MergePPNPZone < Zone2Zone & ProcessDataUnit
             while ~isempty(filename)
                 indexMerge = strcmp(filename{1},refname);
                 if sum(indexMerge)>1  % ignore files containing only one type of pulse sequences
+                    % check data consistency between the items to be merged
+                    
                     
                     % make the merged item
-                    datalist = getData(relaxObj(indexMerge), 'Zone');
+                    datalist = getData(relaxObj(indexMerge), 'Dispersion');
                     mergedbloc = merge(datalist);
                     paramlist = [relaxObj(indexMerge).parameter];
                     mergedparam = merge(paramlist);
@@ -71,7 +80,7 @@ classdef MergePPNPZone < Zone2Zone & ProcessDataUnit
                                               'parameter',    mergedparam,...
                                               'label',        label{1},...
                                               'filename',     filename{1},...
-                                              'sequence',     'Merged NP/PP zones',...
+                                              'sequence',     'Merged PP/NP dispersion',...
                                               'dataset',      getRelaxProp(datalist(1),'dataset'));
                     mergedbloc.relaxObj = mergedRelaxObj;
 %                     fitlikeHandle.RelaxData(end+1) = mergedRelaxObj;
@@ -83,8 +92,7 @@ classdef MergePPNPZone < Zone2Zone & ProcessDataUnit
                     
                 end
                 % make sure we don't process a dataset twice
-                indexDel = strcmp(filename{1},filename);
-                filename(indexDel) = [];
+                filename(indexMerge) = [];
                 % select the new files instead of the old ones
                 % TO DO
             end

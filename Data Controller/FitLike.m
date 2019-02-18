@@ -336,6 +336,8 @@ classdef FitLike < handle
             % remove files in RelaxData 
             idx = intersect(this.RelaxData, relaxObj);
             remove(this.RelaxData, idx);
+            % removes invalid objects
+            this.RelaxData = this.RelaxData(arrayfun(@(r) isvalid(r),this.RelaxData));
             % update FileManager
             deleteFile(this.FileManager);
             % throw message
@@ -730,15 +732,9 @@ classdef FitLike < handle
                     end
                 end
 
-                % Check if data has processingMethod and delete if true
-                tf_oldprocess = ~arrayfun(@(x) isempty(x.processingMethod), data);
-                if any(tf_oldprocess ~= 0)
-                    [data(tf_oldprocess).processingMethod] = deal([]);
-                end
-
                 % replace the highest object created in relaxObj
                 for indFile = 1:numel(relaxObj)
-                    relaxObj(indFile).data(:) = [];
+                    relaxObj(indFile).data(~arrayfun(@(x) isempty(x.processingMethod), relaxObj(indFile).data)) = [];
                 end
                 for indData = 1:numel(data)
                     data(indData).relaxObj.data(end+1) = data(indData);

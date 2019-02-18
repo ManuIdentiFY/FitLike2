@@ -59,7 +59,10 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             parentObj.processingMethod = this;
             
             % gather data and create childObj
-            childObj = makeProcessData(this, new_data, parentObj);     
+            childObj = makeProcessData(this, new_data, parentObj);    
+            
+            % link the child and parent processes
+            link(parentObj, childObj);
             
             % add other data (xLabel, yLabel,...)
             childObj = addOtherProp(this, childObj);
@@ -73,8 +76,8 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
         end %formatData
         
         % dispatch the merge operation to the corresponding function
-        function [childObj, parentObj] = processRelax(this,relaxList,parentObj)
-            [model, new_data] = applyProcess(this, relaxList, parentObj);
+        function [childObj, parentObj] = processDataGroup(this,parentObj)
+            childObj = applyProcess(this, parentObj);
         end
         
         % compare two process to determine if they are the same. This

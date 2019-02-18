@@ -356,8 +356,8 @@ classdef DispersionTab < EmptyTab
                             hPlot.XData = xfit;
                             hPlot.YData = yfit;
                             % +legend
-                            if ~strcmp(hPlot(tf_fit).DisplayName,leg)
-                                hPlot(tf_fit).DisplayName = leg;
+                            if ~strcmp(hPlot.DisplayName,leg)
+                                hPlot.DisplayName = leg;
                             end
                         end
                     end
