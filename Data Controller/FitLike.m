@@ -61,7 +61,10 @@ classdef FitLike < handle
            this.ProcessingManager.deleteWindow();
            this.ModelManager.deleteWindow();
 %          this.AcquisitionManager.deleteWindow();
-
+            
+           % delete data
+           delete(this.RelaxData);
+            
            % Delete this and clear to avoid memory leak
            delete(this);
            clear this
@@ -668,7 +671,7 @@ classdef FitLike < handle
                 % get the process array
                 ProcessArray = flip(tab.ProcessArray);
                 event.txt = 'Starting to process file...\n';
-                throwMessage(this, [], event);
+                throwMessage(this, [], event);  
                 
                 % apply the processes
                 warning off
@@ -684,9 +687,10 @@ classdef FitLike < handle
 %                             else
 %                                 data = [data getData(this.RelaxData(tf), ProcessArray(nProc).InputChildClass)];
 %                             end
-%                         end
+%                         end                       
+                        
                         data = getData(relaxObj, ProcessArray(nProc).InputChildClass);
-                        data = arrayfun(@(d) processData(d, ProcessArray(nProc)),data); % perform the process
+                        data = processData(data, ProcessArray(nProc)); % perform the process
                     else % case when the process needs to be applied to the entire selection.
                         data = getData(relaxObj, ProcessArray(nProc).InputChildClass);
                         data = processDataGroup(ProcessArray(nProc),data);
@@ -733,12 +737,12 @@ classdef FitLike < handle
                 end
 
                 % replace the highest object created in relaxObj
-                for indFile = 1:numel(relaxObj)
-                    relaxObj(indFile).data(~arrayfun(@(x) isempty(x.processingMethod), relaxObj(indFile).data)) = [];
-                end
-                for indData = 1:numel(data)
-                    data(indData).relaxObj.data(end+1) = data(indData);
-                end
+%                 for indFile = 1:numel(relaxObj)
+%                     relaxObj(indFile).data(~arrayfun(@(x) isempty(x.processingMethod), relaxObj(indFile).data)) = [];
+%                 end
+%                 for indData = 1:numel(data)
+%                     data(indData).relaxObj.data(end+1) = data(indData);
+%                 end
                 pause(0.005); % avoids some bugs with Java delays
                 % update FileManager
                 setTree(this.FileManager, class(data));

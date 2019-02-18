@@ -38,12 +38,29 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             out = 1;
         end
     
+        function tf = checkProcessData(this, parentObj)
+            % init
+            tf = 1;
+            % check if process
+            if isempty(parentObj.processingMethod)
+                return
+            end
+            
+            % check if process was already applied: same process &
+            % parameter
+            if strcmp(class(this), class(parentObj.processingMethod)) &&...
+                    isequal(this.parameter, parentObj.processingMethod.parameter) &&...
+                ~isempty(parentObj.children)
+                tf = 0;
+            end
+        end
+        
         % main process function
         function [childObj, parentObj] = processData(this, parentObj)  
             % check data size to confirm process
-%             if ~checkProcessData(this, parentObj)
-%                 childObj = []; return
-%             end
+            if ~checkProcessData(this, parentObj)
+                childObj = [parentObj.children]; return
+            end
             
             % get data
             data = getProcessData(this, parentObj);
@@ -62,7 +79,8 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             childObj = makeProcessData(this, new_data, parentObj);    
             
             % link the child and parent processes
-            link(parentObj, childObj);
+            %link(parentObj, childObj); already done in MakeProcessData()
+            %[Manu]
             
             % add other data (xLabel, yLabel,...)
             childObj = addOtherProp(this, childObj);
@@ -120,13 +138,4 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
     methods (Abstract)
         applyProcess(this, data, parentObj)
     end
-    
-    % set/get methods
-%     methods
-%         function this = set.parameter(this, val)
-%             oldProp = this.parameter;
-%             this.parameter = val;
-%             this = update(this, val);
-%         end %set.parameters
-%     end
 end

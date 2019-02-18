@@ -35,12 +35,11 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     
     % other properties
     properties (Hidden = true)
-        relaxObj@RelaxObj        %handle to the meta-data
+        relaxObj@RelaxObj        % handle to the meta-data
         parent@DataUnit          % parent of the object
         children@DataUnit        % children of the object
         parameters@ParamObj;     % redirects towards relaxobj parameters
         subUnitList@DataUnit;    % lists the data that were merged to create this object, if any
-%         ls;                      % listener
     end
     
     events
@@ -84,8 +83,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 end
                 % set displayName
                 setname(this);
-%                 % add listener
-%                 this.ls = addlistener(this,{'x','y','dy','mask'},'PostSet',@DataUnit.dataHasChanged);
             else
                 % array of struct
                 % check for cell sizes
@@ -124,8 +121,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         end
                         % set displayName
                         setname(this(k));
-%                         % add listener
-%                         this(k).ls = addlistener(this(k),{'x','y','dy','mask'},'PostSet',@DataUnit.dataHasChanged);
                     end
                 end
             end   
@@ -135,18 +130,17 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         function delete(this)
             % notify the deletion
             notify(this, 'DataDeletion');
-            if 0
-            % delete the parent and clear children/parent
-%             removeInputData(this.processingMethod,this); % unlink processing methods
-            remove(this.relaxObj,this); % unlink relaxObj
-%             delete(this.parent);  % this will destroy the BLoc object too, which is a problem if one only wants to remove a mistake  
+            % if relaxObj, remove handle
+            if ~isempty(this.relaxObj)
+                tf = ~arrayfun(@(d) isequal(d, this),this.relaxObj.data);
+                this.relaxObj.data = this.relaxObj.data(tf);
             end
-            % I try something else [Manu]
-            delete(this.children(isvalid(this.children)));
+            % unlink
+            unlink(this);
+            % delete children if required
+            delete(this.children);
             this.children(:) = [];
             this.parent(:) = [];
-%             % delete listener
-%             delete(this.ls);
         end
     end
     
@@ -365,26 +359,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             end
         end %get.meta
         
-%         % Fill or adapt the mask to the "y" field 
-%         % Could be simplify ? --> consider always array of struct [Manu] 
-%         function this = resetmask(this)
-%             % check if input is array of struct or just struct
-%             if length(this) > 1 
-%                 % array of struct
-%                 idx = ~arrayfun(@(x) isequal(size(x.mask),size(x.y)), this);
-%                 % reset mask
-%                 new_mask = arrayfun(@(x) true(size(x.y)),this(idx),'UniformOutput',0);
-%                 % set new mask
-%                 [this(idx).mask] = new_mask{:};
-%             else
-%                 % struct
-%                 if ~isequal(size(this.mask),size(this.y))
-%                     % reset mask
-%                     this.mask = true(size(this.y));
-%                 end
-%             end
-%         end %resetmask
-        
         % update an existing data set with new properties
         function this = updateProperties(this,varargin)
             fieldName = varargin(1:2:end);
@@ -425,8 +399,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             end     
         end %setname
         
-        % Should be modify to handle plot options without GUI [Manu]
-        % Need to be simplify by using varargin for optional input [Manu]
         % plot data function
         function h = plotData(this, idxZone, varargin)
             % get data
@@ -452,8 +424,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
              set(h, 'YNegativeDelta',-dyp(maskp), 'YPositiveDelta',dyp(maskp));
          end %addError
          
-         % Should be modify to handle plot options without GUI [Manu]
-         % Need to be simplify by using varargin for optional input [Manu]
          % Plot Masked data
          function h = plotMaskedData(this, idxZone, varargin)
              % get data
@@ -470,8 +440,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotMaskedData
          
          % Plot Fit
-         % Should be modify to handle plot options without GUI [Manu]
-         % Need to be simplify by using varargin for optional input [Manu]
          function h = plotFit(this, idxZone, varargin)
              % get data
              [xfit, yfit] = getFit(this, idxZone, []);
@@ -490,8 +458,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotFit
          
          % Plot Residual
-         % Should be modify to handle plot options without GUI [Manu]
-         % Need to be simplify by using varargin for optional input [Manu]
          function h = plotResidual(this, idxZone, varargin)
               % get data
               [xr,yr,~,maskr] = getData(this, idxZone);
@@ -505,16 +471,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotResidual
         %%% -------------------------------------------- %%%
     end %methods
-    
-    methods
-        % make sure that any link to a relax object updates the object in
-        % question
-        function set.relaxObj(this,relax)
-            add(relax,this);
-            this.relaxObj = relax;
-        end
-        
-    end
  
     % The methods described below are used to enable the merge capabilities
     % of the DataUnit object. They work by re-directing any quiry for the
@@ -524,12 +480,19 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     % during processing.
     % LB 20/08/2018
     methods
-       % set legendTag update the displayName
-       function this = set.legendTag(this, val) %#ok<MCHV2>
-           % add legendTag and update displayName
-           this.legendTag = val;
-           setname(this);
-       end
+        % make sure that any link to a relax object updates the object in
+        % question
+        function set.relaxObj(this, relax)
+            add(relax, this);
+            this.relaxObj = relax;
+        end
+        
+        % set legendTag update the displayName
+        function this = set.legendTag(this, val)
+            % add legendTag and update displayName
+            this.legendTag = val;
+            setname(this);
+        end
        
 %        % set y-values
 %        function self = set.y(self,value)

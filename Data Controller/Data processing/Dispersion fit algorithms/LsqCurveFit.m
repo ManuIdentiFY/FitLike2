@@ -63,13 +63,15 @@ classdef LsqCurveFit < FitAlgorithm
                 disp(ME)
                 return
             end
-            
+
             % get gof and error
             gof = this.getGOF(coeff, ydata, residuals, resnorm);
-
-            ci = nlparci(coeff,residuals,'jacobian',jacobian);
-            error = coeff' - ci(:,1);
-            
+            try
+                ci = nlparci(coeff,residuals,'jacobian',jacobian);
+                error = coeff' - ci(:,1);
+            catch
+                error = nan(size(coeff));
+            end
             %%% ----------------- Weight calculation ------------------ %%%
             function err = wfun(coeff, xdata, ydata, weight)
                 % get error

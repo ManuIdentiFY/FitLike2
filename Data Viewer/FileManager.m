@@ -116,10 +116,10 @@ classdef FileManager  < handle
     
     % Tree methods: add/delete/update
     methods
-       % add file. OK [14/01/19]
+       % add file
        function this = addFile(this, relaxObj)
              % loop over the input
-            for k = 1:length(relaxObj)
+            for k = 1:numel(relaxObj)
                 % + dataset
                 hDataset = TreeManager.addNode(this.gui.treefile.Root,...
                     relaxObj(k).dataset, this.DatasetIcon, 'dataset');
@@ -135,7 +135,7 @@ classdef FileManager  < handle
             end
        end %addFile
         
-       % delete file. OK [14/01/19]
+       % delete file
        function this = deleteFile(this, relaxObj)
            if nargin < 2
                % get checked nodes
@@ -185,7 +185,7 @@ classdef FileManager  < handle
            end
        end %checkFile
        
-       % add data. OK [14/01/19]
+       % add data
        function this = addData(this, fileNode)
            % set icon for selected tree
            icon = this.RelaxObjIcon{this.gui.treedata == this.SelectedTree};
@@ -226,7 +226,7 @@ classdef FileManager  < handle
        end %addData
        
        % add relaxobj. name is a cell array 1xN displayName. nZone is a
-       % scalar indicating the number of zone in the relaxObj. OK [14/01/19]
+       % scalar indicating the number of zone in the relaxObj
        function this = addRelaxObj(this, hParent, icon, name, nZone)
            % check if idx are included
            if ~isempty(nZone)
@@ -246,7 +246,7 @@ classdef FileManager  < handle
            end
        end %addRelaxObj
        
-       % remove data. OK [14/01/19]
+       % remove data
        function this = removeData(this, relaxObj)
            % check if files
            if isempty(this.SelectedTree.Root.Children)
@@ -307,71 +307,69 @@ classdef FileManager  < handle
             notify(this, 'DataSelected', event);
        end % checkData
        
-       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
        % update data if dataobj is changed. dataObj is a DataUnit.
        function this = updateData(this, relaxObj)
-           % get data info
-            displayName = getDataInfo(relaxObj, this.SelectedTree.Tag);
-            displayName = displayName.(this.SelectedTree.Tag);
-            
-           if ~isempty(displayName)
-               % set icon
-               icon = this.RelaxObjIcon{this.gui.treedata == this.SelectedTree};
-               % if not dispersion tab, add the zone index
-               if ~strcmp(this.SelectedTree.Tag, 'Dispersion')
-                   nZone = numel(getfield(relaxObj,'BR')); %#ok<GFLD>
-               else
-                   nZone = [];
-               end
-               % get the tree root
-               root = this.SelectedTree.Root;
-               if numel(root.Children) < 1
-                   % add new node
-                   for ind = 1:numel(relaxObj)
-                       hFile = TreeManager.addNode(root,...
-                           relaxObj(ind).filename, this.FileIcon, 'filename',...
-                           'UserData', relaxObj(ind));
-                       % add relaxObj
-                       addRelaxObj(this, hFile, icon, displayName, nZone);
-                   end
-               else
-                   % check if the file exists
-                   hFile = root.Children;
-                   tf_file = arrayfun(@(x) isequal(x.UserData, relaxObj), hFile);
-                   
-                   if all(tf_file == 0)
-                       % add new node
-                       hFile = TreeManager.addNode(root,...
-                           relaxObj.filename, this.FileIcon, 'filename',...
-                          'UserData', relaxObj);
-                       % add relaxObj
-                       addRelaxObj(this, hFile, icon, displayName, nZone);
+           % loop over the input
+           for k = 1:numel(relaxObj)
+               % get data info
+                displayName = getDataInfo(relaxObj(k), this.SelectedTree.Tag);
+                displayName = displayName.(this.SelectedTree.Tag);
+
+               if ~isempty(displayName)
+                   % set icon
+                   icon = this.RelaxObjIcon{this.gui.treedata == this.SelectedTree};
+                   % if not dispersion tab, add the zone index
+                   if ~strcmp(this.SelectedTree.Tag, 'Dispersion')
+                       nZone = numel(getfield(relaxObj(k),'BR')); %#ok<GFLD>
                    else
-                       % get the file node
-                       hFile = hFile(tf_file);
-                       n = numel(hFile.Children);
-                       % check how many relaxObj are inside the file node
-                       % remove or add some relaxObj
-                       if n > numel(displayName)
-                           % remove some relaxObj
-                           delete(hFile.Children(numel(displayName)+1:end));
-                           %hRelaxObj = hRelaxObj(1:nOldRelax); %clear
-                       elseif n < numel(displayName)
-                           % add some relaxObj
-                           addRelaxObj(this, hFile, icon,...
-                               repmat({''},1,1:numel(displayName)- n), nZone);
-                       end
-                       % set new name
-                       [hFile.Children.Name] = displayName{:};
+                       nZone = [];
                    end
+                   % get the tree root
+                   root = this.SelectedTree.Root;
+                   if numel(root.Children) < 1
+                           hFile = TreeManager.addNode(root,...
+                               relaxObj(k).filename, this.FileIcon, 'filename',...
+                               'UserData', relaxObj(k));
+                           % add relaxObj
+                           addRelaxObj(this, hFile, icon, displayName, nZone);
+                   else
+                       % check if the file exists
+                       hFile = root.Children;
+                       tf_file = arrayfun(@(x) isequal(x.UserData, relaxObj(k)), hFile);
+
+                       if all(tf_file == 0)
+                           % add new node
+                           hFile = TreeManager.addNode(root,...
+                               relaxObj(k).filename, this.FileIcon, 'filename',...
+                              'UserData', relaxObj(k));
+                           % add relaxObj
+                           addRelaxObj(this, hFile, icon, displayName, nZone);
+                       else
+                           % get the file node
+                           hFile = hFile(tf_file);
+                           n = numel(hFile.Children);
+                           % check how many relaxObj are inside the file node
+                           % remove or add some relaxObj
+                           if n > numel(displayName)
+                               % remove some relaxObj
+                               delete(hFile.Children(numel(displayName)+1:end));
+                               %hRelaxObj = hRelaxObj(1:nOldRelax); %clear
+                           elseif n < numel(displayName)
+                               % add some relaxObj
+                               addRelaxObj(this, hFile, icon,...
+                                   repelem({''}, numel(displayName)- n), nZone);
+                           end
+                           % set new name
+                           [hFile.Children.Name] = displayName{:};
+                       end
+                   end
+                   % expand
+                   expand(hFile);   
                end
-               % expand
-               expand(hFile);   
            end
        end %updateData
-       %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
        
-       % reset tree: unchecked all nodes. OK [14/01/19]
+       % reset tree: unchecked all nodes
        function this = reset(this)
           % get the file tree
           hNodes = this.gui.treefile.CheckedNodes;
@@ -385,7 +383,7 @@ classdef FileManager  < handle
           end
        end %reset
        
-       % add label to the selected nodes. OK [14/01/19]
+       % add label to the selected nodes
        function this = addLabel(this, icon)
            % get the selected nodes (files)
            hFile = TreeManager.getEndChild(this.gui.treefile.CheckedNodes);
@@ -398,7 +396,7 @@ classdef FileManager  < handle
            end
        end %addLabel
        
-       % remove label. OK [14/01/19]
+       % remove label
        function this = removeLabel(this, relaxObj) 
            % reset their icon
            for k = 1:numel(relaxObj)
@@ -410,7 +408,7 @@ classdef FileManager  < handle
     
     % Tree methods: Data and File access
     methods       
-        % select file  OK [14/01/19]
+        % select file
         function this = selectFile(this, ~, event) 
             % be sure to get the file
             hFile = TreeManager.getEndChild(event.CheckedNodes);
@@ -449,7 +447,7 @@ classdef FileManager  < handle
             %src.Enable = 'on';
         end %selectFile
         
-        % edit file  OK [14/01/19]
+        % edit file
         function this = editFile(this, ~, event)
             % check if dragdrop call
             if isa(event,'EventFileManager')
@@ -467,7 +465,7 @@ classdef FileManager  < handle
             end  
         end %editFile
         
-        % select data  OK [14/01/19]
+        % select data
         function this = selectData(this, ~, event)
             % get the selected data
             [hData, idxZone] = getSelectedData(this, event.CheckedNodes);
@@ -488,7 +486,7 @@ classdef FileManager  < handle
             drawnow %nocallbacks
         end %selectData
        
-       % set the selected tree  OK [14/01/19]
+       % set the selected tree
        function this = setTree(this, type)
            % check if different
            if strcmpi(this.SelectedTree.Tag, type)
@@ -508,7 +506,7 @@ classdef FileManager  < handle
            end
        end %setTree
        
-       % callback when selected tree is modified  OK [14/01/19]
+       % callback when selected tree is modified
        function this = changeTree(this, s, e)
            % remove the children from the previous selected tree
            delete(this.SelectedTree.Root.Children);
@@ -525,7 +523,7 @@ classdef FileManager  < handle
            end
        end %changeTree
 
-        % Throw the relaxObj selected  OK [14/01/19]
+        % Throw the relaxObj selected
         function relaxObj = getSelectedFile(this)
             % get checked nodes
             hNodes = this.gui.treefile.CheckedNodes;
@@ -538,7 +536,7 @@ classdef FileManager  < handle
             end
         end %getSelectedFile
         
-        % Throw the DataUnit selected and their zone index  OK [14/01/19]
+        % Throw the DataUnit selected and their zone index
         function [hData, idxZone] = getSelectedData(this, hNodes)
             % get checked nodes
             if nargin == 1
