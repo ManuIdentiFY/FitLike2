@@ -73,7 +73,12 @@ classdef DataFit < ProcessDataUnit%DataModel
                                     fun, xdata, ydata, dydata, x0, lb, ub);
             
             % gather data and make output structure
-            new_data = formatFitData(this, res);
+            new_data = formatFitData(this, res);            
+            
+            % update best values (take care of the fixed parameters)
+            this.bestValue = this.startPoint;
+            this.bestValue(~this.isFixed) = res.bestValue;
+            
         end %applyProcess
                    
         % format output fit data (if childObj is created from fit results)
@@ -99,8 +104,16 @@ classdef DataFit < ProcessDataUnit%DataModel
             for k = 1:numel(fld) 
                 % get data
                 val = cellfun(@(x) x.(fld{k}), model, 'Uniform', 0);
-                % assign
-                this.(fld{k}) = val;
+                % assign (initialise the values in case some parameters are
+                % fixed)
+                switch fld{k}
+                    case 'bestValue'
+                        this.bestValue = {this.startPoint};
+                    case 'errorBar'
+                        this.errorBar = zeros(size(this.startPoint));
+                    otherwise
+                        this.(fld{k}) = val;
+                end
             end
         end %formatData
         
@@ -112,6 +125,10 @@ classdef DataFit < ProcessDataUnit%DataModel
         % this operation adds all the contributions from the subModel list,
         % recursively.
         function this = makeFunctionHandle(this)
+            % check that the model is present
+            if isempty(this.modelEquation)
+                return
+            end
              % check for element-wise operators
             opList = {'^','*','/'};
             for indParam = 1:length(opList)
@@ -142,7 +159,7 @@ classdef DataFit < ProcessDataUnit%DataModel
         end
         
         % set the fixed parameters for a given 
-        function fhfixed = setFixedParameter(this, fh) %#ok<INUSD>
+        function fhfixed = setFixedParameter(this, fh)
 %             paramlist = '';
 %             n = 0;
 %             for i = 1:length(this.isFixed)
@@ -163,10 +180,10 @@ classdef DataFit < ProcessDataUnit%DataModel
             % using nested functions allows creating permanent function
             % handles from custom equations
             function y = localFunction(c,x)
-                par = this.bestValue;
+                par = this.startPoint;
                 par(~this.isFixed) = c;
                 par = num2cell(par);
-                y = fh(par{:},x);
+                y = fh([par{:}],x);
             end
         end
         
@@ -202,12 +219,100 @@ classdef DataFit < ProcessDataUnit%DataModel
                                     'modelOption', modelOption);           
         end %addParameter
         
+        
+        % make a list of all the boudaries for each parameter
+        function this = gatherBoundaries(this)
+            % init
+%             this.model = struct('minValue',[],'maxValue',[],...
+%                 'startPoint',[],'isFixed',[],'bestValue',[],'errorBar',[]);
+            
+            for i = 1:length(this.subModel)
+                this.minValue = [this.minValue, this.subModel(i).minValue(:)']; %#ok<*AGROW>
+                this.maxValue = [this.maxValue, this.subModel(i).maxValue(:)'];
+                this.startPoint = [this.startPoint, this.subModel(i).startPoint(:)'];
+                this.isFixed  = [this.isFixed,  this.subModel(i).isFixed(:)'];
+                this.bestValue  = [this.bestValue,  this.subModel(i).bestValue(:)'];
+                this.errorBar  = [this.errorBar,  this.subModel(i).errorBar(:)'];
+            end
+        end
+    end
+    
+    methods (Sealed)
+        
+        % add a DispersionModel object to the list of contributions
+        function self = addModel(self,subModel)
+%             if ~isequal(class(subModel),'DispersionModel')
+%                 error('Wrong class of model, must be a DispersionModel.')
+%             end
+            if isempty(self.subModel)
+                self.subModel = subModel;
+            else
+                self.subModel = [self.subModel subModel];
+            end
+            self = wrapSubModelList(self); % update the function handles
+        end
+        
+                
+        % Create the sum of all the contributions by wrapping the function
+        % handles into standard function handles (parameter array, variable
+        % array)
+        function self = wrapSubModelList(self)
+            % deal with the case when a list of objects if given
+            if length(self)>1
+                self = arrayfun(@(o)wrapSubModelList(o),self);
+                return
+            end
+            % from here on, only one object is being processed
+            if isempty(self.subModel)
+                return
+            end
+%             if isempty(self.model)
+%                 self.model = DispersionModel;
+%             end
+            self.modelEquation = '';
+            parNum = 0; % number of parameters in the final model
+            varName = self.variableName{1};
+            model = self.subModel;  %#ok<*PROP> % simplifying the names for clarity
+            for indModel = 1:length(model)
+                if indModel > 1
+                    self.modelEquation = [self.modelEquation ' + '];
+                end
+                % add the contributions but replaces the parameter names by
+                % 'param' and 'x'
+                varList = listInputNames(model(indModel));
+                for indv = 1:length(model(indModel).parameterName)
+                    indPar = find(strcmp(varList,model(indModel).parameterName{indv}));
+                    parNum = parNum + 1;
+                    varList{indPar} = ['param(' num2str(parNum) '),']; %#ok<*FNDSB>
+                end
+                for indv = 1:length(model(indModel).variableName)
+                    indPar = find(strcmp(varList,model(indModel).variableName{indv}));
+                    varList{indPar} = [varName ','];
+                end
+                varList{end} = varList{end}(1:end-1); % remove the trailing comma
+                self.modelEquation = [self.modelEquation 'model(' num2str(indModel) ').modelHandle(' varList{:} ')'];
+                
+            end
+            % generate the function handles to wrap the submodel
+            % equations
+            % WARNING: we cannot use str2func to generate the function
+            % handle, as it does not seem to generate the function
+            % properly. There is no escape but to use eval...
+            self.modelHandle = eval(['@(param,' varName ')' self.modelEquation]);
+            
+            % collect the boundaries corresponding to each sub-model
+            self = gatherBoundaries(self);
+            
+        end
+        
+    end
+    
+        
         % should be in Pipeline probably
 %         function numberOfInputs(this)
 %         end
 %         
 %         function numberOfOutputs(this)
 %         end
-    end
 end
 

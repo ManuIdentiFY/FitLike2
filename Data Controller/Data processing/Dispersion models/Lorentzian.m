@@ -15,7 +15,7 @@ classdef Lorentzian < DispersionModel
         maxValue      = [Inf,     1e-3];  
         startPoint    = [3e-10,   1e-6];  
         isFixed       = [0           0];
-         visualisationFunction@cell = {};
+        visualisationFunction@cell = {};
     end
     
      methods

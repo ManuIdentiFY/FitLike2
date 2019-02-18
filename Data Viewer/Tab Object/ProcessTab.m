@@ -220,7 +220,9 @@ classdef ProcessTab < uix.Container & handle
                     case 'Disp2Disp'
                         in = 'dispersion';
                         out = 'dispersion';
-                        
+%                     case 'Disp2Exp'
+%                         in = 'dispersion';
+%                         out = 'experiment';
                 end
                 
                 tb.from = repmat({in},height(tb),1);
