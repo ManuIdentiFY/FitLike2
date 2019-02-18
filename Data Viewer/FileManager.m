@@ -357,7 +357,7 @@ classdef FileManager  < handle
                            elseif n < numel(displayName)
                                % add some relaxObj
                                addRelaxObj(this, hFile, icon,...
-                                   repmat({''},1,1:numel(displayName)- n), nZone);
+                                   repelem({''}, numel(displayName)- n), nZone);
                            end
                            % set new name
                            [hFile.Children.Name] = displayName{:};
