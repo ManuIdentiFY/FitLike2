@@ -35,12 +35,11 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     
     % other properties
     properties (Hidden = true)
-        relaxObj@RelaxObj        %handle to the meta-data
+        relaxObj@RelaxObj        % handle to the meta-data
         parent@DataUnit          % parent of the object
         children@DataUnit        % children of the object
         parameters@ParamObj;     % redirects towards relaxobj parameters
         subUnitList@DataUnit;    % lists the data that were merged to create this object, if any
-%         ls;                      % listener
     end
     
     events
@@ -365,26 +364,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             end
         end %get.meta
         
-%         % Fill or adapt the mask to the "y" field 
-%         % Could be simplify ? --> consider always array of struct [Manu] 
-%         function this = resetmask(this)
-%             % check if input is array of struct or just struct
-%             if length(this) > 1 
-%                 % array of struct
-%                 idx = ~arrayfun(@(x) isequal(size(x.mask),size(x.y)), this);
-%                 % reset mask
-%                 new_mask = arrayfun(@(x) true(size(x.y)),this(idx),'UniformOutput',0);
-%                 % set new mask
-%                 [this(idx).mask] = new_mask{:};
-%             else
-%                 % struct
-%                 if ~isequal(size(this.mask),size(this.y))
-%                     % reset mask
-%                     this.mask = true(size(this.y));
-%                 end
-%             end
-%         end %resetmask
-        
         % update an existing data set with new properties
         function this = updateProperties(this,varargin)
             fieldName = varargin(1:2:end);
@@ -425,8 +404,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             end     
         end %setname
         
-        % Should be modify to handle plot options without GUI [Manu]
-        % Need to be simplify by using varargin for optional input [Manu]
         % plot data function
         function h = plotData(this, idxZone, varargin)
             % get data
@@ -452,8 +429,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
              set(h, 'YNegativeDelta',-dyp(maskp), 'YPositiveDelta',dyp(maskp));
          end %addError
          
-         % Should be modify to handle plot options without GUI [Manu]
-         % Need to be simplify by using varargin for optional input [Manu]
          % Plot Masked data
          function h = plotMaskedData(this, idxZone, varargin)
              % get data
@@ -470,8 +445,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotMaskedData
          
          % Plot Fit
-         % Should be modify to handle plot options without GUI [Manu]
-         % Need to be simplify by using varargin for optional input [Manu]
          function h = plotFit(this, idxZone, varargin)
              % get data
              [xfit, yfit] = getFit(this, idxZone, []);
@@ -490,8 +463,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotFit
          
          % Plot Residual
-         % Should be modify to handle plot options without GUI [Manu]
-         % Need to be simplify by using varargin for optional input [Manu]
          function h = plotResidual(this, idxZone, varargin)
               % get data
               [xr,yr,~,maskr] = getData(this, idxZone);
