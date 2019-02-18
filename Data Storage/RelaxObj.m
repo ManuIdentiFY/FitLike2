@@ -181,6 +181,8 @@ classdef RelaxObj < handle
         % Override the intersect struct. Check which object in this are in
         % relaxObj
         function idx = intersect(this, relaxObj)
+            % check that the inputs are valid
+            this = this(arrayfun(@(o) isvalid(o),this));
             % check input
             if isempty(relaxObj); idx = []; return; end
             
