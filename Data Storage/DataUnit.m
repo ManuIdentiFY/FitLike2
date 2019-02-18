@@ -83,8 +83,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 end
                 % set displayName
                 setname(this);
-%                 % add listener
-%                 this.ls = addlistener(this,{'x','y','dy','mask'},'PostSet',@DataUnit.dataHasChanged);
             else
                 % array of struct
                 % check for cell sizes
@@ -123,8 +121,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                         end
                         % set displayName
                         setname(this(k));
-%                         % add listener
-%                         this(k).ls = addlistener(this(k),{'x','y','dy','mask'},'PostSet',@DataUnit.dataHasChanged);
                     end
                 end
             end   
@@ -134,18 +130,17 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         function delete(this)
             % notify the deletion
             notify(this, 'DataDeletion');
-            if 0
-            % delete the parent and clear children/parent
-%             removeInputData(this.processingMethod,this); % unlink processing methods
-            remove(this.relaxObj,this); % unlink relaxObj
-%             delete(this.parent);  % this will destroy the BLoc object too, which is a problem if one only wants to remove a mistake  
+            % if relaxObj, remove handle
+            if ~isempty(this.relaxObj)
+                tf = ~arrayfun(@(d) isequal(d, this),this.relaxObj.data);
+                this.relaxObj.data = this.relaxObj.data(tf);
             end
-            % I try something else [Manu]
-            delete(this.children(isvalid(this.children)));
+            % unlink
+            unlink(this);
+            % delete children if required
+            delete(this.children);
             this.children(:) = [];
             this.parent(:) = [];
-%             % delete listener
-%             delete(this.ls);
         end
     end
     
@@ -476,16 +471,6 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
          end %plotResidual
         %%% -------------------------------------------- %%%
     end %methods
-    
-    methods
-        % make sure that any link to a relax object updates the object in
-        % question
-        function set.relaxObj(this,relax)
-            add(relax,this);
-            this.relaxObj = relax;
-        end
-        
-    end
  
     % The methods described below are used to enable the merge capabilities
     % of the DataUnit object. They work by re-directing any quiry for the
@@ -495,12 +480,19 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
     % during processing.
     % LB 20/08/2018
     methods
-       % set legendTag update the displayName
-       function this = set.legendTag(this, val) %#ok<MCHV2>
-           % add legendTag and update displayName
-           this.legendTag = val;
-           setname(this);
-       end
+        % make sure that any link to a relax object updates the object in
+        % question
+        function set.relaxObj(this, relax)
+            add(relax, this);
+            this.relaxObj = relax;
+        end
+        
+        % set legendTag update the displayName
+        function this = set.legendTag(this, val)
+            % add legendTag and update displayName
+            this.legendTag = val;
+            setname(this);
+        end
        
 %        % set y-values
 %        function self = set.y(self,value)
