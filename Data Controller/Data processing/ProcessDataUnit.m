@@ -38,12 +38,27 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             out = 1;
         end
     
+        function tf = checkProcessData(this, parentObj)
+            % check if process
+            if isempty(parentObj.processingMethod)
+                tf = 1; return
+            end
+            
+            % check if process was already applied: same process &
+            % parameter
+            if strcmp(class(this), class(parentObj.processingMethod)) &&...
+                    isequal(this.parameter, parentObj.processingMethod.parameter) &&...
+                ~isempty(parentObj.children)
+                tf = 0; fprintf('Same Process\n')
+            end                                             
+        end
+        
         % main process function
         function [childObj, parentObj] = processData(this, parentObj)  
             % check data size to confirm process
-%             if ~checkProcessData(this, parentObj)
-%                 childObj = []; return
-%             end
+            if ~checkProcessData(this, parentObj)
+                childObj = [parentObj.children]; return
+            end
             
             % get data
             data = getProcessData(this, parentObj);
