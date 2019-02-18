@@ -272,6 +272,9 @@ classdef FileManager  < handle
                 % get the node file
                 nodes = this.SelectedTree.Root.Children;
                 tf = arrayfun(@(x) isequal(x.UserData, dataObj(k).relaxObj), nodes);
+                if isempty(nodes) % case when some data object are adly formed
+                    continue
+                end
                 hData = nodes(tf).Children;
                 if isnan(idxZone(k))
                     tf = strcmp({hData.Name}, dataObj(k).displayName);
