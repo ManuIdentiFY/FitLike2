@@ -686,7 +686,7 @@ classdef FitLike < handle
 %                             end
 %                         end
                         data = getData(relaxObj, ProcessArray(nProc).InputChildClass);
-                        data = arrayfun(@(d) processData(d, ProcessArray(nProc)),data); % perform the process
+                        data = processData(data, ProcessArray(nProc)); % perform the process
                     else % case when the process needs to be applied to the entire selection.
                         data = getData(relaxObj, ProcessArray(nProc).InputChildClass);
                         data = processDataGroup(ProcessArray(nProc),data);
