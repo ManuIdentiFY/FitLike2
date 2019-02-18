@@ -696,18 +696,30 @@ classdef DispersionTab < EmptyTab
                 end
                 return
             end
+            % check if listener activated
+            if isa(e, 'PropertyEvent')
+                % for now just delete selected point
+                src.Tag = 'SelectedPoint';
+                selectData(this, src, []);
+                return
+                src = e.AffectedObject;
+            end
+            
             % get the associated data
             hPlot = arrayfun(@(x) findobj(x.hPlot,'Tag','Data'), this.hGroup, 'Uniform', 0);
             tf = cellfun(@(x) x == src, hPlot);
             
             % check if associated idxZone
             idxZone = EmptyTab.getIdxZone(this.hGroup(tf));
-%             idxZone = strsplit(this.hGroup(tf).Tag,'@');
-%             idxZone = str2double(idxZone{end});
+
             % if no zone, get it by the intersection point
             if isnan(idxZone)
-                % get the zone index
-                [~,idxZone] = min(abs(this.hData(tf).x - e.IntersectionPoint(1)));
+                if isa(e, 'PropertyEvent')
+                    [~,idxZone] = min(abs(src.XData - this.SelectedPoint.XData));
+                else
+                    % get the zone index
+                    [~,idxZone] = min(abs(this.hData(tf).x - e.IntersectionPoint(1)));
+                end
                 % check if the object is selected
                 if isempty(this.SelectedPoint)
                     % create a marker
