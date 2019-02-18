@@ -39,9 +39,11 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
         end
     
         function tf = checkProcessData(this, parentObj)
+            % init
+            tf = 1;
             % check if process
             if isempty(parentObj.processingMethod)
-                tf = 1; return
+                return
             end
             
             % check if process was already applied: same process &
@@ -49,8 +51,8 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             if strcmp(class(this), class(parentObj.processingMethod)) &&...
                     isequal(this.parameter, parentObj.processingMethod.parameter) &&...
                 ~isempty(parentObj.children)
-                tf = 0; fprintf('Same Process\n')
-            end                                             
+                tf = 0;
+            end
         end
         
         % main process function
