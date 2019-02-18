@@ -733,12 +733,12 @@ classdef FitLike < handle
                 end
 
                 % replace the highest object created in relaxObj
-                for indFile = 1:numel(relaxObj)
-                    relaxObj(indFile).data(~arrayfun(@(x) isempty(x.processingMethod), relaxObj(indFile).data)) = [];
-                end
-                for indData = 1:numel(data)
-                    data(indData).relaxObj.data(end+1) = data(indData);
-                end
+%                 for indFile = 1:numel(relaxObj)
+%                     relaxObj(indFile).data(~arrayfun(@(x) isempty(x.processingMethod), relaxObj(indFile).data)) = [];
+%                 end
+%                 for indData = 1:numel(data)
+%                     data(indData).relaxObj.data(end+1) = data(indData);
+%                 end
                 pause(0.005); % avoids some bugs with Java delays
                 % update FileManager
                 setTree(this.FileManager, class(data));
