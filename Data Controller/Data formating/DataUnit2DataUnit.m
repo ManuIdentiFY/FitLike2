@@ -164,8 +164,12 @@ classdef DataUnit2DataUnit %< handle & matlab.mixin.Copyable [Manu]
                 end
                 % loop over the field
                 for k = numel(fld):-1:1
-                    % get data and reshape
-                    val = vertcat(data_formated.(fld{k}));
+                    % if NaN are in the data, it changes the concatenation 
+                    if all(any(isnan(vertcat(data_formated.(fld{k}))) == 0) == 0)
+                        val = horzcat(data_formated.(fld{k}))';
+                    else
+                        val = vertcat(data_formated.(fld{k}));
+                    end
                     val = reshape(val, dim);
                     % convert into 1xn cell array
                     data{2*k} = squeeze(num2cell(val,1:numel(size(val))-1));
