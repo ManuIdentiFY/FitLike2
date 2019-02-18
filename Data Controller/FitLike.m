@@ -675,7 +675,9 @@ classdef FitLike < handle
                 
                 % apply the processes
                 warning off
-                for nProc = 1:length(ProcessArray)          
+                for nProc = 1:length(ProcessArray)      
+                    event.txt = ['Applying ' ProcessArray(nProc).functionName '\n'];
+                    throwMessage(this, [], event);  
                     if ~ProcessArray(nProc).globalProcess % case when the process is applied independently to each data acquisition
                         % loop over the file
 %                         for indFile = 1:numel(relaxObj)
@@ -751,6 +753,11 @@ classdef FitLike < handle
                 checkData(this.FileManager, data, idxZone, 1);                    
                 drawnow; pause(0.005);
                 
+                % select the current data (needed in case of merging files)
+                % TO DO
+                
+                event.txt = 'Done !\n';
+                throwMessage(this, [], event);  
             else
                 % Simulation mode
                 % TO DO
