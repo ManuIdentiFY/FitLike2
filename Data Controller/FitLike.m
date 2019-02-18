@@ -752,10 +752,7 @@ classdef FitLike < handle
                 end                   
                 checkData(this.FileManager, data, idxZone, 1);                    
                 drawnow; pause(0.005);
-                
-                % select the current data (needed in case of merging files)
-                % TO DO
-                
+                                
                 event.txt = 'Done !\n';
                 throwMessage(this, [], event);  
             else
