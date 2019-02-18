@@ -92,7 +92,8 @@ classdef MergePPNPDisp < Disp2Disp & ProcessDataUnit
                     
                 end
                 % make sure we don't process a dataset twice
-                filename(indexMerge) = [];
+                indDel = strcmp(filename{1},filename);
+                filename(indDel) = [];
                 % select the new files instead of the old ones
                 % TO DO
             end
