@@ -186,18 +186,15 @@ classdef ModelManager < handle
                    javaMethodEDT('removeRow',this.gui.jtable,0);
             end
             % check if data are available
-            if isempty(dataObj)
+            if isempty(dataObj.processingMethod)
                 return
+            else
+                processObj = dataObj.processingMethod;
             end
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % Need to finish submodel architecture in DataFit!
-            if 1; disp('ModelManager: OK!'); return; end
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
             % add new results
             modelName = processObj.modelName;
-            for k = 1:numel(model.subModel)
+            for k = 1:numel(processObj.subModel)
                 % add by submodel
                 submodelName = processObj.subModel(k).modelName;
                 parameter = strcat(processObj.subModel(k).parameterName);
@@ -219,8 +216,7 @@ classdef ModelManager < handle
         % handle in UserData!)
         
         % File checked in tree callback
-        function this = updateFilePopup(this,~,event)
-            return
+        function this = updateFilePopup(this, ~, event)
             % check if data are dispersion
             if ~isa(event.Data ,'Dispersion')
                 return
@@ -272,18 +268,16 @@ classdef ModelManager < handle
                     @(src, event) onDataDeletion(this, src, event));
             end
             
-%             % remove previous listener
-%             if ~isempty(this.ls); delete(this.ls); end
-%             
-%             if lisflag                
-%                 % add new one
-%                 dataObj = hPopup.UserData(hPopup.Value);
-%                 this.ls_table = addlistener(dataObj,{'processingMethod'},'PostSet',...
-%                     @(src, event) updateResultTable(this));
-%             end
-%             drawnow; pause (0.005);
-%             updateResultTable(this);
-%             drawnow;
+            if lisflag                
+                % add new one
+                dataObj = hPopup.UserData(hPopup.Value);
+                if ~isempty(this.ls_table); delete(this.ls_table); end
+                this.ls_table = addlistener(dataObj,{'processingMethod'},'PostSet',...
+                    @(src, event) updateResultTable(this));
+            end
+            pause (0.005);
+            updateResultTable(this);
+            drawnow;
         end %updateFilePopup
         
         % function fires when a DataUnit is deleted 
