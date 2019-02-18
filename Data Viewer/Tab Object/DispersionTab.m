@@ -674,10 +674,14 @@ classdef DispersionTab < EmptyTab
             end
         end %makeResidualHistogram
         
-        % Just callback: to adapt with struct group!!!!
+        % Add fast visualisation of parent object if clicking on any data
+        % point in main axis
         function this = selectData(this, src, e)
             % check source 
             if strcmp(src.Tag, 'SelectedPoint')
+                % delete listener and delete function
+                this.SelectedPoint.UserData.Object{1}.DeleteFcn = [];
+                delete(this.SelectedPoint.UserData);
                 % delete current selected point
                 delete(this.SelectedPoint);
                 this.SelectedPoint = []; %clear
@@ -693,24 +697,33 @@ classdef DispersionTab < EmptyTab
                 return
             end
             % get the associated data
-            [~,idx,~] = intersect(getPlotID(this), src.Tag);
+            hPlot = arrayfun(@(x) findobj(x.hPlot,'Tag','Data'), this.hGroup, 'Uniform', 0);
+            tf = cellfun(@(x) x == src, hPlot);
+            
             % check if associated idxZone
-            idxZone = strsplit(src.Tag,'@');
-            idxZone = str2double(idxZone{end});
+            idxZone = EmptyTab.getIdxZone(this.hGroup(tf));
+%             idxZone = strsplit(this.hGroup(tf).Tag,'@');
+%             idxZone = str2double(idxZone{end});
             % if no zone, get it by the intersection point
             if isnan(idxZone)
                 % get the zone index
-                [~,idxZone] = min(abs(this.hData(idx).x - e.IntersectionPoint(1)));
+                [~,idxZone] = min(abs(this.hData(tf).x - e.IntersectionPoint(1)));
                 % check if the object is selected
                 if isempty(this.SelectedPoint)
                     % create a marker
                     this.SelectedPoint = plot(this.axe,...
-                            this.hData(idx).x(idxZone), this.hData(idx).y(idxZone),...
+                            this.hData(tf).x(idxZone), this.hData(tf).y(idxZone),...
                             'LineStyle','none','Marker','s','MarkerSize',14,...
                             'Color','k','ButtonDownFcn',@(s,e) selectData(this,s,e),...
                             'Tag','SelectedPoint');
                     set(get(get(this.SelectedPoint,'Annotation'),...
                         'LegendInformation'),'IconDisplayStyle','off');
+                    % add a deletion callback if the source object is
+                    % destroyed
+                    src.DeleteFcn = @(~,~) clearSelectedPoint(this);
+                    % add listener if the source is modified
+                    this.SelectedPoint.UserData = addlistener(src,...
+                        'YData','PostSet',@(src, event) selectData(this, src, event));
                     % create a new axis
                     if isempty(this.axeres)
                         subplot(3,2,[1 3 5], this.axe);
@@ -721,34 +734,40 @@ classdef DispersionTab < EmptyTab
                     end
                     this.axezone.NextPlot = 'add'; 
                     % plot parent data with error
-                    h = plotData(this.hData(idx).parent, idxZone,...
+                    h = plotData(this.hData(tf).parent, idxZone,...
                                  'Color',src.Color,...
                                  'LineStyle',src.LineStyle,...
                                  'Marker', src.Marker,...
+                                 'MarkerFaceColor', 'auto',...
                                  'MarkerSize',src.MarkerSize,...
-                                 'Parent', this.axezone,...
-                                 'Tag', src.Tag);
-                    addError(this.hData(idx).parent, idxZone, h);
+                                 'Parent', this.axezone);
+                    addError(this.hData(tf).parent, idxZone, h);
                     % add fit
-                    plotFit(this.hData(idx).parent, idxZone,...
+                    plotFit(this.hData(tf).parent, idxZone,...
                             'Color',src.Color,...
                             'LineStyle',this.FitLineStyle,...
                             'Marker',this.FitMarkerStyle,...
-                            'Parent',this.axezone,...
-                            'Tag', src.Tag);
+                            'Parent',this.axezone);
                     % set fontsize
                     set(this.axezone, 'FontSize', 8);
-                    xlabel(this.axezone, this.hData(idx).parent.xLabel);
-                    ylabel(this.axezone, this.hData(idx).parent.yLabel);
+                    xlabel(this.axezone, this.hData(tf).parent.xLabel);
+                    ylabel(this.axezone, this.hData(tf).parent.yLabel);
                     % add legend
                     legend(this.axezone,'show');
                     set(this.axezone.Legend,'Interpreter','none');
                 else
+                    % remove deleteFcn
+                    this.SelectedPoint.UserData.Object{1}.DeleteFcn = [];
+                    % update listener
+                    delete(this.SelectedPoint.UserData);
+                    this.SelectedPoint.UserData = addlistener(src,...
+                        'YData','PostSet',@(src, event) selectData(this, src, event));
+                    src.DeleteFcn = @(~,~) clearSelectedPoint(this);
                     % update selected point
-                    this.SelectedPoint.XData = this.hData(idx).x(idxZone);
-                    this.SelectedPoint.YData = this.hData(idx).y(idxZone);
+                    this.SelectedPoint.XData = this.hData(tf).x(idxZone);
+                    this.SelectedPoint.YData = this.hData(tf).y(idxZone);
                     % update current plot obj
-                    [x,y,dy,mask] = getData(this.hData(idx).parent, idxZone);
+                    [x,y,dy,mask] = getData(this.hData(tf).parent, idxZone);
                     % +data
                     hData = findobj(this.axezone, 'Type', 'errorbar');
                     if ~isempty(hData) && ~isempty(y(mask))
@@ -761,7 +780,7 @@ classdef DispersionTab < EmptyTab
                         % update color, marker, displayName
                         set(hData,'Color',src.Color,'LineStyle',src.LineStyle,...
                             'Marker',src.Marker,'MarkerSize',src.MarkerSize);
-                        leg = getLegend(this.hData(idx).parent, idxZone, 'Data', 0);
+                        leg = getLegend(this.hData(tf).parent, idxZone, 'Data', 0);
                         if ~strcmp(leg, hData.DisplayName)
                             hData.DisplayName = leg;
                         end
@@ -770,12 +789,12 @@ classdef DispersionTab < EmptyTab
                     end
                     % +fit
                     hFit = findobj(this.axezone, 'Type', 'line');
-                    [xfit, yfit] = getFit(this.hData(idx).parent, idxZone, []);
+                    [xfit, yfit] = getFit(this.hData(tf).parent, idxZone, []);
                     if ~isempty(hFit) && ~isempty(yfit)
                         set(hFit, 'XData', xfit, 'YData', yfit);
                         % update color, marker, displayName
                         set(hFit,'Color',src.Color);
-                        leg = getLegend(this.hData(idx).parent, idxZone, 'Fit', 0);
+                        leg = getLegend(this.hData(tf).parent, idxZone, 'Fit', 0);
                         if ~strcmp(leg, hData.DisplayName)
                             hFit.DisplayName = leg;
                         end
@@ -788,6 +807,12 @@ classdef DispersionTab < EmptyTab
                 return
             end
         end % selectData
+                    
+        function clearSelectedPoint(this)
+            % call selectData like if user hit the selected point
+            src.Tag = 'SelectedPoint';
+            selectData(this, src, []);
+        end
     end
     
     % Other function
