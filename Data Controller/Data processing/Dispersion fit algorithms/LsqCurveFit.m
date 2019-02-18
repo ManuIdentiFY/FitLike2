@@ -55,11 +55,12 @@ classdef LsqCurveFit < FitAlgorithm
                             x0, xdata, ydata,lb, ub,...
                             this.options.Weight, opts);
                 end           
-            catch
+            catch ME
                 coeff = x0;
                 error = nan(size(x0));
                 gof = struct('sse',[],'rsquare',[],'adjrsquare',[],'RMSE',[]);
                 exitflag = -1;
+                disp(ME)
                 return
             end
 

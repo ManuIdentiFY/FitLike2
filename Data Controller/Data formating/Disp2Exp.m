@@ -27,70 +27,7 @@ classdef Disp2Exp < ProcessDataUnit
             end
         end
         
-        % add a DispersionModel object to the list of contributions
-        function self = addModel(self,subModel)
-%             if ~isequal(class(subModel),'DispersionModel')
-%                 error('Wrong class of model, must be a DispersionModel.')
-%             end
-            if isempty(self.subModel)
-                self.subModel = subModel;
-            else
-                self.subModel = [self.subModel subModel];
-            end
-            self = wrapSubModelList(self); % update the function handles
-        end
-                
-        % Create the sum of all the contributions by wrapping the function
-        % handles into standard function handles (parameter array, variable
-        % array)
-        function self = wrapSubModelList(self)
-            % deal with the case when a list of objects if given
-            if length(self)>1
-                self = arrayfun(@(o)wrapSubModelList(o),self);
-                return
-            end
-            % from here on, only one object is being processed
-            if isempty(self.subModel)
-                return
-            end
-            if isempty(self.model)
-                self.model = DispersionModel;
-            end
-            self.model.modelEquation = '';
-            parNum = 0; % number of parameters in the final model
-            varName = self.model.variableName{1};
-            model = self.subModel;  %#ok<*PROP> % simplifying the names for clarity
-            for indModel = 1:length(model)
-                if indModel > 1
-                    self.model.modelEquation = [self.model.modelEquation ' + '];
-                end
-                % add the contributions but replaces the parameter names by
-                % 'param' and 'x'
-                varList = listInputNames(model(indModel));
-                for indv = 1:length(model(indModel).parameterName)
-                    indPar = find(strcmp(varList,model(indModel).parameterName{indv}));
-                    parNum = parNum + 1;
-                    varList{indPar} = ['param(' num2str(parNum) '),']; %#ok<*FNDSB>
-                end
-                for indv = 1:length(model(indModel).variableName)
-                    indPar = find(strcmp(varList,model(indModel).variableName{indv}));
-                    varList{indPar} = [varName ','];
-                end
-                varList{end} = varList{end}(1:end-1); % remove the trailing comma
-                self.model.modelEquation = [self.model.modelEquation 'model(' num2str(indModel) ').modelHandle(' varList{:} ')'];
-                
-            end
-            % generate the function handles to wrap the submodel
-            % equations
-            % WARNING: we cannot use str2func to generate the function
-            % handle, as it does not seem to generate the function
-            % properly. There is no escape but to use eval...
-            self.model.modelHandle = eval(['@(param,' varName ')' self.model.modelEquation]);
-            
-            % collect the boundaries corresponding to each sub-model
-            self = gatherBoundaries(self);
-            
-        end
+        
         
         % function that allows estimating the start point. It should be 
         % over-riden by the derived classes
@@ -133,21 +70,6 @@ classdef Disp2Exp < ProcessDataUnit
             end
         end
         
-        % make a list of all the boudaries for each parameter
-        function this = gatherBoundaries(this)
-            % init
-%             this.model = struct('minValue',[],'maxValue',[],...
-%                 'startPoint',[],'isFixed',[],'bestValue',[],'errorBar',[]);
-            
-            for i = 1:length(this.subModel)
-                this.model.minValue = [this.model.minValue, this.subModel(i).minValue(:)']; %#ok<*AGROW>
-                this.model.maxValue = [this.model.maxValue, this.subModel(i).maxValue(:)'];
-                this.model.startPoint = [this.model.startPoint, this.subModel(i).startPoint(:)'];
-                this.model.isFixed  = [this.model.isFixed,  this.subModel(i).isFixed(:)'];
-                this.model.bestValue  = [this.model.bestValue,  this.subModel(i).bestValue(:)'];
-                this.model.errorBar  = [this.model.errorBar,  this.subModel(i).errorBar(:)'];
-            end
-        end
         
         % redefine the access functions so that any change to the model or
         % submodel list updates the entire object

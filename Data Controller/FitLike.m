@@ -863,6 +863,9 @@ classdef FitLike < handle
                 tab = this.ModelManager.gui.tab.SelectedTab.Children;
                 % get the process array
                 ModelArray = tab.ModelArray;
+                % make the sum of all the models
+                ModelSum = MergedModels;
+                ModelSum = addModel(ModelSum,ModelArray);
                 
                 if isempty(ModelArray); return; end
                 
@@ -870,7 +873,7 @@ classdef FitLike < handle
                 for k = 1:numel(dataObj)
                     event.txt = 'Fitting...'; throwMessage(this, [], event);
                     % apply the process
-                    dataObj(k) = processData(dataObj(k), ModelArray(1));
+                    dataObj(k) = processData(dataObj(k), ModelSum);
                     % throw message
                     event.txt = [sprintf('%d/%d',k,numel(dataObj)),'\n'];
                     throwMessage(this, [], event);

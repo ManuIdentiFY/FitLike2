@@ -70,8 +70,8 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             
             % format output
             new_data = formatData(this, new_data);
-            this = formatModel(this, model);         
-            
+            this = formatModel(this, model);    
+                        
             % add processObj
             parentObj.processingMethod = this;
             

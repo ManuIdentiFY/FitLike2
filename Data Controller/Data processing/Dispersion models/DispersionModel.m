@@ -21,7 +21,15 @@ classdef DispersionModel < DataUnit2DataUnit & DataFit
             this = this@DataFit;
             % redefine input/output class
             this.InputChildClass  = 'Dispersion';
-            this.OutputChildClass = 'Dispersion';
+            this.OutputChildClass = 'Experiment';
+        end
+        
+        % list the name of input parameters
+        function list = listInputNames(this)
+             eq= func2str(this.modelHandle);
+             indp = strfind(eq,')');
+             indv = strfind(eq,',');
+             list = arrayfun(@(indstart,indend) eq(indstart:indend),[3 indv+1],[indv-1,indp(1)-1],'UniformOutput',0);             
         end
     end
 end
