@@ -6,11 +6,14 @@ classdef ModelManager < handle
     properties
         gui % GUI (View)
         FitLike % Presenter
+        hData % data handle
+        SelectedData % current selected data
     end
     
     properties (Hidden)
         ls_table %listener to update fit results
         ls_popup  %listener to update popup if DataUnit is deleted
+        ls % listener to the data handle
     end
     
     methods
@@ -55,11 +58,13 @@ classdef ModelManager < handle
             
             % Set callback for the file selection popup
             set(this.gui.FileSelectionPopup,'Callback',...
-                @(src, event) updateResultTable(this));
+                @(src, event) updateSelection(this));
             
             % Add listener to the Dispersion tree
-            addlistener(this.FitLike.FileManager,...
-               'DataSelected',@(src, event) updateFilePopup(this, src, event));
+%             addlistener(this.FitLike.FileManager,...
+%                'DataSelected',@(src, event) updateFilePopup(this, src, event));
+           addlistener(this.FitLike.FileManager,...
+               'DataSelected',@(src, event) update(this, src, event));
         end %ModelManager
         
         % Destructor
@@ -167,17 +172,7 @@ classdef ModelManager < handle
         end %switchProcessMode
         
         % Check file callback
-        function this = updateResultTable(this, src , event)
-            % handle popup
-            hPopup = this.gui.FileSelectionPopup;
-            % get the selected file
-            if isempty(hPopup.UserData)
-                return               
-            end
-            
-            % get the data associated
-            dataObj = hPopup.UserData(hPopup.Value);
-
+        function this = updateTable(this)
             % remove previous results
             nRow = this.gui.jtable.getRowCount();
             for k = 1:nRow
@@ -185,13 +180,16 @@ classdef ModelManager < handle
                    % see https://undocumentedmatlab.com/blog/matlab-and-the-event-dispatch-thread-edt
                    javaMethodEDT('removeRow',this.gui.jtable,0);
             end
-            % check if data are available
-            if isempty(dataObj.processingMethod)
-                return
-            else
-                processObj = dataObj.processingMethod;
-            end
             
+            % get the selected file
+            if isempty(this.SelectedData)
+                return               
+            end
+
+            % check if data are available          
+            if isempty(this.SelectedData.processingMethod); return; end
+            
+            processObj = this.SelectedData.processingMethod;            
             % add new results
             modelName = processObj.modelName;
             for k = 1:numel(processObj.subModel)
@@ -209,81 +207,204 @@ classdef ModelManager < handle
             end
         end
         
-        % Need to add move listener from updateResultTable to
-        % updateFilePopup to respond to runProcess() call. [Manu]
-        % Could pass data to the updateResultTable directly, avoiding the
-        % need to do multiple call to FitLike to get data (just store
-        % handle in UserData!)
+        % function fires when a DataUnit is deleted 
+        function this = onDataDeletion(this, src, ~)
+            % check the data deleted
+            tf = this.hData == src;
+            this.hData = this.hData(~tf);
+            delete(this.ls(tf)); this.ls = this.ls(~tf);
+            
+            % update popup
+            removePopupItem(this);
+        end %onDataDeletion
         
-        % File checked in tree callback
-        function this = updateFilePopup(this,~,event)
+        % fire when data are selected
+        function this = update(this, ~, event)
             % check if data are dispersion
             if ~isa(event.Data ,'Dispersion')
                 return
             end
             
-            % form output name and ID
-            for k = numel(event.Data):-1:1
-                new_name{k} = [getRelaxProp(event.Data(k), 'filename'),...
-                    ' (',event.Data(k).displayName,')'];
-            end
-            
-            % check format
-            if size(event.Data,1) > 1; event.Data = event.Data'; end
-            if size(new_name,1) > 1; new_name = new_name'; end
-            
-            lisflag = 1; %flag for listener
-            % check if we add new item or remove one
-            hPopup = this.gui.FileSelectionPopup;
+            % check which action was done
             if strcmp(event.Action, 'Select')
-                if strcmp(hPopup.String, 'Select a dispersion data:')
-                    hPopup.String = new_name;
-                    hPopup.UserData = event.Data;
+                if isempty(this.hData)
+                    this.hData = event.Data;
+                    for k = 1:numel(event.Data)
+                        l = addlistener(event.Data(k),'DataDeletion',...
+                                @(src, event) onDataDeletion(this, src, event));
+                        this.ls = [this.ls, l];
+                    end
                 else
-                    % check if duplicates
-                    [~,idx] = setdiff(new_name, hPopup.String);
-                    hPopup.String = [hPopup.String new_name(idx)];
-                    hPopup.UserData = [hPopup.UserData event.Data(idx)];
+                    % add new data (without duplicates)
+                    new_data = setdiff(event.Data, this.hData);
+                    if ~isempty(new_data)
+                        this.hData = [this.hData, new_data];
+                        % add listeners
+                        for k = 1:numel(new_data)
+                            l = addlistener(new_data(k),'DataDeletion',...
+                                    @(src, event) onDataDeletion(this, src, event));
+                            this.ls = [this.ls, l];
+                        end
+                    end
                 end
+                % update popup
+                addPopupItem(this);
             else
-                [~,idx] = setdiff(hPopup.String, new_name);
-                hPopup.UserData = hPopup.UserData(idx);
-                
-                if isempty(hPopup.UserData)
-                    lisflag = 0;
-                    hPopup.Value = 1;
-                    hPopup.String = 'Select a dispersion data:'; 
-                else
-                    hPopup.String = hPopup.String(idx);
-                end
+                % remove data
+                [~,idx] = setdiff(this.hData, event.Data);
+                this.hData = this.hData(idx);
+                % update listeners
+                delete(this.ls(setdiff(1:numel(this.ls), idx))); 
+                this.ls = this.ls(idx);
+                if isempty(this.ls); this.ls = []; end
+                % update popup
+                removePopupItem(this);
             end
-            
-            % update popup listener
-            if isempty(this.ls_popup)
-                this.ls_popup = addlistener([hPopup.UserData],'DataDeletion',...
-                    @(src, event) onDataDeletion(this, src, event));
-            else
-                delete(this.ls_popup); this.ls_popup = [];
-                this.ls_popup = addlistener([hPopup.UserData],'DataDeletion',...
-                    @(src, event) onDataDeletion(this, src, event));
-            end
-            
-            if lisflag                
-                % add new one
-                dataObj = hPopup.UserData(hPopup.Value);
-                if ~isempty(this.ls_table); delete(this.ls_table); end
-                this.ls_table = addlistener(dataObj,{'processingMethod'},'PostSet',...
-                    @(src, event) updateResultTable(this));
-            end
-            pause (0.005);
-            updateResultTable(this);
-            drawnow;
-        end %updateFilePopup
+        end
         
-        % function fires when a DataUnit is deleted 
-        function this = onDataDeletion(this, src, event)
-            h = 1;            
-        end %onDataDeletion
+        function this = addPopupItem(this)
+            % check current popup state
+            hPopup = this.gui.FileSelectionPopup;
+            
+            % form output name
+            for k = numel(this.hData):-1:1
+                name{1,k} = [getRelaxProp(this.hData(k), 'filename'),...
+                    ' (',this.hData(k).displayName,')'];
+            end
+            
+            if strcmp(hPopup.String, 'Select a dispersion data:')
+                hPopup.String = name;
+                % update current selection
+                updateSelection(this);
+            else
+                new_name = setdiff(name, hPopup.String); pause(0.005);
+                hPopup.String = [hPopup.String; new_name'];
+            end
+        end %addPopupItem
+        
+        function this = removePopupItem(this)
+            % check current popup state
+            hPopup = this.gui.FileSelectionPopup;
+            
+            if strcmp(hPopup.String, 'Select a dispersion data:')
+                return
+            end
+            
+            % form output name
+            for k = numel(this.hData):-1:1
+                name{1,k} = [getRelaxProp(this.hData(k), 'filename'),...
+                    ' (',this.hData(k).displayName,')'];
+            end
+            
+            oldVal = hPopup.String{hPopup.Value};
+            
+            if ~isempty(this.hData)
+                if hPopup.Value > numel(name)
+                    set(hPopup,'String',name,'Value',numel(name));
+                else
+                    hPopup.String = name;
+                end
+                newVal = hPopup.String{hPopup.Value};               
+            else
+                set(hPopup,'String','Select a dispersion data:','Value',1);
+                newVal = [];
+            end       
+            
+            if ~isequal(oldVal, newVal)
+                updateSelection(this);
+            end
+        end %removePopupItem
+        
+        function this = updateSelection(this)
+            % check the current popup state
+            hPopup = this.gui.FileSelectionPopup;
+            
+            % clear current listener
+            delete(this.ls_table); this.ls_table = [];
+            
+            if strcmp(hPopup.String, 'Select a dispersion data:')
+                % clear current selection
+                this.SelectedData = [];                
+            else
+                % get current string
+                str = hPopup.String{hPopup.Value};
+                % grab the 'Dispersion' flag in the string and separate the
+                % filename from the displayName
+                idx = strfind(str, 'Dispersion');
+                
+                displayName = str(idx(end):end-1);
+                filename = str(1:idx(end)-3);
+                
+                % get the data corresponding to these properties
+                for k = numel(this.hData):-1:1
+                    filename_list{k} = getRelaxProp(this.hData(k), 'filename');
+                    displayName_list{k} = this.hData(k).displayName;
+                end
+                tf = strcmp(filename, filename_list) & strcmp(displayName, displayName_list);
+                
+                % set this data as the selected one
+                this.SelectedData = this.hData(tf);
+                % add a listener on it
+                this.ls_table = addlistener(this.SelectedData,{'processingMethod'},'PostSet',...
+                     @(src, event) updateTable(this));
+            end
+
+            % update table
+            updateTable(this);
+        end %updatePopup
+        
+%         function this = updatePopup(this)
+%             hPopup = this.gui.FileSelectionPopup;
+%             % check if data are available
+%             if isempty(this.hData)
+%                 hPopup.String = 'Select a dispersion data:'; 
+%                 if ~isempty(this.ls_table)
+%                     delete(this.ls_table); this.ls_table = []; 
+%                 end
+%                 return
+%             end
+%             
+%             % form output name
+%             for k = numel(this.hData):-1:1
+%                 name{1,k} = [getRelaxProp(this.hData(k), 'filename'),...
+%                     ' (',this.hData(k).displayName,')'];
+%             end
+%             
+%             % compare current display with new name
+%             if numel(name) > numel(hPopup.String)
+%                 if strcmp(hPopup.String, 'Select a dispersion data:')
+%                     hPopup.String = name;
+%                 else
+%                     % add new name
+%                     new_name = setdiff(name, hPopup.String);
+%                     hPopup.String = [hPopup.String, new_name];
+%                 end
+%             elseif numel(name) < numel(hPopup.String)
+%                 % remove name
+%                 [~,idx] = setdiff(hPopup.String, name);
+%                 if numel(idx) ~= numel(hPopup.String)
+%                     hPopup.String = hPopup.String(idx);
+%                 else
+%                     hPopup.Value = 1;
+%                     hPopup.String = 'Select a dispersion data:';
+%                 end
+%             else
+%                 hPopup.String = name;
+%             end
+%             
+%             % get the current data
+%             tf = strcmp(name, hPopup.String{hPopup.Value});
+%             hPopup.UserData = this.hData(tf);
+%             
+%             % add listener for table
+%             if ~isempty(hPopup.UserData)
+%                 if isempty(this.ls_table)
+%                     delete(this.ls_table); this.ls_table = []; 
+%                 end
+%                 this.ls_table = addlistener(hPopup.UserData,{'processingMethod'},'PostSet',...
+%                     @(src, event) updateTable(this));
+%             end
+%         end %updatePopup
         
         % Wrapper to throw messages in the console or in the terminal in
         % function of FitLike input.
