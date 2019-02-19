@@ -6,18 +6,18 @@ classdef ParamV2 < ParamObj
     end
     
     methods
-        function self = ParamV2(varargin)
-            self@ParamObj(varargin{:});
-        end
+        function this = ParamV2(varargin)
+            this@ParamObj(varargin{:});
+        end %ParamV2
             
-        function x = getZoneAxis(self)
-            T1MAX = self.paramList.T1MX;
+        function x = getZoneAxis(this)
+            T1MAX = this.paramList.T1MX;
             % extract the info from the TAU field
-            ind = strfind(self.paramList.TAU,':');
-            algo = self.paramList.TAU(2:ind(1)-1);
-            xstart = self.paramList.TAU(ind(1)+1:ind(2)-1);
-            xend = self.paramList.TAU(ind(2)+1:ind(3)-1);
-            npts = str2double(self.paramList.TAU(ind(3)+1:end-1));
+            ind = strfind(this.paramList.TAU,':');
+            algo = this.paramList.TAU(2:ind(1)-1);
+            xstart = this.paramList.TAU(ind(1)+1:ind(2)-1);
+            xend = this.paramList.TAU(ind(2)+1:ind(3)-1);
+            npts = str2double(this.paramList.TAU(ind(3)+1:end-1));
             % make the array
             x = zeros(npts,length(T1MAX));
             switch algo
@@ -38,21 +38,21 @@ classdef ParamV2 < ParamObj
             end
             % make sure the dimensions are consistent (tau, nT2, BRLX)
             x = reshape(x,size(x,1),size(x,2));
-        end
+        end %getZoneAxis
         
         % find the parameters that have been used to select multiple values
         % for looped experimentation, when not using the profile wizard.
-        function [parName,parValue] = findExtendedParameter(self)
+        function [parName,parValue] = findExtendedParameter(this)
             parName = {};
             parValue = {};
-            parList = fieldnames(self.paramList);
+            parList = fieldnames(this.paramList);
             for i=1:length(parList)
-                if isequal(self.paramList.(parList{i})(1),'[')
+                if isequal(this.paramList.(parList{i})(1),'[')
                     parName = [parName parList{i}];
-                    parValue = [parValue self.paramList.(parList{i})];
+                    parValue = [parValue this.paramList.(parList{i})];
                 end
             end
-        end
+        end %findExtendedParameter
     end
     
 end

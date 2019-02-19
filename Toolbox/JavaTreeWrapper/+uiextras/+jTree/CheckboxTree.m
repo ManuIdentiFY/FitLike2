@@ -86,8 +86,6 @@ classdef CheckboxTree < uiextras.jTree.Tree
         CheckedNodes %in DigIn, returns highest level that's fully checked
     end
     
-    %%% -------------------------------------------------------- %%%
-    
     properties (SetAccess=protected, GetAccess=protected)
         jCBoxSelModel %Java checkbox selection model (internal)
     end
@@ -122,6 +120,7 @@ classdef CheckboxTree < uiextras.jTree.Tree
             
             % Call superclass constructor
             tObj = tObj@uiextras.jTree.Tree(varargin{:});
+            
         end
         
     end %methods
@@ -216,8 +215,9 @@ classdef CheckboxTree < uiextras.jTree.Tree
                         return
                     end
                     
-                     % Prepare the event data
+                    % Prepare the event data
                     e1 = struct('SelectionPaths',tObj.CheckedNodes);
+                    
                 else %not DigIn mode
                     
                     % Figure out what paths were added or removed by eventdata

@@ -12,7 +12,7 @@ classdef PowerLawAndLogarithmicDB < DispersionModel
     % Link: http://onlinelibrary.wiley.com/doi/10.1002/mrm.23229/pdf
     %
     % Lionel Broche, University of Aberdeen, 08/02/2017 (modified 23/08/18)
-                 
+    
     properties
         modelName     = 'Piecewise power law and logarithmic';
         modelEquation = ['A*(2*pi*f)^v + '...
@@ -24,14 +24,13 @@ classdef PowerLawAndLogarithmicDB < DispersionModel
         maxValue      = [Inf,    0,     Inf,   1e-4];
         startPoint    = [7e4,    -0.3,  3e10,  1e-06];
         isFixed       = [ 0       0      0      0];
+        visualisationFunction@cell = {};
     end
     
-    methods
-        function model = PowerLawAndLogarithmicDB
-            % additional property used to visualise the individual components
-            model.visualisationFunction = {'A*(2*pi*f)^v', ...
-                                           'B*taud*(log(1 + 1/(taud*2*pi*f)^2) + 4*log(1 + 1/(2*taud*2*pi*f)^2))'};
-        end
-        
+     methods
+         function this = PowerLawAndLogarithmicDB
+             % call superclass constructor
+             this = this@DispersionModel;
+         end
     end
 end

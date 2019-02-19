@@ -8,7 +8,7 @@ classdef ColeColeShort < DispersionModel
     %
     % Vasileios Zampetoulas, University of Aberdeen, 2016
     % Adapted by LB, 23/08/18
-               
+
     properties
 
         modelName = 'Cole-Cole, short';        
@@ -19,5 +19,13 @@ classdef ColeColeShort < DispersionModel
         maxValue =      [20,  20,    20e6];         
         startPoint =    [9,    4,    1e6];       
         isFixed = [0 0 0];
+        visualisationFunction@cell = {};
+    end
+    
+    methods
+        function this = ColeColeShort
+            % call superclass constructor
+            this = this@DispersionModel;
+        end
     end
 end

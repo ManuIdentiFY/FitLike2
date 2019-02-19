@@ -8,8 +8,9 @@ classdef ParamV1 < ParamObj
         % parameter can be a structure or a cell array of structure. If a
         % cell array of structure is detected then PARAMV1 creates an array
         % of ParamV1 object.
-        function self = ParamV1(varargin)
-            self@ParamObj(varargin{:});
+        function this = ParamV1(varargin)
+            % call superclass constructor
+            this@ParamObj(varargin{:});
         end %ParamV1
             
         % GETZONEAXIS(SELF) generates the inversion time values based on
@@ -17,21 +18,26 @@ classdef ParamV1 < ParamObj
         % The input can not be an array of object, instead call GETZONEAXIS
         % with the following syntax:
         % invtime = arrayfun(@(x) getZoneAxis(x), self, 'UniformOutput', 0);
-        function invtime = getZoneAxis(self)
+        function invtime = getZoneAxis(this)
             % check input
-            if length(self) > 1
+            if length(this) > 1
                 error('GetZoneAxis:InputSize',['It seems that the input is'...
                     ' an array of object. Use the following syntax instead: '...
                     'arrayfun(@(x) getZoneAxis(x), self, ''UniformOutput'', 0);'])
             end
+            
+            % check if possible to send invtime
+            if this.paramList.NBLK == 1
+                invtime = 0; return
+            end
             % get parameters
-            BGRD = self.paramList.BGRD;
-            T1MX = self.paramList.T1MX; %#ok<NASGU>
-            NBLK = self.paramList.NBLK;
+            BGRD = this.paramList.BGRD;
+            T1MX = this.paramList.T1MX; %#ok<NASGU>
+            NBLK = this.paramList.NBLK;
             % depending on the format generate the inversion time values           
             switch BGRD
                 case 'LIST'
-                    blst = regexp(self.paramList.BLST,'[;:]','split'); %split the field BLST
+                    blst = regexp(this.paramList.BLST,'[;:]','split'); %split the field BLST
                     Ti = eval(blst{1}); %time start vector
                     Te = eval(blst{2}); %time end vector   
                     [Ti,Te] = checkOutputSz(Ti, Te);
@@ -41,13 +47,13 @@ classdef ParamV1 < ParamObj
                        invtime = arrayfun(@(ti,te)linspace(ti,te,NBLK),Ti,Te,'UniformOutput',0); %create all the time vectors
                     end                
                 case 'LOG'
-                    Ti = eval(self.paramList.BINI);
-                    Te = eval(self.paramList.BEND);
+                    Ti = eval(this.paramList.BINI);
+                    Te = eval(this.paramList.BEND);
                     [Ti,Te] = checkOutputSz(Ti, Te);
                     invtime = arrayfun(@(ti,te)logspace(log10(ti),log10(te),NBLK),Ti,Te,'UniformOutput',0); %create all the time vectors
                 case 'LIN'
-                    Ti = eval(self.paramList.BINI);
-                    Te = eval(self.paramList.BEND);
+                    Ti = eval(this.paramList.BINI);
+                    Te = eval(this.paramList.BEND);
                     [Ti,Te] = checkOutputSz(Ti, Te);
                     invtime = arrayfun(@(ti,te)linspace(ti,te,NBLK),Ti,Te,'UniformOutput',0); %create all the time vectors
                 otherwise
@@ -66,8 +72,8 @@ classdef ParamV1 < ParamObj
                 elseif ni ~= ne && ne == 1
                     Te = repelem(Te, ni);
                 end
-            end
-        end
+            end %checkOutputSz
+        end %getZoneAxis
                 
     end
     

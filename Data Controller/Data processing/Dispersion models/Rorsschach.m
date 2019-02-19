@@ -3,7 +3,7 @@ classdef Rorsschach < DispersionModel
     %H.E. Rorsschach - 1986
     % Vasileios Zampetoulas, University of Aberdeen, 2016
     % Adapted for FitLike2 by LB, 23/08/18
-                 
+    
     properties
         modelName = 'Rorsschach';
         modelEquation = ['(M_ratio/(1 + M_ratio))*R_s + (M_ratio/(1 + M_ratio))*Var*((-2*atand(1-sqrt(2)*sqrt((w*tau_corrmax)))'...
@@ -18,5 +18,13 @@ classdef Rorsschach < DispersionModel
         maxValue = [   Inf,       1,        Inf,             0.1,       Inf];
         startPoint = [   10,       0.4,     7e-6,            7e-10,     10];
         isFixed = [0 0 0 0 0];
+        visualisationFunction@cell = {};
+    end
+    
+    methods
+         function this = Rorsschach
+             % call superclass constructor
+             this = this@DispersionModel;
+         end
     end
 end

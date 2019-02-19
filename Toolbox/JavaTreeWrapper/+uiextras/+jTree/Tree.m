@@ -577,7 +577,7 @@ classdef Tree < hgsetget
         
         function onCollapse(tObj,e)
             % Occurs when a node is collapsed
-            
+
             % Is there a custom NodeCollapsedCallback?
             if callbacksEnabled(tObj) && ~isempty(tObj.NodeCollapsedCallback)
                 
@@ -603,7 +603,7 @@ classdef Tree < hgsetget
                 
                 % Get the position clicked
                 x = e.getX;
-                y = e.getY;            
+                y = e.getY;
                 
                 if e.isMetaDown %Right-click
                     
@@ -644,41 +644,12 @@ classdef Tree < hgsetget
                 elseif ~isempty(tObj.MouseClickedCallback)
                     % Do the following for a custom MouseClickedCallback
                     
-                    %%% -------- M.Petit modified, 09/2018 -------- %%%
-                    % check if a node was selected
-                    if ~isempty(nObj)
-                        % check if the node is selected
-                        treePath = tObj.jTree.getPathForLocation(x,y); 
-                        isSelected = tObj.jTree.isPathSelected(treePath); 
-                        
-                        % if node selected, fire the edit callback
-                        if isSelected
-                            % get the current name
-                            oldName = nObj.Name;
-                            % Edit the selected nodes
-                            tObj.jTree.startEditingAtPath(treePath)
-                            % wait until the path is not edit anymore
-                            while tObj.jTree.isEditing
-                                % loop
-                            end
-                            % get new name and call the custom callback
-                            newName = nObj.Name;
-                            e1 = struct('Nodes',nObj,'Action','NodeEdited',...
-                                'OldName',oldName,'NewName',newName);
-                            hgfeval(tObj.MouseClickedCallback,tObj,e1);
-                        else
-                            % Call the custom callback
-                            e1 = struct('Nodes',nObj,'Action','NodeChecked');
-                            hgfeval(tObj.MouseClickedCallback,tObj,e1);
-                        end
-                    end                   
-                    %%% ------------------------------------------- %%%
-                    
                     % Call the custom callback
-%                     e1 = struct(...
-%                         'Position',[x,y],...
-%                         'Nodes',nObj);
-%                                       
+                    e1 = struct(...
+                        'Position',[x,y],...
+                        'Nodes',nObj);
+                    hgfeval(tObj.MouseClickedCallback,tObj,e1);
+                    
                 end %if e.isMetaDown
                 
             end %if callbacksEnabled(tObj)
@@ -1087,13 +1058,13 @@ classdef Tree < hgsetget
         % FontSize
         function value = get.FontSize(tObj)
             
-            value = tObj.jTree.getFont().getSize();
+            value = tObj.jTree.getFont.getSize();
             
             % Convert value from pixels to points
             %http://stackoverflow.com/questions/6257784/java-font-size-vs-html-font-size
             % Java font is in pixels, and assumes 72dpi. Windows is
             % typically 96 and up, depending on display settings.
-            dpi = java.awt.Toolkit.getDefaultToolkit().getScreenResolution();
+            dpi = java.awt.Toolkit.getDefaultToolkit.getScreenResolution();
             value = (value * 72 / dpi);
             
         end % get.FontSize
@@ -1104,12 +1075,13 @@ classdef Tree < hgsetget
             jFont = tObj.jTree.getFont();
             
             % Convert value from points to pixels
-            dpi = java.awt.Toolkit.getDefaultToolkit().getScreenResolution();
+            dpi = java.awt.Toolkit.getDefaultToolkit.getScreenResolution();
             value = round(value * dpi / 72);
             
             % Create a new Java font
             jFont = javax.swing.plaf.FontUIResource(jFont.getName(),...
-                jFont.getStyle(), value);
+                java.awt.Font.PLAIN, value);
+            %jFont = java.awt.Font(jFont.getName(), java.awt.Font.PLAIN, value);
             
             % Set the font size (in pixels)
             tObj.jTree.setFont(jFont);

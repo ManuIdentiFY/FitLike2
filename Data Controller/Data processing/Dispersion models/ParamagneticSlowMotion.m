@@ -9,7 +9,7 @@ classdef ParamagneticSlowMotion < DispersionModel
     % UNFINISHED! Beware, not working in the current state. 
     %
     % Lionel Broche, University of Aberdeen, 23/08/2018
-            
+    
     properties
         modelName = 'Paramagnetic contribution, slow motion'; 
         modelEquation = 'functionname(f,a,b,d,tau,N,w12,w23,w13,w34,w24)'; 
@@ -19,6 +19,14 @@ classdef ParamagneticSlowMotion < DispersionModel
         maxValue      = [ Inf  Inf  Inf  Inf  Inf  Inf  Inf  Inf  Inf  Inf ];
         startPoint    = [   1    1    1    1    1    1    1    1    1    1];
         isFixed       = [   0    0    0    0    0    1    1    1    1    1];
+        visualisationFunction@cell = {};
+    end
+    
+    methods
+        function this = ParamagneticSlowMotion
+            % call superclass constructor
+            this = this@DispersionModel;
+        end
     end
     
     % The model for paramagnetic relaxation is quite complex, therefore a

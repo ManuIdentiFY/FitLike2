@@ -1,4 +1,4 @@
-classdef LorentzianStretched < DispersionModel   
+classdef LorentzianStretched < DispersionModel 
     % Stretched Lorentzian model for liquids with Gaussian diffusion and
     % restricted motion (phenomenological model).
     %
@@ -13,31 +13,33 @@ classdef LorentzianStretched < DispersionModel
         maxValue      = [Inf,     1    ,   Inf];  
         startPoint    = [3e-9,   1e-6,     1];  
         isFixed       = [0        0         0];
+        visualisationFunction@cell = {};
     end
     
     methods
-        function model = LorentzianStretched
-            model@DispersionModel;
-            % generate the function handle (do not remove)
-%             model = makeFunctionHandle(model);
+        function this = LorentzianStretched
+            % call superclass constructor
+            this = this@DispersionModel;
         end
-        
+    end
+    
+    methods        
         % function that allows estimating the start point.
-        function self = evaluateStartPoint(self,x,y)
+        function this = evaluateStartPoint(this, xdata, ydata)
             % make sure the data is sorted
-            [x,ord] = sort(x);
-            y = y(ord);
+            [xdata,ord] = sort(xdata);
+            ydata = ydata(ord);
             % estimate tau from the half-peak value
-            if length(y)>10
-                yLowFreq = 10^median(log10(y(1:10)));
+            if length(ydata)>10
+                yLowFreq = 10^median(log10(ydata(1:10)));
             else
-                yLowFreq = y(1);
+                yLowFreq = ydata(1);
             end
-            [~,indm] = min(abs(y-yLowFreq/2));
-            tau = 1/x(indm);
+            [~,indm] = min(abs(ydata-yLowFreq/2));
+            tau = 1/xdata(indm);
             % then rhh is estimated from the low-frequency limit
             rhh = (1.2e-23)^(1/3)/(yLowFreq/(5*tau)*2/3)^(1/6);
-            self.startPoint = [rhh,tau,1];
+            this.startPoint = [rhh,tau,1];
         end
     end
 end

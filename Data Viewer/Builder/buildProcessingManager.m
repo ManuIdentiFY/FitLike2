@@ -1,4 +1,4 @@
-function fig = buildProcessingManager(FitLike)
+function fig = buildProcessingManager()
 %
 % Builder for the ProcessingManager View
 %
@@ -9,7 +9,7 @@ import uiextras.jTree.*
 % Make the figure
 fig = figure('Name','Processing Manager','NumberTitle','off',...
     'MenuBar','none','ToolBar','none','Units','normalized',...
-    'Position',[0.35 0.15 0.30 0.65],'Tag','fig','Visible','off');
+    'Position',[0.35 0.15 0.30 0.45],'Tag','fig','Visible','off');
 
 % Add grid & box for panels
 grid = uix.Grid( 'Parent', fig, 'Spacing', 0); 
@@ -19,9 +19,6 @@ box = uix.VBox( 'Parent', grid,'Padding',5,'Spacing',4, 'Tag', 'box');
 mode_panel = uix.Panel( 'Parent', box,...
                         'Title', 'Processing Mode',...
                         'Padding',2);
-file_panel = uix.Panel( 'Parent', box,...
-            'Title', 'File selection',...
-            'Padding',2);
 process_panel = uix.Panel( 'Parent', box,...
                            'Title', 'Process settings',...
                            'Padding',2);
@@ -54,13 +51,6 @@ uicontrol( 'Parent', buttonbox,...
             'Value',0,...
             'String','Simulation',...
             'Tag','SimulationRadioButton');
-
-% File Panel
-% + Tree
-TreeManager(FitLike, 'Parent', file_panel,...
-            'Editable',false, 'DndEnabled',false,...
-            'Tag','tree','RootVisible',false); 
-        
 % Process Panel
 % + Grid, VBox
 grid_process = uix.Grid( 'Parent', process_panel, 'Spacing', 0 ); 
@@ -73,6 +63,6 @@ box_process = uix.VBox( 'Parent', grid_process,'Padding',2,'Spacing',2,...
 uitabgroup(box_process,'Position',[0 0 1 1],'Tag','tab');
 
 % set heights    
-box.Heights = [-1.5 -7 -8 -1];
+box.Heights = [-1.5 -8 -1];
 end
 

@@ -6,6 +6,13 @@ classdef ModelManager < handle
     properties
         gui % GUI (View)
         FitLike % Presenter
+        hData % data handle
+        SelectedData % current selected data
+    end
+    
+    properties (Hidden)
+        ls_table %listener to update fit results
+        ls % listener to the data handle
     end
     
     methods
@@ -16,16 +23,15 @@ classdef ModelManager < handle
             this.FitLike = FitLike;
                       
             % Make the figure
-            [gui, jtable] = buildModelManager(FitLike);
+            [gui, jtable] = buildModelManager();
             this.gui = guihandles(gui);     
             
             % Update handle
-            this.gui.tree = this.gui.tree.UserData;
             this.gui.jtable = jtable.getModel.getActualModel.getActualModel;
             
             % Set the first tab and the '+' tab
-            ModelTab(FitLike, uitab(this.gui.tab),'Model1');
-            EmptyPlusTab(FitLike, uitab(this.gui.tab));
+            ModelTab(this, uitab(this.gui.tab),'Model1');
+            EmptyPlusTab(this, uitab(this.gui.tab));
             
             % Set the UI ContextMenu
             setUIMenu(this);
@@ -49,25 +55,33 @@ classdef ModelManager < handle
             set(this.gui.RunPushButton, 'Callback',...
                 @(src, event) this.FitLike.runFit());
             
-            % Set callback for the run pushbutton
-            set(this.gui.ExportPushButton, 'Callback',...
-                @(src, event) this.FitLike.exportFitResult());
-                        
             % Set callback for the file selection popup
             set(this.gui.FileSelectionPopup,'Callback',...
-                @(src, event) updateResultTable(this));
-            
-            % Set callback if file is checked
-            set(this.gui.tree,'CheckboxClickedCallback',...
-                @(src, event) updateFilePopup(this));
-            
-            % Add listener to the FileManager tree
-            addlistener(this.FitLike.FileManager.gui.tree,...
-                'TreeUpdate',@(src, event) updateTree(this, src, event));
+                @(src, event) updateSelection(this));
+           
+            % Set callback when data are selected
+            addlistener(this.FitLike.FileManager,...
+                'DataSelected',@(src, event) update(this, src, event));
         end %ModelManager
         
         % Destructor
         function deleteWindow(this)
+            % remove listeners
+            if ~isempty(this.ls)
+                delete(this.ls); this.ls = [];
+            end
+            
+            if ~isempty(this.ls_table)
+                delete(this.ls_table); this.ls_table = [];
+            end
+            % remove handles
+            if ~isempty(this.hData)
+                this.hData = [];
+            end
+            
+            if ~isempty(this.SelectedData)
+                this.SelectedData = [];
+            end
             %remove the closerequestfcn from the figure, this prevents an
             %infitie loop with the following delete command
             set(this.gui.fig,  'closerequestfcn', '');
@@ -94,60 +108,6 @@ classdef ModelManager < handle
             this.gui.tab.SelectedTab.UIContextMenu = cmenu;  
         end
         
-        % Update tree
-        function this = updateTree(this, ~, event)
-            % get the tree
-            root = this.gui.tree.Root;
-            % check the type of update: insert or delete
-            if strcmp(event.Action, 'Add')
-                % search the parent node
-                parentNode = TreeManager.searchNode(root, event.Parent);
-                copy(event.Data, parentNode);
-                % update
-                updateFilePopup(this);
-                updateResultTable(this);
-            elseif strcmp(event.Action, 'Delete')
-                % search the node to delete
-                for k = 1:numel(event.Data)
-                    % search the node
-                    node = TreeManager.searchNode(root, event.Data(k));                    
-                    delete(node);
-                end
-                % update
-                updateFilePopup(this);
-                updateResultTable(this);
-            elseif strcmp(event.Action,'ReOrder')
-                % reorder children
-                node = TreeManager.searchNode(root, event.Data(1));  
-                TreeManager.stackNodes(node.Parent.Children, event.NewOrder, []);
-            elseif strcmp(event.Action, 'DragDrop')
-                % get old parent node
-                oldParent = TreeManager.searchNode(root, event.OldParent);  
-                % get new parent node
-                newParent = TreeManager.searchNode(root, event.Parent);
-                % deparent the corresponding node
-                tf = strcmp(get(oldParent.Children,'Name'), event.Data.Name);
-                hNode = oldParent(tf).Children;
-                hNode.Parent = [];
-                TreeManager.stackNodes(newParent.Children, event.NewOrder, hNode); 
-                % delete old parent if no more children
-                if isempty(oldParent.Children)
-                    delete(oldParent)
-                end
-            elseif strcmp(event.Action, 'UpdateName')
-                % search the parent nodes
-                hParent = TreeManager.searchNode(root, event.Parent); 
-                % find the modified nodes
-                tf = strcmp(get(hParent.Children,'Name'),event.OldName);
-                hParent.Children(tf).Name = event.NewName;
-            elseif strcmp(event.Action, 'UpdateIcon')
-                % search the node
-                hNode = TreeManager.searchNode(root, event.Parent); 
-                % reset icon
-                setIcon(hNode, event.Data);
-            end
-        end %updateTree
-        
         % Select Model
         function this = selectModel(this)
             if strcmp(this.gui.tab.SelectedTab.Title,'+')
@@ -161,7 +121,7 @@ classdef ModelManager < handle
             % count tab
             nTab = numel(this.gui.tab.Children);
             % add new tab
-            ModelTab(this.FitLike, uitab(this.gui.tab),['Model',num2str(nTab)]);
+            ModelTab(this, uitab(this.gui.tab),['Model',num2str(nTab)]);
             % push this tab
             uistack(this.gui.tab.Children(end),'up');
             % set the selection to this tab
@@ -224,18 +184,8 @@ classdef ModelManager < handle
             end
         end %switchProcessMode
         
-        % Check file callback
-        function this = updateResultTable(this)
-            % get the selected file
-            if ischar(this.gui.FileSelectionPopup.String)
-                return               
-            elseif isempty(this.gui.FileSelectionPopup.String{this.gui.FileSelectionPopup.Value})
-                return
-            end
-            % get the file selected
-            fileID = this.gui.FileSelectionPopup.UserData{this.gui.FileSelectionPopup.Value};
-            tf = strcmp({this.FitLike.RelaxData.fileID}, fileID);
-            model = this.FitLike.RelaxData(tf).processingMethod;
+        % update the table (fit results)
+        function this = updateTable(this)
             % remove previous results
             nRow = this.gui.jtable.getRowCount();
             for k = 1:nRow
@@ -243,18 +193,24 @@ classdef ModelManager < handle
                    % see https://undocumentedmatlab.com/blog/matlab-and-the-event-dispatch-thread-edt
                    javaMethodEDT('removeRow',this.gui.jtable,0);
             end
-            % check if model available
-            if isempty(model)
-                return
+            
+            % get the selected file
+            if isempty(this.SelectedData)
+                return               
             end
+
+            % check if data are available          
+            if isempty(this.SelectedData.processingMethod); return; end
+            
+            processObj = this.SelectedData.processingMethod;            
             % add new results
-            modelName = model.model.modelName;
-            for k = 1:numel(model.subModel)
+            modelName = processObj.modelName;
+            for k = 1:numel(processObj.subModel)
                 % add by submodel
-                submodelName = model.subModel(k).modelName;
-                parameter = strcat(model.subModel(k).parameterName);
-                bestValue = single([model.subModel(k).bestValue]);
-                error = single([model.subModel(k).errorBar]);
+                submodelName = processObj.subModel(k).modelName;
+                parameter = strcat(processObj.subModel(k).parameterName);
+                bestValue = single([processObj.subModel(k).bestValue]);
+                error = single([processObj.subModel(k).errorBar]);
                 for i = 1:numel(parameter)
                        row = {modelName, submodelName, parameter{i}, bestValue(i), error(i)};
                        % here we use the javaMethodEDT to handle EDT
@@ -264,22 +220,165 @@ classdef ModelManager < handle
             end
         end
         
-        % File checked in tree callback
-        function this = updateFilePopup(this)
-            % get the selected fileID;
-            fileID = nodes2fileID(this.gui.tree);
-            % get the corresponding data
-            if ~isempty(fileID)
-                [~,~,idx] = intersect(fileID, {this.FitLike.RelaxData.fileID});
-                % update file popup
-                this.gui.FileSelectionPopup.String = {this.FitLike.RelaxData(idx).filename};
-                this.gui.FileSelectionPopup.UserData = {this.FitLike.RelaxData(idx).fileID};
-            else
-                % reset filepopup
-                this.gui.FileSelectionPopup.String = 'Select a file:';
+        % function fires when a DataUnit is deleted 
+        function this = onDataDeletion(this, src, ~)
+            % check the data deleted
+            tf = this.hData == src;
+            this.hData = this.hData(~tf);
+            delete(this.ls(tf)); this.ls = this.ls(~tf);
+            
+            % update popup
+            removePopupItem(this);
+        end %onDataDeletion
+        
+        % fire when data are selected
+        function this = update(this, ~, event)
+            % check if data are dispersion
+            if ~isa(event.Data ,'Dispersion')
+                return
             end
-            drawnow;
-        end %updateFilePopup
+            
+            % check which action was done
+            if strcmp(event.Action, 'Select')
+                if isempty(this.hData)
+                    this.hData = event.Data;
+                    for k = 1:numel(event.Data)
+                        l = addlistener(event.Data(k),'DataDeletion',...
+                                @(src, event) onDataDeletion(this, src, event));
+                        this.ls = [this.ls, l];
+                    end
+                else
+                    % add new data (without duplicates)
+                    new_data = setdiff(event.Data, this.hData);
+                    if ~isempty(new_data)
+                        this.hData = [this.hData, new_data];
+                        % add listeners
+                        for k = 1:numel(new_data)
+                            l = addlistener(new_data(k),'DataDeletion',...
+                                    @(src, event) onDataDeletion(this, src, event));
+                            this.ls = [this.ls, l];
+                        end
+                    end
+                end
+                % update popup
+                addPopupItem(this);
+            else
+                % remove data
+                [~,idx] = setdiff(this.hData, event.Data);
+                this.hData = this.hData(idx);
+                % update listeners
+                delete(this.ls(setdiff(1:numel(this.ls), idx))); 
+                this.ls = this.ls(idx);
+                if isempty(this.ls); this.ls = []; end
+                % update popup
+                removePopupItem(this);
+            end
+        end
+        
+        % add item to the popup
+        function this = addPopupItem(this)
+            % check current popup state
+            hPopup = this.gui.FileSelectionPopup;
+            
+            % form output name
+            for k = numel(this.hData):-1:1
+                name{1,k} = [getRelaxProp(this.hData(k), 'filename'),...
+                    ' (',this.hData(k).displayName,')'];
+            end
+            
+            if strcmp(hPopup.String, 'Select a dispersion data:')
+                hPopup.String = name;
+                % update current selection
+                updateSelection(this);
+            else
+                new_name = setdiff(name, hPopup.String); pause(0.005);
+                hPopup.String = [hPopup.String; new_name'];
+            end
+        end %addPopupItem
+        
+        % remove item from the popup
+        function this = removePopupItem(this)
+            % check current popup state
+            hPopup = this.gui.FileSelectionPopup;
+            
+            if strcmp(hPopup.String, 'Select a dispersion data:')
+                return
+            end
+            
+            % form output name
+            for k = numel(this.hData):-1:1
+                name{1,k} = [getRelaxProp(this.hData(k), 'filename'),...
+                    ' (',this.hData(k).displayName,')'];
+            end
+            
+            oldVal = hPopup.String{hPopup.Value};
+            
+            if ~isempty(this.hData)
+                if hPopup.Value > numel(name)
+                    set(hPopup,'String',name,'Value',numel(name));
+                else
+                    hPopup.String = name;
+                end
+                newVal = hPopup.String{hPopup.Value};               
+            else
+                set(hPopup,'String','Select a dispersion data:','Value',1);
+                newVal = [];
+            end       
+            
+            if ~isequal(oldVal, newVal)
+                updateSelection(this);
+            end
+        end %removePopupItem
+        
+        % update the selected data
+        function this = updateSelection(this)
+            % check the current popup state
+            hPopup = this.gui.FileSelectionPopup;
+            
+            % clear current listener
+            delete(this.ls_table); this.ls_table = [];
+            
+            if strcmp(hPopup.String, 'Select a dispersion data:')
+                % clear current selection
+                this.SelectedData = [];                
+            else
+                % get current string
+                str = hPopup.String{hPopup.Value};
+                % grab the 'Dispersion' flag in the string and separate the
+                % filename from the displayName
+                idx = strfind(str, 'Dispersion');
+                
+                displayName = str(idx(end):end-1);
+                filename = str(1:idx(end)-3);
+                
+                % get the data corresponding to these properties
+                for k = numel(this.hData):-1:1
+                    filename_list{k} = getRelaxProp(this.hData(k), 'filename');
+                    displayName_list{k} = this.hData(k).displayName;
+                end
+                tf = strcmp(filename, filename_list) & strcmp(displayName, displayName_list);
+                
+                % set this data as the selected one
+                this.SelectedData = this.hData(tf);
+                % add a listener on it
+                this.ls_table = addlistener(this.SelectedData,{'processingMethod'},'PostSet',...
+                     @(src, event) updateTable(this));
+            end
+
+            % update table
+            updateTable(this);
+        end %updatePopup
+     
+        % Wrapper to throw messages in the console or in the terminal in
+        % function of FitLike input.
+        function this = throwWrapMessage(this, txt)
+            % check FitLike
+            if ~isa(this.FitLike,'FitLike')
+                fprintf(txt);
+            else
+                notify(this.FitLike, 'ThrowMessage', EventMessage('txt',txt));
+            end
+        end % throwWrapMessage
     end      
 end
 

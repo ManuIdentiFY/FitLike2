@@ -181,6 +181,7 @@ classdef CheckboxTreeNode < uiextras.jTree.TreeNode
                 value = isNodePartiallyChecked(nObj.Tree,nObj);
             end
         end
+        
     end %get/set methods
     
 end %classdef

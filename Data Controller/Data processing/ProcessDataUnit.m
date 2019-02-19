@@ -1,4 +1,4 @@
-classdef ProcessDataUnit < matlab.mixin.Heterogeneous
+classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
 % this class defines the structure and general attibute of all the objects
 % that are used to process the data units. It aims at facilitating
 % operations on the processing functions, to streamline the creation of
@@ -11,6 +11,11 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous
         labelY@char             % string, labels the Y-axis data in graphs
         labelX@char             % string, labels the X-axis data in graphs
         legendTag@cell          % cell of strings, contain the legend associated with the data processed
+    end
+    
+    properties
+        parameter@struct        % structure containing parameters associated with the process (weighted, robust fit, log,...)
+        globalProcess@logical = false;  % set to 0 if the algorithm is distributed to each acquisition independently, 1 if the algorithm is applied to the entire dataset provided as an input
     end
     
     methods
@@ -32,22 +37,105 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous
         function out = selfCheck(self)
             out = 1;
         end
-        
-        % function that allows estimating the start point. It should be 
-        % over-riden by the derived classes
-        function self = evaluateStartPoint(self,x,y)
+    
+        function tf = checkProcessData(this, parentObj)
+            % init
+            tf = 1;
+            % check if process
+            if isempty(parentObj.processingMethod)
+                return
+            end
+            
+            % check if process was already applied: same process &
+            % parameter
+            if strcmp(class(this), class(parentObj.processingMethod)) &&...
+                    isequal(this.parameter, parentObj.processingMethod.parameter) &&...
+                ~isempty(parentObj.children)
+                tf = 0;
+            end
         end
         
-%         function [newData, dataObj] = processData(self,dataObj)
-%             newData = dataObj;
-%         end
-                
+        % main process function
+        function [childObj, parentObj] = processData(this, parentObj)  
+            % check data size to confirm process
+            if ~checkProcessData(this, parentObj)
+                childObj = [parentObj.children]; return
+            end
+            
+            % get data
+            data = getProcessData(this, parentObj);
+            
+            % apply process
+            [model, new_data] = arrayfun(@(d) applyProcess(this, d), data, 'Uniform', 0); % include the whole data, for merging or other purposes (LB 11/2/19)
+            
+            % format output
+            new_data = formatData(this, new_data);
+            this = formatModel(this, model);    
+                        
+            % add processObj
+            parentObj.processingMethod = this;
+            
+            % gather data and create childObj
+            childObj = makeProcessData(this, new_data, parentObj);    
+            
+            % link the child and parent processes
+            %link(parentObj, childObj); already done in MakeProcessData()
+            %[Manu]
+            
+            % add other data (xLabel, yLabel,...)
+            childObj = addOtherProp(this, childObj);
+        end %processData
+        
+        % format output data from process: cell array to array of structure
+        % This function could also be used to modify this in order to
+        % gather all fit data for instance [Manu]
+        function this = formatModel(this, model)
+            
+        end %formatData
+        
+        % dispatch the merge operation to the corresponding function
+        function [childObj, parentObj] = processDataGroup(this,parentObj)
+            childObj = applyProcess(this, parentObj);
+        end
+        
+        % compare two process to determine if they are the same. This
+        % function only check the necessary fields:
+        % *class of the processObj (AverageAbs, Monoexp, Constant,...)
+        % *property parameters (if parameters are the same, the results
+        % will be the same)
+        function tf = isequal(this, processObj)
+            % dummy check
+            if ~isa(processObj, 'ProcessDataUnit')
+                tf = 0; return
+            end
+            % compare the class of the input and their parameters
+            if ~strcmp(class(this), class(processObj)) ||...
+                    ~isequal(this.parameter, processObj.parameter)
+                tf = 0;
+            else
+                tf = 1;
+            end
+        end %isequal
+        
+        % add other properties (xLabel, yLabel, legendTag
+        function childObj = addOtherProp(this, childObj)
+            % add xLabel and yLabel
+            if ~isempty(this.labelX)
+                [childObj.xLabel] = deal(this.labelX);
+            end
+            
+            if ~isempty(this.labelY)
+                [childObj.yLabel] = deal(this.labelY);
+            end
+            % add legendTag
+            % do not add empty legeng (listener!)
+            if ~isempty(this.legendTag{1})
+                [childObj.legendTag] = this.legendTag{:};
+            end
+        end %addOtherProp
     end
     
-%     methods (Abstract)
-%         
-%         [newData, dataObj] = processData(self,dataObj)
-%         
-%     end
-    
+    methods (Abstract)
+        applyProcess(this, data, parentObj)
+    end
 end
