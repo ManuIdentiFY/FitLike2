@@ -115,8 +115,14 @@ classdef DispersionTab < EmptyTab
         
         % Destructor
         function delete(this)
+            % clear handle to plot
+            this = clearGroup(this);
+            % remove handle if needed
+            if ~isempty(this.hData)
+                this.hData = [];
+            end
             % delete the listener
-            delete(this.ls);
+            delete(this.ls); this.ls = [];
             % delete the selected point
             if ~isempty(this.SelectedPoint)
                 this.SelectedPoint.UserData.Object{1}.DeleteFcn = [];

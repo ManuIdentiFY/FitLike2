@@ -54,8 +54,19 @@ classdef DisplayManager < handle
             end
         end %DisplayManager
         
+        function delete(this)
+            % delete tab children
+            deleteData(this);
+        end
+        
+        function deleteData(this)
+            % remove all the children properly
+            delete(this.gui.tab.Children)
+        end
+        
         % Destructor
         function deleteWindow(this)
+            deleteData(this)
             %remove the closerequestfcn from the figure, this prevents an
             %infitie loop with the following delete command
             set(this.gui.fig,  'closerequestfcn', '');

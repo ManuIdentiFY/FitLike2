@@ -13,7 +13,6 @@ classdef EmptyTab < uix.Container & handle
     
     % plot
     properties
-        Legend    % handle to the legend
         hGroup    % contain handle of the plot object
         PlotSpec  % structure containing the display specifications
         inputType % input type accepted
@@ -40,6 +39,14 @@ classdef EmptyTab < uix.Container & handle
             this.Parent.Title = 'Untitled';
             drawnow;
         end %DisplayTab
+        
+        % delete handle properly
+        function delete(this)
+            % remove handle if needed
+            if ~isempty(this.hData)
+                this.hData = [];
+            end
+        end
     end
     
     methods        
