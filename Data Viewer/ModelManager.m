@@ -12,7 +12,6 @@ classdef ModelManager < handle
     
     properties (Hidden)
         ls_table %listener to update fit results
-        ls_popup  %listener to update popup if DataUnit is deleted
         ls % listener to the data handle
     end
     
@@ -59,12 +58,10 @@ classdef ModelManager < handle
             % Set callback for the file selection popup
             set(this.gui.FileSelectionPopup,'Callback',...
                 @(src, event) updateSelection(this));
-            
-            % Add listener to the Dispersion tree
-%             addlistener(this.FitLike.FileManager,...
-%                'DataSelected',@(src, event) updateFilePopup(this, src, event));
-           addlistener(this.FitLike.FileManager,...
-               'DataSelected',@(src, event) update(this, src, event));
+           
+            % Set callback when data are selected
+            addlistener(this.FitLike.FileManager,...
+                'DataSelected',@(src, event) update(this, src, event));
         end %ModelManager
         
         % Destructor
@@ -171,7 +168,7 @@ classdef ModelManager < handle
             end
         end %switchProcessMode
         
-        % Check file callback
+        % update the table (fit results)
         function this = updateTable(this)
             % remove previous results
             nRow = this.gui.jtable.getRowCount();
@@ -262,6 +259,7 @@ classdef ModelManager < handle
             end
         end
         
+        % add item to the popup
         function this = addPopupItem(this)
             % check current popup state
             hPopup = this.gui.FileSelectionPopup;
@@ -282,6 +280,7 @@ classdef ModelManager < handle
             end
         end %addPopupItem
         
+        % remove item from the popup
         function this = removePopupItem(this)
             % check current popup state
             hPopup = this.gui.FileSelectionPopup;
@@ -315,6 +314,7 @@ classdef ModelManager < handle
             end
         end %removePopupItem
         
+        % update the selected data
         function this = updateSelection(this)
             % check the current popup state
             hPopup = this.gui.FileSelectionPopup;
@@ -352,60 +352,7 @@ classdef ModelManager < handle
             % update table
             updateTable(this);
         end %updatePopup
-        
-%         function this = updatePopup(this)
-%             hPopup = this.gui.FileSelectionPopup;
-%             % check if data are available
-%             if isempty(this.hData)
-%                 hPopup.String = 'Select a dispersion data:'; 
-%                 if ~isempty(this.ls_table)
-%                     delete(this.ls_table); this.ls_table = []; 
-%                 end
-%                 return
-%             end
-%             
-%             % form output name
-%             for k = numel(this.hData):-1:1
-%                 name{1,k} = [getRelaxProp(this.hData(k), 'filename'),...
-%                     ' (',this.hData(k).displayName,')'];
-%             end
-%             
-%             % compare current display with new name
-%             if numel(name) > numel(hPopup.String)
-%                 if strcmp(hPopup.String, 'Select a dispersion data:')
-%                     hPopup.String = name;
-%                 else
-%                     % add new name
-%                     new_name = setdiff(name, hPopup.String);
-%                     hPopup.String = [hPopup.String, new_name];
-%                 end
-%             elseif numel(name) < numel(hPopup.String)
-%                 % remove name
-%                 [~,idx] = setdiff(hPopup.String, name);
-%                 if numel(idx) ~= numel(hPopup.String)
-%                     hPopup.String = hPopup.String(idx);
-%                 else
-%                     hPopup.Value = 1;
-%                     hPopup.String = 'Select a dispersion data:';
-%                 end
-%             else
-%                 hPopup.String = name;
-%             end
-%             
-%             % get the current data
-%             tf = strcmp(name, hPopup.String{hPopup.Value});
-%             hPopup.UserData = this.hData(tf);
-%             
-%             % add listener for table
-%             if ~isempty(hPopup.UserData)
-%                 if isempty(this.ls_table)
-%                     delete(this.ls_table); this.ls_table = []; 
-%                 end
-%                 this.ls_table = addlistener(hPopup.UserData,{'processingMethod'},'PostSet',...
-%                     @(src, event) updateTable(this));
-%             end
-%         end %updatePopup
-        
+     
         % Wrapper to throw messages in the console or in the terminal in
         % function of FitLike input.
         function this = throwWrapMessage(this, txt)
