@@ -68,7 +68,7 @@ classdef LsqCurveFit < FitAlgorithm
             gof = this.getGOF(coeff, ydata, residuals, resnorm);
             try
                 ci = nlparci(coeff,residuals,'jacobian',jacobian);
-                error = coeff' - ci(:,1);
+                error = coeff - ci(:,1)';
             catch
                 error = nan(size(coeff));
             end

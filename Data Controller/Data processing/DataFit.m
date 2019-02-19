@@ -104,30 +104,47 @@ classdef DataFit < ProcessDataUnit%DataModel
             % get data from model and assign it in this
             fld = fieldnames(model{1,1});
             
-            for k = 1:numel(fld) 
-                % get data
-                val = cellfun(@(x) x.(fld{k}), model, 'Uniform', 0);
-                % assign (initialise the values in case some parameters are
-                % fixed)
-                switch fld{k}
-                    case 'bestValue'
-                        if iscell(this.bestValue)  % zone processing may require cells here (to be fixed, only arrays should be used)
-                            this.bestValue = {this.startPoint};
-                            this.bestValue{1}(~this.isFixed) = val{1};
-                        else
-                            this.bestValue = this.startPoint;
-                            this.bestValue(~this.isFixed) = val{1};
-                        end
-                    case 'errorBar' 
-                        if iscell(this.errorBar) % same here
-                            this.errorBar = {zeros(size(this.startPoint))};
-                            this.errorBar{1}(~this.isFixed) = val{1};
-                        else
-                            this.errorBar = zeros(size(this.startPoint));
-                            this.errorBar(~this.isFixed) = val{1};
-                        end
-                    otherwise
+            
+            if numel(model) > 1 && size(model,2) < 2% Zone case
+                model = [model{:}];
+                for k = 1:numel(fld)
+                    val = vertcat(model.(fld{k}));
+                    % check for NaN and assign
+                    if ~isnumeric(val)
                         this.(fld{k}) = val;
+                    elseif all(any(isnan(val) == 0) == 0)
+                        this.(fld{k}) = horzcat(model.(fld{k}))';
+                    else
+                        this.(fld{k}) = val;
+                    end
+                end
+            else                  
+                % To change, I do some fixing for zone case [Manu]
+                for k = 1:numel(fld)                 
+                    % get data
+                    val = cellfun(@(x) x.(fld{k}), model, 'Uniform', 0);
+                    % assign (initialise the values in case some parameters are
+                    % fixed)
+                    switch fld{k}
+                        case 'bestValue'
+                            if iscell(this.bestValue)  % zone processing may require cells here (to be fixed, only arrays should be used)
+                                this.bestValue = {this.startPoint};
+                                this.bestValue{1}(~this.isFixed) = val{1};
+                            else
+                                this.bestValue = this.startPoint;
+                                this.bestValue(~this.isFixed) = val{1};
+                            end
+                        case 'errorBar' 
+                            if iscell(this.errorBar) % same here
+                                this.errorBar = {zeros(size(this.startPoint))};
+                                this.errorBar{1}(~this.isFixed) = val{1};
+                            else
+                                this.errorBar = zeros(size(this.startPoint));
+                                this.errorBar(~this.isFixed) = val{1};
+                            end
+                        otherwise
+                            this.(fld{k}) = val;
+                    end
                 end
             end
             % update sub-models (if any)

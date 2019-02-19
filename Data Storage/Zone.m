@@ -44,7 +44,7 @@ classdef Zone < DataUnit
         % evaluate the fit function if present, for display purposes
         function y = evaluate(this, idxZone, x)
             model = this.processingMethod.modelHandle;
-            x = [num2cell(this.processingMethod.bestValue{idxZone,:}), {x}];
+            x = [num2cell(this.processingMethod.bestValue(idxZone,:)), {x}];
             y = model(x{:});
         end
         
@@ -153,7 +153,7 @@ classdef Zone < DataUnit
                         % error ?
                     else
                         leg = sprintf('%s  (r² = %.3f)',leg,...
-                            this.processingMethod.gof{idxZone}.rsquare);
+                            this.processingMethod.gof(idxZone).rsquare);
                                                                                      
                         if extend                        
                             leg = sprintf('%s: Zone %d - %s', leg, idxZone, this.relaxObj.filename);
