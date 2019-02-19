@@ -295,6 +295,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             % check input
             if isempty(this); return; end
             
+            % start by remove invalid data
+            this = this(isvalid(this));
+            
             % loop over the input
             for k = 1:numel(this)
                 % check the parent/children property
