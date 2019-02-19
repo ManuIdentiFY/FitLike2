@@ -29,6 +29,9 @@ else
         end
     elseif ischar(filename)
         [path{1},file{1},ext{1}] = fileparts(filename);
+        if isempty(path{1})
+            [path{1},file{1},ext{1}] = fileparts(which(filename));
+        end
     elseif isobject(filename)
         if nargin < 2
             dataset = 'Default dataset';
@@ -80,8 +83,9 @@ for i = 1:length(file)
                 else
                     [data, parameter] = readsdfv2(filename);
                 end
-            catch
+            catch ME
                 warning(['Error while importing file ' filename '. File not loaded.\n']) % simple error handling for file import
+                disp(ME)
                 continue
             end   
             % get the data
