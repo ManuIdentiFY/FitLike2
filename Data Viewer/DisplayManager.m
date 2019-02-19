@@ -184,8 +184,8 @@ classdef DisplayManager < handle
         end %getData
         
         % Wrapper to get legend from current tab (avoid fit)
-        function [leg, hData] = getLegend(this)
-             [leg, hData] = getLegend(this.gui.tab.SelectedTab.Children);
+        function leg = getLegend(this)
+            leg = getLegend(this.gui.tab.SelectedTab.Children);
         end
         
         % Wrapper to throw messages in the console or in the terminal in

@@ -1070,15 +1070,16 @@ classdef DispersionTab < EmptyTab
         end %addPlotObj
         
         % get legend: avoid fit
-        function [leg, relaxObj] = getLegend(this)
+        function leg = getLegend(this)
             % get the data plotted
             hData = findobj(this.axe.Children,'Type','ErrorBar');
+            %relaxObj = [];
             
             if isempty(hData)
-                leg = []; relaxObj = []; return
+                leg = [];  return
             else
                 leg = {hData.DisplayName}; 
-                relaxObj = [hData.relaxObj];
+                %relaxObj = [hData.relaxObj];
             end
         end %getLegend
     end
