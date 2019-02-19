@@ -131,6 +131,34 @@ classdef RelaxObj < handle
             end
         end %checkUUID
         
+        % This function will check all the handles contain in the array of
+        % object ensure that handles are valid. It will remove all the
+        % invalid handles
+        function this = checkHandle(this)
+            % check input
+            if isempty(this); return; end
+            
+            % loop over the input
+            for k = 1:numel(this)
+                % check data container
+                this(k).data = checkHandle(this(k).data);
+                
+                % check parameter container
+                tf = ~isempty(this(k).parameter);
+                this(k).parameter = checkHandle(this(k).parameter);
+                
+                % throw warning if parameter are deleted
+                if tf && isempty(this(k).parameter)
+                    warning('RelaxObj: checkHandle: no parameter handle detected') 
+                end
+                
+                % if subRelaxObj, call the function recursively
+                if ~isempty(this(k).subRelaxObj)
+                    this(k).subRelaxObj = checkHandle(this(k).subRelaxObj);
+                end
+            end %for loop
+        end %checkHandle
+        
         function this = add(this,dataunit)
             % check that it is not already present in the data list
             if ~sum(arrayfun(@(d) isequal(d,dataunit),this.data))||isempty(this.data)

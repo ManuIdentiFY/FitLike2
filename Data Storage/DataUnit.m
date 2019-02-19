@@ -288,6 +288,35 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             this = this(setdiff(1:numel(this),idx));
         end
         
+        % this function will check the array of object to ensure that no
+        % invalid handles (deleted) are presented. Invalid handles are
+        % deleted.
+        function this = checkHandle(this)
+            % check input
+            if isempty(this); return; end
+            
+            % loop over the input
+            for k = 1:numel(this)
+                % check the parent/children property
+                this(k).children = this(k).children(isvalid(this(k).children));
+                this(k).parent = this(k).parent(isvalid(this(k).parent));
+                
+                % check the relaxObj handle
+                tf = ~isempty(this(k).relaxObj);
+                this(k).relaxObj = this(k).relaxObj(isvalid(this(k).relaxObj));
+                
+                % throw warning if no relaxObj
+                if isempty(this(k).relaxObj) && tf
+                    warning('DataUnit: checkHandle: no relaxObj handle detected')
+                end
+                
+                % if subDataUnit, call the function recursively
+                if ~isempty(this(k).subDataUnit)
+                    this(k).subDataUnit = checkHandle(this(k).subDataUnit);
+                end
+            end %for loop
+        end %checkHandle
+        
         % link parent and children units
         function [parentObj, childObj] = link(parentObj, childObj)
             for indp = 1:length(parentObj)              
