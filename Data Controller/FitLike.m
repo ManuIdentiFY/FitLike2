@@ -859,6 +859,7 @@ classdef FitLike < handle
 %             end
         end %runFit
         
+% <<<<<<< HEAD
         % send model to the ModelManager
         function dataObj = getData(this, fileID, displayName)
             % check input
@@ -871,6 +872,37 @@ classdef FitLike < handle
             
             dataObj = getData(this.RelaxData(tf), 'Dispersion', displayName);
         end %getModel
+% =======
+%         % save the data in the current directory (needs many improvements,
+%         % quite basic for now)
+%         function exportFitResult(this)
+%             exportTable= {};
+%             for indDataset = 1:length(this.RelaxData)
+%                 exportTable{indDataset} = table;
+%                 for indProc = 1:length(this.RelaxData(indDataset).processingMethod)
+%                     for indMod = 1:length(this.RelaxData(indDataset).processingMethod(indProc).subModel)
+%                         parval(indDataset,indProc,indMod,:) = this.RelaxData(indDataset).processingMethod(indProc).subModel(indMod).bestValue;
+%                         parerr(indDataset,indProc,indMod,:) = this.RelaxData(indDataset).processingMethod(indProc).subModel(indMod).errorBar;
+%                         samplename{indDataset,indProc,indMod,:} = [this.RelaxData(indDataset).filename ' - ' num2str(indProc) ' - ' num2str(indMod)];
+%                         parname{indDataset,indProc,indMod,:} = this.RelaxData(indDataset).processingMethod(indProc).subModel(indMod).parameterName;
+%                        
+% %                         % store the data in the correct columns
+% %                         indini = length(exportTable.Properties.VariableNames);
+% %                         exportTable.Properties.VariableNames = [exportTable.Properties.VariableNames,...
+% %                                                                {this.RelaxData(indDataset).processingMethod(indProc).subModel.modelName(indMod).parameterName{:}}];
+% %                         indcol = (indini + 1):length(exportTable.Properties.VariableNames);
+% %                         exportTable.Properties.RowNames = parname{indDataset,indProc,indMod,:};
+%                     end
+%                 end 
+%             end
+%             save export.mat parval parerr samplename parname
+% %             % make excel file
+% %             T = table(var1,...,varN)
+% %             T = table('Size',sz,'VariableTypes',varTypes)
+% %             T = table(___,'VariableNames',varNames)
+% %             T = table(___,'RowNames',rowNames)
+%         end % exportFitResult
+% >>>>>>> master
     end
     %% ------------------ AcquisitionManager Callback ------------------ %%
     methods (Access = public)
