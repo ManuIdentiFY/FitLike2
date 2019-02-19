@@ -4,8 +4,7 @@ classdef ParamObj < matlab.mixin.Heterogeneous
         paramList@struct;   % list of parameters
     end
     
-    methods 
-         
+    methods          
         function this = ParamObj(paramStruct)           
             % check input, must be non empty and have always field/val
             % couple

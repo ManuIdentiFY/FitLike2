@@ -311,8 +311,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 end
                 
                 % if subDataUnit, call the function recursively
-                if ~isempty(this(k).subDataUnit)
-                    this(k).subDataUnit = checkHandle(this(k).subDataUnit);
+                if ~isempty(this(k).subUnitList)
+                    this(k).subUnitList = checkHandle(this(k).subUnitList);
                 end
             end %for loop
         end %checkHandle

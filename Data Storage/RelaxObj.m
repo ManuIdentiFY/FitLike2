@@ -3,7 +3,7 @@ classdef RelaxObj < handle
     %
     % See also DATAUNIT, BLOC, ZONE, DISPERSION
     
-   
+    
     properties (Access = public)
     % file properties
         label@char = '';               % label of the file ('control','tumour',...)
@@ -87,7 +87,9 @@ classdef RelaxObj < handle
         % Destructor
         function delete(this)
            % delete data handle
-           delete(this.data);
+           if ~isempty(this.data)
+               delete(this.data);
+           end
         end %delete
     end
     
@@ -138,19 +140,13 @@ classdef RelaxObj < handle
             % check input
             if isempty(this); return; end
             
+            % start by remove invalid relaxObj
+            this = this(isvalid(this));
+            
             % loop over the input
             for k = 1:numel(this)
                 % check data container
                 this(k).data = checkHandle(this(k).data);
-                
-                % check parameter container
-                tf = ~isempty(this(k).parameter);
-                this(k).parameter = checkHandle(this(k).parameter);
-                
-                % throw warning if parameter are deleted
-                if tf && isempty(this(k).parameter)
-                    warning('RelaxObj: checkHandle: no parameter handle detected') 
-                end
                 
                 % if subRelaxObj, call the function recursively
                 if ~isempty(this(k).subRelaxObj)
@@ -164,7 +160,7 @@ classdef RelaxObj < handle
             if ~sum(arrayfun(@(d) isequal(d,dataunit),this.data))||isempty(this.data)
                 this.data(end+1) = dataunit;
             end
-        end
+        end %add
         
         function this = removeDataUnit(this, dataunit)
             for i = 1:length(this)
