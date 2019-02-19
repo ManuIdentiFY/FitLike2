@@ -57,11 +57,16 @@ classdef DisplayManager < handle
         function delete(this)
             % delete tab children
             deleteData(this);
+            % delete fig
+            delete(this.gui.fig);
+            this.gui = [];
         end
         
         function deleteData(this)
             % remove all the children properly
-            delete(this.gui.tab.Children)
+            if ~isempty(this.gui.tab.Children)
+                delete(this.gui.tab.Children)
+            end
         end
         
         % Destructor
