@@ -66,6 +66,22 @@ classdef ModelManager < handle
         
         % Destructor
         function deleteWindow(this)
+            % remove listeners
+            if ~isempty(this.ls)
+                delete(this.ls); this.ls = [];
+            end
+            
+            if ~isempty(this.ls_table)
+                delete(this.ls_table); this.ls_table = [];
+            end
+            % remove handles
+            if ~isempty(this.hData)
+                this.hData = [];
+            end
+            
+            if ~isempty(this.SelectedData)
+                this.SelectedData = [];
+            end
             %remove the closerequestfcn from the figure, this prevents an
             %infitie loop with the following delete command
             set(this.gui.fig,  'closerequestfcn', '');

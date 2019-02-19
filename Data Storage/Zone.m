@@ -152,8 +152,13 @@ classdef Zone < DataUnit
                     if isnan(idxZone)
                         % error ?
                     else
-                        leg = sprintf('%s  (r² = %.3f)',leg,...
-                            this.processingMethod.gof(idxZone).rsquare);
+                        if iscell(this.processingMethod.gof)
+                            leg = sprintf('%s  (r² = %.3f)',leg,...
+                            this.processingMethod.gof{idxZone}.rsquare);
+                        else
+                            leg = sprintf('%s  (r² = %.3f)',leg,...
+                                this.processingMethod.gof(idxZone).rsquare);
+                        end
                                                                                      
                         if extend                        
                             leg = sprintf('%s: Zone %d - %s', leg, idxZone, this.relaxObj.filename);

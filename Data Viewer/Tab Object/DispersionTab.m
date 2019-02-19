@@ -117,6 +117,11 @@ classdef DispersionTab < EmptyTab
         function delete(this)
             % delete the listener
             delete(this.ls);
+            % delete the selected point
+            if ~isempty(this.SelectedPoint)
+                this.SelectedPoint.UserData.Object{1}.DeleteFcn = [];
+                delete(this.SelectedPoint.UserData);
+            end
         end %delete
     end
     
