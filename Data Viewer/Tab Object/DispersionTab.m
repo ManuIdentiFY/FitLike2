@@ -372,9 +372,11 @@ classdef DispersionTab < EmptyTab
                 if this.optsButton.ResidualCheckButton.Value
                     if ~isempty(this.axeres) && any(tf_data ~= 0) && any(tf_fit ~= 0)
                         tf_hist = 1;
-                        hPlot = strcmp(get(this.hGroup(idx(k)).hPlot,'Tag'), 'Residual');
+                        tf_res = strcmp(get(this.hGroup(idx(k)).hPlot,'Tag'), 'Residual');
+                        hPlot = this.hGroup(idx(k)).hPlot(tf_res);
                         % get residual data
                         [x,y,~,mask] = getData(src, idxZone);
+                        [~,yfit] = getFit(src, idxZone, x(mask));
                         yres = y(mask) - yfit;
                         if isempty(hPlot) && ~isempty(yres)
                             % plot
