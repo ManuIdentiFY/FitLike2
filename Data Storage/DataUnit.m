@@ -494,43 +494,35 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             setname(this);
         end
        
-%        % set y-values
-%        function self = set.y(self,value)
-% %            if ~isempty(self.subUnitList)
-% %                % distribute the values to the sub-units
-% %                self = distributeSubData(self,'y',value);
-% %            end
-%             % check if different from before
-%             self.y = value;
-%        end
-%        
-%        % set x-values
-%        function self = set.dy(self,value)
-% %            if ~isempty(self.subUnitList)
-% %                % distribute the values to the sub-units
-% %                self = distributeSubData(self,'dy',value);
-% %            end
-%            self.dy = value;
-%        end
-%        
-%        % set mask
-%        function self = set.mask(self,value)
-% %             if ~isempty(self.subUnitList) %#ok<*MCSUP>
-% %                 % distribute the values to the sub-units
-% %                 self = distributeSubData(self,'mask',value);
-% %             end
-%             self.mask = value;
-%        end
-%         
-%        % set x
-%        function self = set.x(self,value)
-% %             if ~isempty(self.subUnitList) %#ok<*MCSUP>
-% %                 % distribute the values to the sub-units
-% %                 self = distributeSubData(self,'mask',value);
-% %             end
-%             self.x = value;
-%         end
-    
+       % set y-values
+       function self = set.y(self,value)
+           if ~isempty(self.subUnitList)
+               % distribute the values to the sub-units
+               self = distributeSubData(self,'y',value);
+           end
+            check if different from before
+            self.y = value;
+       end
+       
+       % set x-values
+       function self = set.dy(self,value)
+           if ~isempty(self.subUnitList)
+               % distribute the values to the sub-units
+               self = distributeSubData(self,'dy',value);
+           end
+           self.dy = value;
+       end
+       
+       % set mask
+       function self = set.mask(self,value)
+            if ~isempty(self.subUnitList) %#ok<*MCSUP>
+                % distribute the values to the sub-units
+                self = distributeSubData(self,'mask',value);
+            end
+            self.mask = value;
+       end
+        
+
         % check that new objects added to the list are of the same type as
         % the main object
         function self = set.subUnitList(self,objArray) %#ok<*MCSV,*MCHC,*MCHV2>
