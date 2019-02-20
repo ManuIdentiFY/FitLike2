@@ -142,6 +142,11 @@ classdef ModelTab < uix.Container & handle
                % get the parameter that changed, the model and the new data
                parameter   = jObj.getValueAt(row, 1);
                modelName = jObj.getValueAt(row, 0);
+               % remove model index
+               indbr = strfind(modelName,')');
+               if ~isempty(indbr)
+                   modelName = modelName(indbr+2:end);
+               end                   
                newData = jObj.getValueAt(row, col);
                if ischar(newData)
                    newData = str2double(newData);

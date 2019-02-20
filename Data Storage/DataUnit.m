@@ -260,7 +260,8 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                 mergedUnit = fh('displayName',   selfList(1).displayName,...
                                 'legendTag',     selfList(1).legendTag,...
                                 'xLabel',        selfList(1).xLabel,...
-                                'yLabel',        selfList(1).yLabel);
+                                'yLabel',        selfList(1).yLabel,...
+                                'parent',        selfList);
                 mergedUnit.subUnitList = selfList;
             end
         end
@@ -309,6 +310,20 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         
         % Wrapper to get data from DataUnit
         function [x,y,dy,mask] = getData(this, idxZone)
+            if numel(this)>1 % case when the object is a merged of multiple objects
+                [dispList,idxSubZone] = findSubElement(this,idxZone);
+                [x,y,dy,mask] = arrayfun(@(d,i) getData(d.parent,i),dispList,idxSubZone,'UniformOutput',0);     
+                x = [x{:}];
+                y = [y{:}];
+                dy = [dy{:}];
+                mask = [mask{:}];
+                return
+            end
+            % If we reach this point, we are dealing with a normal object
+            % that only has one parent.
+            if iscell(idxZone)
+                idxZone = [idxZone{:}];
+            end
             % call dimension indexing function
             dim = getDim(this, idxZone);
             % get data
@@ -391,7 +406,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             
             % loop over the parent to get additional information
             if ~isempty(this.parent)
-                if ~isempty(this.parent.legendTag)
+                if numel(this.parent)>1
+                    
+                elseif ~isempty(this.parent.legendTag)
                     parentTag = collectLegend(this.parent);
                     this.displayName = [this.displayName,' (',...
                                             parentTag(1:end-2),')'];
@@ -564,6 +581,24 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             startList = [1 endList(1:end-1)+1];
             s = arrayfun(@(o,s,e)setfield(o,fieldName,value(s:e)),self.subUnitList,startList,endList,'UniformOutput',0); 
             self.subUnitList = [s{:}];
+        end
+        
+        % This function provides the list of indexes for parent objects
+        % when dealing with merged objects. It allows retreiving indexes of
+        % sub-elements.
+        function [dataList,indexList] = findSubElement(this,index)
+            lengthList = arrayfun(@(o)length(o.x),this); 
+            indexData = arrayfun(@(a) cumsum(ones(1,a)),lengthList,'UniformOutput',0);
+            indexData = [indexData{:}];
+            indexDataUnit = arrayfun(@(d,n) repmat(d,1,n),this,lengthList,'UniformOutput',0);
+            indexDataUnit = [indexDataUnit{:}];
+            dataList = indexDataUnit(index);
+            indexList = cell(1,numel(dataList));
+            selection = false(1,numel(indexData));
+            selection(index) = true;
+            for i = 1:length(dataList)
+                indexList{i} = indexData(selection & indexDataUnit==dataList(i));
+            end
         end
         
         % functions used to make sure that merged objects behave

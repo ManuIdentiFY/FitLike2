@@ -71,24 +71,24 @@ classdef MergePPNPDisp < Disp2Disp & ProcessDataUnit
                     
                     % make the merged item
                     datalist = getData(relaxObj(indexMerge), 'Dispersion');
-                    mergedbloc = merge(datalist);
+                    mergeddisp = merge(datalist);
                     paramlist = [relaxObj(indexMerge).parameter];
                     mergedparam = merge(paramlist);
                     label = {relaxObj(indexMerge).label};
                     % add the merged item to the FitLike handle
-                    mergedRelaxObj = RelaxObj('data',         mergedbloc,...
+                    mergedRelaxObj = RelaxObj('data',         mergeddisp,...
                                               'parameter',    mergedparam,...
                                               'label',        label{1},...
                                               'filename',     filename{1},...
                                               'sequence',     'Merged PP/NP dispersion',...
                                               'dataset',      getRelaxProp(datalist(1),'dataset'));
-                    mergedbloc.relaxObj = mergedRelaxObj;
+                    mergeddisp.relaxObj = mergedRelaxObj;
 %                     fitlikeHandle.RelaxData(end+1) = mergedRelaxObj;
 %                     addFile(fitlikeHandle.FileManager, mergedRelaxObj); % add the new object to the file manager
                     mergedRelaxObj.subRelaxObj = relaxObj(indexMerge); % keep the old objects to allow un-merge
                     
                     % add the merged object to the list
-                    mergedList(end+1) = mergedbloc; %#ok<AGROW>
+                    mergedList(end+1) = mergeddisp; %#ok<AGROW>
                     
                 end
                 % make sure we don't process a dataset twice

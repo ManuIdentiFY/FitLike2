@@ -64,7 +64,19 @@ classdef Dispersion < DataUnit
         
         % get the dispersion fit data
         function [xfit, yfit] = getFit(this, idxZone, xfit)
+            % deal with objects that have multipled parents (such as merged
+            % objects)
+            if numel(this)>1
+                [dispList,idxSubZone] = findSubElement(this,idxZone);
+                [xfit, yfit] = arrayfun(@(d,i) getFit(d,i,xfit),dispList,idxSubZone,'UniformOutput',0);     
+                xfit = [xfit{:}];
+                yfit = [yfit{:}];
+                return
+            end
             % check input
+            if iscell(idxZone)
+                idxZone = [idxZone{:}];
+            end
             if ~isnan(idxZone)
                x = this.x(idxZone); mask = this.mask(idxZone);
                xfit = x(mask);
@@ -94,6 +106,9 @@ classdef Dispersion < DataUnit
         % included the displayName (filename (displayName)). Can be useful
         % when several plot coming from the same file are displayed.
         function leg = getLegend(this, idxZone, plotType, extend)
+            if numel(this)>1 % case of merged object: we only consider the first one
+                this = this(1);
+            end
             % switch according to the input
             switch plotType
                 case 'Data'

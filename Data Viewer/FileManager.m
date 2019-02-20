@@ -255,10 +255,11 @@ classdef FileManager  < handle
 
            % delete nodes
            nodes = this.SelectedTree.Root.Children;
+           nodes(~isvalid(nodes)) = [];
            idx = intersect([nodes.UserData], relaxObj);
            if ~isempty(idx)
                delete(nodes(idx));
-           end   
+           end 
        end %removeData
        
        % check data. dataObj is a DataUnit object.

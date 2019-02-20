@@ -721,7 +721,7 @@ classdef DispersionTab < EmptyTab
             
             % get the associated data
             hPlot = arrayfun(@(x) findobj(x.hPlot,'Tag','Data'), this.hGroup, 'Uniform', 0);
-            tf = cellfun(@(x) x == src, hPlot);
+            tf = cellfun(@(x) x == src, hPlot);55
             
             % check if associated idxZone
             idxZone = EmptyTab.getIdxZone(this.hGroup(tf));
