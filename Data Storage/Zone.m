@@ -100,12 +100,25 @@ classdef Zone < DataUnit
         
         % get the dispersion fit data
         function [xfit, yfit] = getFit(this, idxZone, xfit)
+            % deal with objects that have multipled parents (such as merged
+            % objects)
+            if numel(this)>1
+                [dispList,idxSubZone] = findSubElement(this,idxZone);
+                [xfit, yfit] = arrayfun(@(d,i) getFit(d,i,xfit),dispList,idxSubZone,'UniformOutput',0);     
+                xfit = [xfit{:}];
+                yfit = [yfit{:}];
+                return
+            end
+            % If we reach this point, we only deal with one parent object
             % check if fitobj
             if isempty(this.processingMethod)
                 xfit = []; yfit = [];
                 return
             end
             % check input
+            if iscell(idxZone)
+                idxZone = [idxZone{:}];
+            end
             if ~isnan(idxZone)
                 if isempty(xfit)
                     x = sort(this.x(this.mask(:,idxZone),idxZone));
@@ -152,7 +165,7 @@ classdef Zone < DataUnit
                     if isnan(idxZone)
                         % error ?
                     else
-                        leg = sprintf('%s  (r² = %.3f)',leg,...
+                        leg = sprintf('%s  (rï¿½ = %.3f)',leg,...
                             this.processingMethod.gof(idxZone).rsquare);
                                                                                      
                         if extend                        
