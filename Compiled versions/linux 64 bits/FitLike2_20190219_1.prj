@@ -1,0 +1,192 @@
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration file="/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Compiled versions/linux 64 bits/FitLike2_20190219_1.prj" location="/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Compiled versions/linux 64 bits" name="FitLike2_20190219_1" target="target.ezdeploy.standalone" target-name="Application Compiler">
+    <param.appname>FitLike</param.appname>
+    <param.icon />
+    <param.icons />
+    <param.version>2.0</param.version>
+    <param.authnamewatermark>Lionel Broche</param.authnamewatermark>
+    <param.email>l.broche@abdn.ac.uk</param.email>
+    <param.company>University of Aberdeen</param.company>
+    <param.summary />
+    <param.description />
+    <param.screenshot />
+    <param.guid />
+    <param.installpath.string>/University_of_Aberdeen/FitLike/</param.installpath.string>
+    <param.installpath.combo>option.installpath.user</param.installpath.combo>
+    <param.logo />
+    <param.install.notes />
+    <param.target.install.notes>In the following directions, replace MR/v95 by the directory on the target machine where MATLAB is installed, or MR by the directory where the MATLAB Runtime is installed.
+
+(1) Set the environment variable XAPPLRESDIR to this value:
+
+MR/v95/X11/app-defaults
+
+
+(2) If the environment variable LD_LIBRARY_PATH is undefined, set it to the following:
+
+MR/v95/runtime/glnxa64:MR/v95/bin/glnxa64:MR/v95/sys/os/glnxa64:MR/v95/sys/opengl/lib/glnxa64
+
+If it is defined, set it to the following:
+
+${LD_LIBRARY_PATH}:MR/v95/runtime/glnxa64:MR/v95/bin/glnxa64:MR/v95/sys/os/glnxa64:MR/v95/sys/opengl/lib/glnxa64</param.target.install.notes>
+    <param.intermediate>${PROJECT_ROOT}/FitLike2_20190219_1/for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}/FitLike2_20190219_1/for_redistribution_files_only</param.files.only>
+    <param.output>${PROJECT_ROOT}/FitLike2_20190219_1/for_redistribution</param.output>
+    <param.logdir>${PROJECT_ROOT}/FitLike2_20190219_1</param.logdir>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options />
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.support.packages />
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.windows.command.prompt>false</param.windows.command.prompt>
+    <param.create.log>false</param.create.log>
+    <param.log.file />
+    <param.native.matlab>false</param.native.matlab>
+    <param.checkbox>false</param.checkbox>
+    <param.example />
+    <param.help.text />
+    <unset>
+      <param.icon />
+      <param.icons />
+      <param.summary />
+      <param.description />
+      <param.screenshot />
+      <param.guid />
+      <param.installpath.string />
+      <param.installpath.combo />
+      <param.logo />
+      <param.install.notes />
+      <param.intermediate />
+      <param.files.only />
+      <param.output />
+      <param.logdir />
+      <param.enable.clean.build />
+      <param.user.defined.mcr.options />
+      <param.target.type />
+      <param.support.packages />
+      <param.web.mcr />
+      <param.package.mcr />
+      <param.no.mcr />
+      <param.web.mcr.name />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.windows.command.prompt />
+      <param.create.log />
+      <param.log.file />
+      <param.native.matlab />
+      <param.checkbox />
+      <param.example />
+      <param.help.text />
+    </unset>
+    <fileset.main>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/FitLike.m</file>
+    </fileset.main>
+    <fileset.resources />
+    <fileset.package />
+    <fileset.depfun>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data export/export_data.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data formating/DataUnit2DataUnit.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data import/arrayofstruct2struct.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data import/checkversion.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data import/getformatdlg.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data import/readsdfv1.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data import/readsdfv2.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data import/readsef.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data import/text2structure.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data processing/DataFit.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data processing/Dispersion fit algorithms/FitAlgorithm.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data processing/Dispersion fit algorithms/LsqCurveFit.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data processing/Dispersion models/DispersionModel.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data processing/Dispersion models/MergedModels.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Controller/Data processing/ProcessDataUnit.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Storage/Bloc.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Storage/DataUnit.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Storage/Dispersion.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Storage/ParamObj.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Storage/ParamV1.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Storage/ParamV2.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Storage/RelaxObj.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Storage/Zone.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Builder/buildDisplayManager.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Builder/buildFitLikeView.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Builder/buildModelManager.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Builder/buildProcessingManager.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/DisplayManager.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Event/EventFileManager.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Event/EventMessage.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/FileManager.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/FitLikeView.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/ModelManager.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/ProcessingManager.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Tab Object/EmptyPlusTab.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Tab Object/EmptyTab.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Tab Object/ModelTab.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Tab Object/ProcessTab.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Tab Object/icon.mat</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Data Viewer/Tree Object/TreeManager.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/+mixin/Container.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/+mixin/Panel.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/Box.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/ButtonBox.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/ChildEvent.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/ChildObserver.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/Container.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/Empty.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/FigureData.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/FigureObserver.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/Grid.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/HBox.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/HButtonBox.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/Node.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/Panel.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/SelectionData.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/Text.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/VBox.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/VButtonBox.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/calcPixelSizes.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/setPosition.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/GUI Layout Toolbox/layout/+uix/tracking.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/JavaTreeWrapper/+uiextras/+jTree/CheckboxTree.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/JavaTreeWrapper/+uiextras/+jTree/CheckboxTreeNode.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/JavaTreeWrapper/+uiextras/+jTree/Tree.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/JavaTreeWrapper/+uiextras/+jTree/TreeNode.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/JavaTreeWrapper/+uiextras/+jTree/loadJavaCustomizations.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/findjobj/findjobj.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/getSubclasses/getSubclasses.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/inputsdlg/inputsdlg.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/robustlsqcurvefit/robustlsqcurvefit.m</file>
+      <file>/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Toolbox/treeTable/treeTable.m</file>
+    </fileset.depfun>
+    <build-deliverables>
+      <file location="${PROJECT_ROOT}/FitLike2_20190219_1/for_testing" name="FitLike" optional="false">/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Compiled versions/linux 64 bits/FitLike2_20190219_1/for_testing/FitLike</file>
+      <file location="${PROJECT_ROOT}/FitLike2_20190219_1/for_testing" name="run_FitLike.sh" optional="false">/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Compiled versions/linux 64 bits/FitLike2_20190219_1/for_testing/run_FitLike.sh</file>
+      <file location="${PROJECT_ROOT}/FitLike2_20190219_1/for_testing" name="readme.txt" optional="true">/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Compiled versions/linux 64 bits/FitLike2_20190219_1/for_testing/readme.txt</file>
+      <file location="${PROJECT_ROOT}/FitLike2_20190219_1/for_testing" name="splash.png" optional="false">/mnt/crypthome/lionel/Documents/MATLAB/FitLike2/Compiled versions/linux 64 bits/FitLike2_20190219_1/for_testing/splash.png</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>/home/lionel/Applications/Matlab2018b</root>
+      <toolboxes />
+    </matlab>
+    <platform>
+      <unix>true</unix>
+      <mac>false</mac>
+      <windows>false</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>true</linux>
+      <solaris>false</solaris>
+      <osver>4.15.0-45-generic</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>glnxa64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

@@ -61,15 +61,39 @@ classdef ModelTab < uix.Container & handle
     end
     
     methods (Access = public)
+        
+        % add a unique number to the model names, to avoid merging model
+        % parameters when the same model is applied several times
+        function number = generateUniqueNumber(this)
+            content = javaMethodEDT('getDataVector',this.jtable);
+            contentarray = toArray(content);
+            modellist = arrayfun(@(l) firstElement(l),contentarray,'UniformOutput',false);
+            modellist = unique(modellist);
+            numberAllocated = [];
+            for i = 1:length(modellist)
+                num = modellist{i}(1:strfind(modellist{i},')'));
+                if ~isempty(num)
+                    numberAllocated(i) = str2double(num(1:end-1)); %#ok<AGROW>
+                end
+            end
+            number = 1;
+            while any(isequal(number,numberAllocated))
+                number = number+1;
+            end
+            
+        end
+        
        % Add new model
        function this = addModel(this)
             % call the model selector
            [modelName, modelObj] = ModelTab.modeldlg();
            % update the gui
            if ~isempty(modelName)
-               % add row one by one
-               for k = 1:numel(modelObj.parameterName)
-                   row = {modelName,modelObj.parameterName{k},...
+               % add row one by one                 
+               ID = generateUniqueNumber(this);
+               for k = 1:numel(modelObj.parameterName)  
+                   row = {[num2str(ID) ') ' modelName],...
+                      modelObj.parameterName{k},...
                       logical(modelObj.isFixed(k)),modelObj.minValue(k),...
                       modelObj.maxValue(k),modelObj.startPoint(k)};
                    % here we use the javaMethodEDT to handle EDT

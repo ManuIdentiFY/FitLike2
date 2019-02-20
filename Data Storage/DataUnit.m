@@ -500,7 +500,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
                % distribute the values to the sub-units
                self = distributeSubData(self,'y',value);
            end
-            check if different from before
+%             check if different from before
             self.y = value;
        end
        
