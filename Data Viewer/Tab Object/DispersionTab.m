@@ -677,24 +677,31 @@ classdef DispersionTab < EmptyTab
         % Add fast visualisation of parent object if clicking on any data
         % point in main axis
         function this = selectData(this, src, e)
-            % check source 
-            if strcmp(src.Tag, 'SelectedPoint')
-                % delete listener and delete function
-                this.SelectedPoint.UserData.Object{1}.DeleteFcn = [];
-                delete(this.SelectedPoint.UserData);
-                % delete current selected point
-                delete(this.SelectedPoint);
-                this.SelectedPoint = []; %clear
-                % delete zone axis
-                delete(this.axezone); this.axezone = [];
-                % reset other axis
-                if isempty(this.axeres)
-                    subplot(3,2,1:6, this.axe);
-                    this.axe.Position = this.AxePosition;
-                else
-                    subplot(3,2,1:4, this.axe);
+            % check data
+            if ~isempty(this.SelectedPoint)
+                this.SelectedPoint(~isvalid(this.SelectedPoint)) = [];
+
+                if ~isempty(this.SelectedPoint)
+                    % check source 
+                    if strcmp(src.Tag, 'SelectedPoint')
+                        % delete listener and delete function
+                        this.SelectedPoint.UserData.Object{1}.DeleteFcn = [];
+                        delete(this.SelectedPoint.UserData);
+                        % delete current selected point
+                        delete(this.SelectedPoint);
+                        this.SelectedPoint = []; %clear
+                        % delete zone axis
+                        delete(this.axezone); this.axezone = [];
+                        % reset other axis
+                        if isempty(this.axeres)
+                            subplot(3,2,1:6, this.axe);
+                            this.axe.Position = this.AxePosition;
+                        else
+                            subplot(3,2,1:4, this.axe);
+                        end
+                        return
+                    end
                 end
-                return
             end
             % check if listener activated
             if isa(e, 'PropertyEvent')
@@ -762,8 +769,8 @@ classdef DispersionTab < EmptyTab
                             'Parent',this.axezone);
                     % set fontsize
                     set(this.axezone, 'FontSize', 8);
-                    xlabel(this.axezone, this.hData(tf).parent.xLabel);
-                    ylabel(this.axezone, this.hData(tf).parent.yLabel);
+                    xlabel(this.axezone, this.hData(tf).parent(1).xLabel);
+                    ylabel(this.axezone, this.hData(tf).parent(1).yLabel);
                     % add legend
                     legend(this.axezone,'show');
                     set(this.axezone.Legend,'Interpreter','none');
@@ -778,7 +785,6 @@ classdef DispersionTab < EmptyTab
                     % update selected point
                     this.SelectedPoint.XData = this.hData(tf).x(idxZone);
                     this.SelectedPoint.YData = this.hData(tf).y(idxZone);
-                    % update current plot obj
                     [x,y,dy,mask] = getData(this.hData(tf).parent, idxZone);
                     % +data
                     hData = findobj(this.axezone, 'Type', 'errorbar');
@@ -802,7 +808,14 @@ classdef DispersionTab < EmptyTab
                     % +fit
                     hFit = findobj(this.axezone, 'Type', 'line');
                     [xfit, yfit] = getFit(this.hData(tf).parent, idxZone, []);
-                    if ~isempty(hFit) && ~isempty(yfit)
+                    if isempty(hFit) && ~isempty(yfit)
+                        hFit = plot(this.axezone,xfit,yfit);
+                        set(hFit,'Color',src.Color);
+                        leg = getLegend(this.hData(tf).parent, idxZone, 'Fit', 0);
+                        if ~strcmp(leg, hData.DisplayName)
+                            hFit.DisplayName = leg;
+                        end
+                    elseif ~isempty(hFit) && ~isempty(yfit)
                         set(hFit, 'XData', xfit, 'YData', yfit);
                         % update color, marker, displayName
                         set(hFit,'Color',src.Color);
@@ -810,7 +823,7 @@ classdef DispersionTab < EmptyTab
                         if ~strcmp(leg, hData.DisplayName)
                             hFit.DisplayName = leg;
                         end
-                    elseif ~isempty(hFit)
+                    else
                         delete(hFit);
                     end
                 end
