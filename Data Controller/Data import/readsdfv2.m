@@ -137,8 +137,8 @@ for acquisitionNumber = 1:length(posExpHeader)-1  % last element of posExpHeader
         % different. Here we try to unify everything.
         % detecting the use of profile wizard:
 %         if 
-        BlocSize = parameter(acquisitionNumber).paramList.BS;
-        ZoneSize = parameter(acquisitionNumber).paramList.NBLK;
+        BlocSize = round(parameter(acquisitionNumber).paramList.BS); % LB 01/03/2019: sometimes, the bloc size is not an integer in the file...
+        ZoneSize = round(parameter(acquisitionNumber).paramList.NBLK);
         for indDisp = 1:length(d)
             dataContent.(columns{nField}){acquisitionNumber}(:,:,indDisp) = reshape(d{indDisp}{nField},BlocSize,ZoneSize);
         end
