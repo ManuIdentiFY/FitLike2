@@ -29,6 +29,7 @@ classdef DispersionModel < DataUnit2DataUnit & DataFit
              eq= func2str(this.modelHandle);
              indp = strfind(eq,')');
              indv = strfind(eq,',');
+             indv = indv(indv<indp(1));
              list = arrayfun(@(indstart,indend) eq(indstart:indend),[3 indv+1],[indv-1,indp(1)-1],'UniformOutput',0);             
         end
     end
