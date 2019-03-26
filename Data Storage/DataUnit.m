@@ -446,6 +446,14 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             else
                 h = [];
             end
+            % check if parent. Add axis label and title if false.
+            if all(strcmp('Parent',varargin) == 0)
+                xlabel(this.xLabel)
+                ylabel(this.yLabel)
+                legend('show')
+                set(get(gca,'Legend'),'Interpreter','none');
+                set(gca,'XScale','log')
+            end
          end %plotData
          
          % Add error to an existing errorbar. 
