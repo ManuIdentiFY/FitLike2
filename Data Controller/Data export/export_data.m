@@ -12,9 +12,6 @@ function export_data(hFile, path)
 %
 % Output:
 % *.txt file containing all the dispersion data of the input files. 
-% *(Optional) .mat file containing all the input files. This optional
-%             input can be used to store and recover all the saved data
-%             (bloc, zone, parameters).
 %
 % Format:
 % .txt file contains three parts: Header, Processing and Data
@@ -178,8 +175,10 @@ for k = 1:size(Y,2)-1
 end
 fprintf(fid,'%8s,\r\n',['Y',num2str(size(Y,2))]);
 
-format = [repmat('%8s,\t',1,size(Y,2)),'%8s,\r\n'];
-fprintf(fid,format,[X, Y]);
+format = [repmat('%8f,\t',1,size(Y,2)),'%8f,\r\n'];
+for k = 1:numel(X) %line by line to avoid NaN problem
+    fprintf(fid,format,[X(k), Y(k,:)]);
+end
 
 % + DY values
 fprintf(fid,'\r\nERROR:,\r\n');
@@ -190,7 +189,9 @@ end
 fprintf(fid,'%8s,\r\n',['DY',num2str(size(DY,2))]);
 
 format = [repmat('%8f,\t',1,size(DY,2)),'%8f,\r\n'];
-fprintf(fid,format,[X, DY]);
+for k = 1:numel(X) %line by line to avoid NaN problem
+    fprintf(fid,format,[X(k), DY(k,:)]);
+end
 
 % close file
 fclose(fid);
