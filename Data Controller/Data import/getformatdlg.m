@@ -28,12 +28,13 @@ function [realcol, imagcol, timecol] = getformatdlg(filename, sequence, ncol, da
 % manuel.petit@inserm.fr
 
 NUMBER_LINE_TO_DISPLAYED = 15;
-PATH = [pwd '\Data Controller\Data import\format\']; %search path for format 
-% settings .mat file
 
-% check if the folder 'format' exists and if false, create it
-if exist(PATH,'file') ~= 7
-    mkdir(PATH)
+% locate the function and check if the folder format exists. Create it if
+% false.
+path = [fileparts(which('getformatdlg')),'\format\'];
+if exist(path,'dir') ~= 7
+    mkdir(path)
+    addpath(path);
 end
 
 % check input
@@ -179,7 +180,7 @@ if Answer.EnableSaveMode
     % IRCPMG   |  2   |    1    |    2    |   []
     %   NP     |  4   |    2    |    3    |   1 
     %  ...     | ...  |   ...   |   ...   |  ...
-    if exist([PATH 'formatsettings.mat'],'file') ~= 2
+    if exist([path 'formatsettings.mat'],'file') ~= 2
         % create the .mat file 
         Sequence = {sequence};
         nCol = ncol;
@@ -189,12 +190,12 @@ if Answer.EnableSaveMode
         
         T = table(Sequence, nCol, realIdx, imagIdx, timeIdx); %#ok<NASGU>
         
-        save([PATH 'formatsettings.mat'], 'T')
+        save([path 'formatsettings.mat'], 'T')
     else        
         % update the .mat file
         try 
             % load the table 
-            saveObj = load([PATH 'formatsettings.mat']);
+            saveObj = load([path 'formatsettings.mat']);
             var = fieldnames(saveObj);
             T = saveObj.(var{1});
             % check if this setting is already in the table
@@ -205,7 +206,7 @@ if Answer.EnableSaveMode
             newSettings = {sequence,ncol,realcol,imagcol,timecol};
             T = [T; newSettings]; %#ok<NASGU>
             % save the settings
-            save([PATH 'formatsettings.mat'], 'T')        
+            save([path 'formatsettings.mat'], 'T')        
         catch ME
             rethrow(ME);
         end   
