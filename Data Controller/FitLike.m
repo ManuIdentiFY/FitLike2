@@ -162,7 +162,7 @@ classdef FitLike < handle
                         new_relaxObj = RelaxObj('filename',name,'sequence',sequence,...
                                                 'dataset',repmat(dataset,1,length(name)),...
                                                 'parameter',num2cell(parameter),...
-                                                'data',num2cell(Bloc('x',data.time,'y',y)));
+                                                'data', num2cell(Bloc('x',data.time,'y',y)));
                         new_relaxObj = check(new_relaxObj);
                         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                         
@@ -356,21 +356,10 @@ classdef FitLike < handle
             if strcmp(src.Tag,'Export_Dispersion')
                 % get save folder
                 path = uigetdir(pwd, 'Export Dispersion data');
-                % loop over the files
-                for k = 1:numel(relaxObj)
-                    % get dispersion data
-                    tf = isequal(relaxObj(k), this.RelaxData);
-                    hData = getData(this.RelaxData(tf),'Dispersion');
-                    % check if dispersion
-                    if ~isa(this.RelaxData(tf), 'Dispersion')
-                        event.txt = [sprintf('Error: Cannot export this file...%d/%d',k,numel(relaxObj)),'\n'];
-                        throwMessage(this, [], event);
-                    else
-                        export_data(hData, path);
-                    end
-                    event.txt = [sprintf('Files exported...%d/%d',k,numel(relaxObj)),'\n'];
-                    throwMessage(this, [], event);
-                end
+                export_data(relaxObj, path);
+                
+                event.txt = 'Files exported!\n';
+                throwMessage(this, [], event);
             else
                 
             end
@@ -637,15 +626,11 @@ classdef FitLike < handle
                 for k = 1:numel(event.Data)
                     event.Data(k) = setMask(event.Data(k), event.idxZone(k),...
                         [xmin xmax], [ymin ymax]);
-                    % notify
-                    %notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))
                 end
             elseif strcmp(event.Action,'ResetMask')
                 % reset mask
                 for k = 1:numel(event.Data)
                     event.Data(k) = setMask(event.Data(k), event.idxZone(k));
-                    % notify
-                    %notify(event.Data(k), 'DataHasChanged', EventData(event.idxZone(k)))
                 end
             end
         end % setMask
