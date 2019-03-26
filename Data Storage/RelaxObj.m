@@ -9,7 +9,7 @@ classdef RelaxObj < handle
         label@char = '';               % label of the file ('control','tumour',...)
         filename@char = '';            % name of the file ('file1.sdf')
         sequence@char = '';            % name of the sequence ('IRCPMG')
-        dataset@char = 'myDataset';    % name of the dataset('ISMRM2018')
+        dataset@char = '';    % name of the dataset('ISMRM2018')
         
     % data properties
         data@DataUnit
