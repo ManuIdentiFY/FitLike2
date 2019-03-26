@@ -31,8 +31,9 @@ function [data, parameter] = readsdfv1(filename)
 
 N_MAX_PARAMETERS = 150; % maximum number of parameter in the header
 iAcq = 1; % number of acquisition
-PATH = [pwd '\Data Controller\Data import\format\']; %search path for format 
-% settings .mat file (See getinputdlg)
+
+% search for formatsettings file
+pathname_settings = which('formatsettings.mat');
 
 % open file and check if ok
 fid = fopen(filename, 'r'); % open the file in read only mode
@@ -93,14 +94,16 @@ while 1
     
     % Use the formatFile to know which column corresponds to the real and
     % imag signal. If unknown call GUI so user can do it
-    if exist([PATH 'formatsettings.mat'],'file') ~= 2
+    if isempty(pathname_settings)
         % no formatFile exists: create it
         % call a GUI to help user to select its columns
         [realcol, imagcol, timecol] = getformatdlg(name,...
             header.EXP, ncol, bloc, []);
+        % reset path
+        pathname_settings = which('formatsettings.mat');
     else
         % open the formatFile and get the table T
-        formatObj = load([PATH 'formatsettings.mat']);
+        formatObj = load(pathname_settings);
         var = fieldnames(formatObj);
         T = formatObj.(var{1});    
         % check if the sequence/format is already known
