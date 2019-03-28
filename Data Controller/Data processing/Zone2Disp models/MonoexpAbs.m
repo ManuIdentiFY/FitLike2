@@ -44,9 +44,9 @@ classdef MonoexpAbs < Zone2Disp & DataFit
             [ymin,indmin] = min(ydata);
             [ymax,indmax] = max(ydata);
             if (indmin == 1)||(indmin == length(ydata))  % case when there is no 0-crossing
-                this.startPoint = [ydata(1), ydata(end), 4/xdata(end), min(ydata)/2];
+                this.startPoint = [ydata(1), ydata(end),1/xdata(end), min(ydata)/2];
             else
-                this.startPoint = [ydata(1), -ydata(end), 4/xdata(end), min(ydata)/2];
+                this.startPoint = [ydata(1), -ydata(end), 1/xdata(end), min(ydata)/2];
             end                
             
         end
