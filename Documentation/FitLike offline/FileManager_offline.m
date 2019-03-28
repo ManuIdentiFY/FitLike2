@@ -45,8 +45,9 @@ reset(fig);
 
 %% Edit file
 % Here I do this operation manually but you can edit nodes (file tree)
-% directly by clicking on the text next to the checkbox
-node = search(fig.gui.treefile,data(2)); 
+% directly by clicking on the text next to the checkbox. I just added this
+% example to show the update of the RelaxObj
+node = TreeManager.findobj(fig.gui.treefile.Root,'UserData', data(2)); 
 fprintf('Old filename: %s\n', node.Name)
 event = struct('Nodes',node,'OldName',data(2).filename,'NewName','Edit!');
 editFile(fig, [], event);
