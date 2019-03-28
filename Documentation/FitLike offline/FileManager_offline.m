@@ -57,7 +57,8 @@ fprintf('New filename: %s\n', data(2).filename);
 % (doing edition manually) is not normally permitted
 node.Name = 'Edit!'; % I do it manually
 
-% you can also try to 'edit' file by using Drag and drop!
+% you can also try to 'edit' file by using Drag and drop and see the
+% results in your RelaxObj array
 
 
 

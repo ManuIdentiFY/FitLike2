@@ -12,7 +12,10 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
     end
     
     properties (Hidden)
-        valid_target % define the valid target for each source
+        valid_target % define the valid target for each source. it is a Nx2 cell array
+                     % if non empty where the first column if the source and
+                     % the second, a cell array, the single or multiple target(s).
+                     % See DragDrop() for details.
     end
     
     events
@@ -264,13 +267,20 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
              end
         end
                  
-        % add new nodes. Pass to children nodes if duplicates.
+        % Add new node to a given parent node. if one of the children of
+        % the parent node has the same 'Name' property, return this child.
+        % hParent: 1x1 CheckboxTree Node
+        % name: char that defines the 'Name' property of the child nodes
+        % icon: path that defines the icon for the node (see FileManager
+        % for example)
+        % type: char that defines the 'Value' property of the child nodes
         function hChildren = addNode(hParent, name, icon, type, varargin)
             % check if children
             if ~isempty(hParent.Children)
                 % check if filename
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                % Not the best method but easy to set
+                % Not the best method but easy to set (problem outside
+                % FitLike framework)
                 if strcmp(type, 'filename')
                     % check UserData
                     tf = isequal(varargin{2}, get(hParent.Children,'UserData'));
@@ -287,9 +297,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                     end
                 end
             end
-            
-
-            
+                      
             % add checkbox               
             hChildren = uiextras.jTree.CheckboxTreeNode('Parent', hParent,...
                                          'Checked',0,...
@@ -301,7 +309,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             end
         end % addNode
         
-        % get all deepest child (root is automaticaly removed)
+        % Get all the deepest child.
         function hChildren = getEndChild(hParent)
             % find nodes without children
             for k = numel(hParent):-1:1
@@ -316,7 +324,9 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
             end
         end %getEndChild
                         
-        % Find nodes based on property/value input.
+        % Find nodes based on property/value input. It replaces the
+        % findobj() build-in function from Matlab that do not work here
+        % (Java issue).
         function hNodes = findobj(hParent,field,value)
             % check input
             if isempty(hParent)

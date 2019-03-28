@@ -1,6 +1,8 @@
 classdef FileManager  < handle
     %
-    % View for FileManager in FitLike
+    % View for FileManager in FitLike. It is a stand alone component, just
+    % replace FitLike input by anything else to use it.
+    % See documentation and examples for off-line usage.
     %
     %
     % M.Petit - 11/2018
@@ -95,6 +97,7 @@ classdef FileManager  < handle
             hbox.Widths = [-1.5 -1];
             drawnow;                      
             
+            % Check if it is a stand-alone usage or not
             if isa(this.FitLike,'FitLike')
                 % Replace the close function by setting the visibility to off
                 set(this.gui.fig,  'closerequestfcn', ...
@@ -123,7 +126,10 @@ classdef FileManager  < handle
     
     % Tree methods: add/delete/update
     methods
-       % add file
+       % THIS = ADDFILE(THIS, RELAXOBJ) add new file in the treefile
+       % object. RELAXOBJ should be an array of RelaxObj.
+       % File are classified in a hierarchical way where the first layer is
+       % dataset, second layer is sequence and third is filename.
        function this = addFile(this, relaxObj)
              % loop over the input
             for k = 1:numel(relaxObj)
@@ -141,8 +147,11 @@ classdef FileManager  < handle
                 expand(hSequence)
             end
        end %addFile
-        
-       % delete file
+       
+       % THIS = DELETEFILE(THIS, RELAXOBJ) delete files from the treefile.
+       % RELAXOBJ should be an array of RelaxObj. This function can be
+       % called with THIS = DELETEFILE(THIS) where checked nodes are
+       % deleted instead.
        function this = deleteFile(this, relaxObj)
            if nargin < 2
                % get checked nodes
@@ -177,7 +186,9 @@ classdef FileManager  < handle
            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
        end %deleteFile
        
-       % check file.
+       % THIS = CHECKFILE(THIS, RELAXOBJ) check files corresponding to 
+       % the RELAXOBJ input in the treefile. RELAXOBJ should be an array 
+       % of RelaxObj. 
        function this = checkFile(this, relaxObj)
            % check input
            if isempty(relaxObj)
@@ -194,7 +205,10 @@ classdef FileManager  < handle
            end
        end %checkFile
        
-       % add data
+       % THIS = ADDDATA(THIS, FILENODE) add file nodes to the selected data
+       % tree (visible tab). FILENODE are an array of CheckboxTree and
+       % corresponds to the third layer of node of the treefile (filename
+       % layer). 
        function this = addData(this, fileNode)
            % set icon for selected tree
            icon = this.RelaxObjIcon{this.gui.treedata == this.SelectedTree};
@@ -231,8 +245,12 @@ classdef FileManager  < handle
            end %for file
        end %addData
        
-       % add relaxobj. name is a cell array 1xN displayName. nZone is a
-       % scalar indicating the number of zone in the relaxObj
+       % THIS = ADDRELAXOBJ(THIS, HPARENT, ICON, NAME, NZONE) add the data
+       % nodes to the parent file node. HPARENT is a CheckboxTree (file node), 
+       % ICON the pathname for icons, NAME a cell array of string corresponding 
+       % to the displayName properties of the data object. NZONE is a
+       % scalar indicating the number of zone nodes to display. If NZONE is
+       % empty (dispersion case), no zone nodes are created.
        function this = addRelaxObj(this, hParent, icon, name, nZone)
            % check if idx are included
            if ~isempty(nZone)
@@ -252,7 +270,10 @@ classdef FileManager  < handle
            end
        end %addRelaxObj
        
-       % remove data
+       % THIS = REMOVEDATA(THIS, RELAXOBJ) remove all the data
+       % corresponding to the RELAXOBJ. RELAXOBJ is an array of RelaxObj.
+       % If data nodes corresponding to the RELAXOBJ array are checked, an
+       % event is throwed to indicate that data were deselected.
        function this = removeData(this, relaxObj)
            % check if files
            if isempty(this.SelectedTree.Root.Children)
@@ -300,7 +321,10 @@ classdef FileManager  < handle
            end %isempty
        end %removeData
        
-       % check data. dataObj is a DataUnit object.
+       % THIS = REMOVEDATA(THIS, DATAOBJ, IDXZONE, FLAG) check (FLAG=1) or
+       % uncheck (FLAG = 0) the data nodes that corresponds to the DATAOBJ 
+       % and IDXZONE. DATAOBJ is an array of DataUnit and IDXZONE a vector
+       % of idxZone. If DATAOBJ is a Dispersion, IDXZONE should be NaN.
        function this = checkData(this, dataObj, idxZone, flag)
             % check input
             if isempty(dataObj)
@@ -346,7 +370,8 @@ classdef FileManager  < handle
             notify(this, 'DataSelected', event);
        end % checkData
        
-       % update data if dataobj is changed. dataObj is a DataUnit.
+       % THIS = UPDATEDATA(THIS, RELAXOBJ) update all the data nodes object
+       % corresponding to RELAXOBJ. RELAXOBJ is an array of RelaxObj.
        function this = updateData(this, relaxObj)
            % loop over the input
            for k = 1:numel(relaxObj)
@@ -408,7 +433,8 @@ classdef FileManager  < handle
            end
        end %updateData
        
-       % reset tree: unchecked all nodes
+       % THIS = RESET(THIS) deselected all the file nodes (and thus all the
+       % data nodes).
        function this = reset(this)
           % get the file tree
           hNodes = this.gui.treefile.CheckedNodes;
@@ -422,7 +448,8 @@ classdef FileManager  < handle
           end
        end %reset
        
-       % add label to the selected nodes
+       % THIS = ADDLABEL(THIS, ICON) add the icon defining by the ICON
+       % pathway to the checked file nodes (treefile).
        function this = addLabel(this, icon)
            % get the selected nodes (files)
            hFile = TreeManager.getEndChild(this.gui.treefile.CheckedNodes);
@@ -435,7 +462,8 @@ classdef FileManager  < handle
            end
        end %addLabel
        
-       % remove label
+       % THIS = REMOVELABEL(THIS, RELAXOBJ) reset the icons of the file
+       % nodes corresponding to the RELAXOBJ array (RelaxObj array).
        function this = removeLabel(this, relaxObj) 
            % reset their icon
            for k = 1:numel(relaxObj)
@@ -447,7 +475,9 @@ classdef FileManager  < handle
     
     % Tree methods: Data and File access
     methods       
-        % select file
+       % THIS = SELECTFILE(THIS, ~,EVENT) callbacks that is fired when a
+       % file node is checked or unchecked. It then adds or remove the
+       % corresponding data nodes of the file node.
         function this = selectFile(this, ~, event) 
             % be sure to get the file
             hFile = TreeManager.getEndChild(event.CheckedNodes);
@@ -462,7 +492,12 @@ classdef FileManager  < handle
             drawnow nocallbacks
         end %selectFile
         
-        % edit file
+       % THIS = EDITFILE(THIS, ~,EVENT) callbacks that is fired when a
+       % file node is edited. File nodes can also be edited is drag and
+       % drop action results in the modification of the sequence or dataset
+       % property. If FileManager is used in stand alone mode, the
+       % corresponding RelaxObj are updated automaticaly. Else, it throws
+       % an event to FitLike.
         function this = editFile(this, ~, event)
             % check if dragdrop call
             if isa(event,'EventFileManager')
@@ -492,7 +527,9 @@ classdef FileManager  < handle
             end
         end %editFile
         
-        % select data
+       % THIS = SELECTDATA(THIS, ~,EVENT) callbacks that is fired when a
+       % data node is selected or deselected. An event is then throwed to
+       % FitLike.
         function this = selectData(this, ~, event)
             % get the selected data
             [hData, idxZone] = getSelectedData(this, event.CheckedNodes);
@@ -513,7 +550,9 @@ classdef FileManager  < handle
             drawnow %nocallbacks
         end %selectData
        
-       % set the selected tree
+       % THIS = SETTREE(THIS, TYPE) allows to change manually the selected
+       % data tree (visible tab). Possible TYPE input are:
+       % {'Dispersion','Zone','Bloc'};
        function this = setTree(this, type)
            % check if different
            if strcmpi(this.SelectedTree.Tag, type)
@@ -533,7 +572,10 @@ classdef FileManager  < handle
            end
        end %setTree
        
-       % callback when selected tree is modified
+       % THIS = CHANGETREE(THIS, S,E) callbacks that is fired when the
+       % selected tree is changed (visible tab). In this case, previous
+       % data nodes (from the old tab) are deleted and replaced by new
+       % ones based on the selected file nodes.
        function this = changeTree(this, s, e)
            % remove the children from the previous selected tree
            delete(this.SelectedTree.Root.Children);
@@ -550,7 +592,8 @@ classdef FileManager  < handle
            end
        end %changeTree
 
-        % Throw the relaxObj selected
+       % RELAXOBJ = GETSELECTED(THIS) returned the selected files as an
+       % array of RelaxObj. 
         function relaxObj = getSelectedFile(this)
             % get checked nodes
             hNodes = this.gui.treefile.CheckedNodes;
@@ -563,7 +606,11 @@ classdef FileManager  < handle
             end
         end %getSelectedFile
         
-        % Throw the DataUnit selected and their zone index
+       % RELAXOBJ = GETSELECTEDDATA(THIS, HNODES) returned the selected
+       % data as an array of DataUnit object and a vector of idxZone (if
+       % hData(i) is a Dispersion, idxZone(i) = NaN). It is possible to
+       % specified the HNODES (array of CheckboxTree) to get the
+       % corresponding data objects.
         function [hData, idxZone] = getSelectedData(this, hNodes)
             % get checked nodes
             if nargin == 1
@@ -594,8 +641,8 @@ classdef FileManager  < handle
     
     % Console methods: add text
     methods
-        % Wrapper to throw messages in the console or in the terminal in
-        % function of FitLike input.
+        % THIS = THROWWRAPMESSAGE(THIS, TXT) is a wrapper to throw messages
+        % in the console or in the terminal in function of FitLike input.
         function this = throwWrapMessage(this, txt)
             % check FitLike
             if ~isa(this.FitLike,'FitLike')
@@ -605,11 +652,17 @@ classdef FileManager  < handle
             end
         end % throwWrapMessage
         
-        % Throw a message in the console according to the input text.
-        % Messages are automaticaly formatted as:
+        % THIS = throwMessage(THIS, TXT) throw a message in the console 
+        % according to the input text. TXT is a char. If TXT char finished
+        % by '\n' then the message is displayed as:
         % >> (previous text)
-        % >> txt
+        % >> TXT
         % >>
+        %
+        % Else
+        % >> (previous text)
+        % >> TXT
+        %
         function this = throwMessage(this, txt)
             % get previous text
             msg = this.gui.console.String;
