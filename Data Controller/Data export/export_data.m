@@ -13,6 +13,10 @@ function export_data(hFile, path)
 % Output:
 % *.txt file containing all the dispersion data of the input files. 
 %
+% Examples:
+% export_data(relaxObj); relaxObj is 1xN RelaxObj
+% export_data(relaxObj, pathname); pathname for saved folder
+%
 % Format:
 % .txt file contains three parts: Header, Processing and Data
 %
@@ -61,7 +65,8 @@ end
 
 % ask user a path if needed
 if nargin < 2
-    path = uigetdir(pwd, 'Export Dispersion data');
+    path = uigetdir(pwd, 'Export Dispersion data');   
+    if isempty(path); return; end
 end
 
 % check if files contains dispersion data
@@ -134,8 +139,14 @@ for k = 1:n
     y = dispersion(k).y(dispersion(k).mask); if ~iscolumn(y); y = y'; end
     dy = dispersion(k).dy(dispersion(k).mask); if ~iscolumn(dy); dy = dy'; end
     
+    % averaged duplicates in y-values and dy-values
+    [x,~,idx] = unique(x);
+    y = accumarray(idx,y,[],@mean);
+    dy = accumarray(idx,dy,[],@mean);
+    
     % prepare Y-values according to the x-values found
     [~,idx,~] = intersect(X, x);
+
     Y(idx,k) = y;
     DY(idx,k) = dy;
 end %for loop
