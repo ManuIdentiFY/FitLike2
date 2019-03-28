@@ -2,7 +2,7 @@ clear all
 close all
 
 % This script shows how to use FileManager without FitLike software. Do not
-% forget to add path to FitLike depository before running the script.
+% forget to add path to FitLike repository before running the script.
 %
 % M.Petit - 03/2019
 % manuel.petit@inserm.fr
