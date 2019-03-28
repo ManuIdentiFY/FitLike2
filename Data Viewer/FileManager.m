@@ -99,6 +99,12 @@ classdef FileManager  < handle
                 % Replace the close function by setting the visibility to off
                 set(this.gui.fig,  'closerequestfcn', ...
                     @(src, event) this.FitLike.hideWindowPressed(src)); 
+            else
+                % show figure
+                set(this.gui.fig,'Visible','on');
+                % Replace the close function by setting the visibility to off
+                set(this.gui.fig,  'closerequestfcn', ...
+                    @(src, event) deleteWindow(this)); 
             end
         end %FileManager
         
@@ -111,6 +117,7 @@ classdef FileManager  < handle
             delete(this.gui.fig);
             % clear pointer
             this.gui = [];
+            this.SelectedTree = [];
         end  %deleteWindow   
     end
     
@@ -143,7 +150,7 @@ classdef FileManager  < handle
            else
                for k = numel(relaxObj):-1:1
                    % find nodes
-                   hNodes(k) = search(this, relaxObj(k));
+                   hNodes(k) = search(this.gui.treefile, relaxObj(k));
                end
            end
            
@@ -451,8 +458,14 @@ classdef FileManager  < handle
         function this = editFile(this, ~, event)
             % check if dragdrop call
             if isa(event,'EventFileManager')
-                notify(this, 'FileEdited', event);
-            % check if node was edited
+                if isa(this, 'FitLike')
+                    % throw event to FitLike
+                    notify(this, 'FileEdited', event);
+                else
+                    % update directly RelaxObj
+                    [event.Data.(event.Prop)] = deal(event.Value);
+                end
+                % check if node was edited
             elseif ~strcmp(event.OldName, event.NewName)
                 % get the node type
                 prop = event.Nodes.Value;
@@ -461,8 +474,14 @@ classdef FileManager  < handle
                 % throw event
                 event = EventFileManager('Data',[hFile.UserData],...
                     'Value', event.NewName,'Prop',prop);
-                notify(this, 'FileEdited', event);
-            end  
+                % check if FitLike is set
+                if isa(this.FitLike, 'FitLike')
+                    notify(this, 'FileEdited', event);
+                else
+                    % update directly RelaxObj
+                    [event.Data.(event.Prop)] = deal(event.Value);
+                end
+            end
         end %editFile
         
         % select data
