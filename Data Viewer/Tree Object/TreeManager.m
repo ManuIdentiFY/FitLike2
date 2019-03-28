@@ -133,34 +133,7 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
                    src.Checked = 1; 
                 end
             end
-        end %DragDrop 
-        
-        % Search node based on its tag (userdata). Stop at the first node!
-        function hNode = search(this, tag)
-            % search recursively along the tree
-            hNode = visit(this.Root, tag, this.Root);
-            
-            %%% ---- Nested function ----- %%%
-            function currentNode = visit(currentNode, tag, stopNode)
-                % check the currentNode
-                if isempty(currentNode)
-                    return
-                elseif isequal(currentNode.UserData, tag)
-                    return
-                else
-                    % check if children
-                    while ~isempty(currentNode.Children)
-                        currentNode = currentNode.Children(1);
-                        if isequal(currentNode.UserData, tag)
-                            return
-                        end
-                    end
-                    % push and visit
-                    currentNode = TreeManager.push(currentNode, stopNode);
-                    currentNode = visit(currentNode, tag, stopNode);
-                end
-            end %visit
-        end %search
+        end %DragDrop        
     end
     
     % Adapt the edit/check methods:
@@ -330,42 +303,56 @@ classdef TreeManager < uiextras.jTree.CheckboxTree
         
         % get all deepest child (root is automaticaly removed)
         function hChildren = getEndChild(hParent)
-            % loop over the input
-            if isempty(hParent)
-                hChildren = []; return;
-            end
-            % init
+            % find nodes without children
             for k = numel(hParent):-1:1
-                if isempty(hParent(k).Children)
-                    hChildren{k} = hParent(k); 
-                else
-                    % search recursively along the tree
-                    [hChildren{k}, ~] = visit(hParent(k), [], hParent(k));
-                end
-            end       
-            % uncell
-            hChildren = [hChildren{:}];
+                hChildren{k} = TreeManager.findobj(hParent(k),...
+                    'Children',uiextras.jTree.TreeNode.empty(0,1));
+            end
             
-            %%% ---- Nested function ----- %%%
-            function [hChild, currentNode] = visit(currentNode, hChild, hStop)
+            if ~isempty(hParent)
+                hChildren = [hChildren{:}];
+            else
+                hChildren = [];
+            end
+        end %getEndChild
+                        
+        % Find nodes based on property/value input.
+        function hNodes = findobj(hParent,field,value)
+            % check input
+            if isempty(hParent)
+                hNodes = []; return
+            end
+            % init current node and list
+            current_node = hParent; 
+            hNodes = [];
+            % search recursively from the parent node (can be root)
+            [~, hNodes]  = visit(current_node, hNodes, hParent, field, value);
+            
+            %%% ---- Nested function ---- %%%
+            function [current_node, hNodes]  = visit(current_node, hNodes, stopNode, field, value)
                 % check the currentNode
-                if isempty(currentNode)
+                if isempty(current_node)
                     return
                 else
-                    % check if children
-                    while ~isempty(currentNode.Children)
-                        currentNode = currentNode.Children(1);
+                    % check if current node match with field/value. avoid
+                    % duplicates
+                    if isequal(current_node.(field), value)
+                        hNodes = [hNodes current_node];
                     end
-                    % add child (not if root)
-                    if ~isempty(currentNode.Parent)
-                        hChild = [hChild, currentNode];
+                    % check if children
+                    while ~isempty(current_node.Children)
+                        current_node = current_node.Children(1);
+                        if isequal(current_node.(field), value)
+                            % add this node to the list
+                            hNodes = [hNodes, current_node]; %#ok<AGROW>
+                        end
                     end
                     % push and visit
-                    currentNode = TreeManager.push(currentNode, hStop);
-                    [hChild, currentNode] = visit(currentNode, hChild, hStop);
+                    current_node = TreeManager.push(current_node, stopNode);
+                    [current_node, hNodes] = visit(current_node, hNodes, stopNode, field, value);
                 end
-            end %visit
-        end %getEndChild
+            end
+        end
         
         % function that find the next left node according to a current
         % node (backtracking). The function is called recursively until a new node is

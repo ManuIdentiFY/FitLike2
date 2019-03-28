@@ -150,7 +150,8 @@ classdef FileManager  < handle
            else
                for k = numel(relaxObj):-1:1
                    % find nodes
-                   hNodes(k) = search(this.gui.treefile, relaxObj(k));
+                   hNodes(k) = TreeManager.findobj(this.gui.treefile.Root,...
+                       'UserData',relaxObj(k)); %search from the root
                end
            end
            
@@ -185,7 +186,8 @@ classdef FileManager  < handle
            % loop over the input
            for k = 1:numel(relaxObj)
                % get the node
-               hNode = search(this.gui.treefile, relaxObj(k));
+               hNode = TreeManager.findobj(this.gui.treefile.Root,...
+                   'UserData',relaxObj(k));
                % check and add data
                addData(this, hNode);
                hNode.Checked = 1;
@@ -215,9 +217,6 @@ classdef FileManager  < handle
                    else
                        hParent = this.SelectedTree.Root.Children(tf);
                    end
-%                    hParent = TreeManager.addNode(this.SelectedTree.Root,...
-%                         relaxObj(k).filename, this.FileIcon, 'filename',...
-%                         'UserData',relaxObj(k));
                    % if not dispersion tab, add the zone index
                    if ~strcmp(this.SelectedTree.Tag, 'Dispersion')
                        nZone = numel(getfield(fileNode(k).UserData,'BR')); %#ok<GFLD>
@@ -259,13 +258,46 @@ classdef FileManager  < handle
            if isempty(this.SelectedTree.Root.Children)
                return
            end
-
+           
            % delete nodes
            nodes = this.SelectedTree.Root.Children;
            idx = intersect([nodes.UserData], relaxObj);
            if ~isempty(idx)
+               % before deletion, see if data are checked. Notify if true
+               for k = 1:numel(idx)
+                    % get checked nodes
+                    hNodes = TreeManager.findobj(nodes(idx(k)),'Checked',1);
+                    % remove nodes with children
+                    hNodes = hNodes(arrayfun(@(x) isempty(x.Children), hNodes));
+                    if ~isempty(hNodes)
+                        % check data type
+                        if strcmp(this.SelectedTree.Tag,'Dispersion')
+                            % get the data and notify
+                            for j = 1:numel(hNodes)
+                                hData = getData(nodes(idx(k)).UserData, 'Dispersion', hNodes(j).Name);
+                                % create event and notify
+                                event = EventFileManager('Action','Deselect',...
+                                    'Data',hData,'idxZone',NaN);
+                                notify(this, 'DataSelected', event);
+                                disp(hData)
+                            end
+                        else
+                            % get the data
+                            for j = 1:numel(hNodes)
+                                hData = getData(nodes(idx(k)).UserData, this.SelectedTree.Tag, hNodes(j).Parent.Name);
+                                idxZone = str2double(regexp(hNodes(j).Name,'\d*','match'));
+                                % create event and notify
+                                event = EventFileManager('Action','Deselect',...
+                                    'Data',hData,'idxZone',idxZone);
+                                notify(this, 'DataSelected', event);
+                                disp(hData)
+                                disp(idxZone)
+                            end                            
+                        end
+                    end
+               end                   
                delete(nodes(idx));
-           end   
+           end %isempty
        end %removeData
        
        % check data. dataObj is a DataUnit object.
@@ -407,7 +439,7 @@ classdef FileManager  < handle
        function this = removeLabel(this, relaxObj) 
            % reset their icon
            for k = 1:numel(relaxObj)
-               hFile = search(this.gui.treefile, relaxObj(k));
+               hFile = TreeManager.findobj(this.gui.treefile.Root,'UserData', relaxObj(k));
                setIcon(hFile, this.FileIcon);
            end
        end %remove Label
@@ -420,30 +452,7 @@ classdef FileManager  < handle
             % be sure to get the file
             hFile = TreeManager.getEndChild(event.CheckedNodes);
             % add or remove data according to 'checked'
-            %src.Enable = 'off';
             if all([hFile.Checked] == 0)
-               % fire event
-               for k = 1:numel(hFile)
-                   % get all the data corresponding to the relaxObj
-                   hData = getData(hFile(k).UserData, this.SelectedTree.Tag);
-                   
-                   if isempty(hData); continue; end
-                   
-                   % if not dispersion tab, notify for each index
-                   if ~strcmp(this.SelectedTree.Tag, 'Dispersion')
-                       % get the number of zone
-                       nZone = numel(getfield(hFile(k).UserData,'BR')); %#ok<GFLD>
-                       idxZone = repmat(1:nZone,1,numel(hData));
-                       hData = repelem(hData, nZone);
-                   else
-                       idxZone = nan(1,numel(hData));
-                   end
-                   
-                   % create event and notify
-                   event = EventFileManager('Action','Deselect',...
-                       'Data',hData,'idxZone',idxZone);
-                   notify(this, 'DataSelected', event);
-               end
                % remove data from the data panel
                removeData(this, [hFile.UserData]);
             else
@@ -451,7 +460,6 @@ classdef FileManager  < handle
                addData(this, hFile);
             end
             drawnow nocallbacks
-            %src.Enable = 'on';
         end %selectFile
         
         % edit file
