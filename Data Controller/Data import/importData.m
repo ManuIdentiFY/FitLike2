@@ -34,14 +34,14 @@ function [filelist, sequence, data, parameter] = importData(varargin)
 % 
 % Examples:
 % 1. Start with no input (will be done inside the window)
-% [data, parameters] = importData();
+% [filelist, sequence, data, parameter] = importData();
 % 
 % 2. Start with one .sdf or .sef file
-% [data, parameters] = importData('mydata.sdf');
-% [data, parameters] = importData('mydata.sef');
+% [filelist, sequence, data, parameter] = importData('mydata.sdf');
+% [filelist, sequence, data, parameter] = importData('mydata.sef');
 %
 % 3. Start with a cell array of .sdf files (same with .sef files)
-% [data, parameters] = importData({'mydata1.sdf','mydata2.sdf'});
+% [filelist, sequence, data, parameter] = importData({'mydata1.sdf','mydata2.sdf'});
 % 
 %
 % M.Petit - 02/2019
