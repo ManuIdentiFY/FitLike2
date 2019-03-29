@@ -1,7 +1,15 @@
 classdef DisplayManager < handle
     %
-    % View for DisplayManager in FitLike
+    % View for DisplayManager in FitLike. This component manages a tab
+    % system where data can be displayed. See the tab object (EmptyTab and
+    % derived classes) for details.
+    % DisplayManager can be used as a stand-alond component by simply
+    % replacing the FitLike input by anything else (0,'1',true,...).
     %
+    % See documentation&examples for details.
+    %
+    % M.Petit - 03/2019
+    % manuel.petit@inserm.fr
     
     properties
         gui % GUI (View)
@@ -15,7 +23,6 @@ classdef DisplayManager < handle
     end
     
     events
-        SelectTab
         PlotError
     end
     
@@ -45,33 +52,24 @@ classdef DisplayManager < handle
                 % Store a reference to the presenter
                 this.FitLike = FitLike;                
 
-                % Replace the close function by setting the visibility to off
+                % Replace the close function
                 set(this.gui.fig,  'closerequestfcn', ...
                     @(src, event) this.FitLike.hideWindowPressed(src));  
             else
                 % set the window visible
                 set(this.gui.fig,'Visible','on')
+                % replace the close function
+                set(this.gui.fig,  'closerequestfcn', ...
+                    @(src, event) deleteWindow(this));  
             end
         end %DisplayManager
-        
-        function delete(this)
-            % delete tab children
-            deleteData(this);
-            % delete fig
-            delete(this.gui.fig);
-            this.gui = [];
-        end
-        
-        function deleteData(this)
+
+        % Destructor
+        function deleteWindow(this)
             % remove all the children properly
             if ~isempty(this.gui.tab.Children)
                 delete(this.gui.tab.Children)
             end
-        end
-        
-        % Destructor
-        function deleteWindow(this)
-            deleteData(this)
             %remove the closerequestfcn from the figure, this prevents an
             %infitie loop with the following delete command
             set(this.gui.fig,  'closerequestfcn', '');
@@ -83,7 +81,8 @@ classdef DisplayManager < handle
     end
     
     methods (Access = public)
-        % Add tab to DisplayManager
+        % THIS = ADDTAB(THIS) adds a new tab to the current tab group. The
+        % new tab which is an EmptyTab object is automaticaly selected.
         function this = addTab(this)
             % add an empty tab: Just to try different gui objects
             EmptyTab(this, uitab(this.gui.tab));
@@ -97,7 +96,9 @@ classdef DisplayManager < handle
             drawnow;
         end %addTab
         
-        %Remove tab
+        % THIS = REMOVETAB(THIS) removes the selected tab in the current
+        % tab group. If the current tab group contains two or less tabs, no
+        % deletion are done. 
         function this = removeTab(this)
             % check the number of children
             n = numel(this.gui.tab.Children);
@@ -112,7 +113,9 @@ classdef DisplayManager < handle
             end
         end %removeTab    
         
-        % Change tab callback
+        % THIS = CHANGETAB(THIS,SRC,~) is a callback function fired when a
+        % tab is selected. If the tab selected is an EmptyTabPlus object
+        % ('+' tab), CHANGETAB adds a new tab.
         function this = changeTab(this, src, ~)
             % check if tab need to be added
             if isa(src.SelectedTab.Children,'EmptyPlusTab')
@@ -122,7 +125,10 @@ classdef DisplayManager < handle
             notify(this, 'SelectTab');
         end
         
-        %Replace tab: should be improved to speed up GUI
+        % THIS = REPLACETAB(THIS,OLDTAB,NEWTAB) allows to replace an OLDTAB
+        % object by a NEWTAB object. OLDTAB and NEWTAB should be EmptyTab
+        % class object or derived classes.
+        % See DispersionTab, ZoneTab, EmptyTabPlus
         function this = replaceTab(this, oldTab, newTab)
             % create the new tab
             fh = str2func(newTab);
@@ -140,8 +146,9 @@ classdef DisplayManager < handle
             setUIMenu(this);
         end %replaceTab
         
-        % Reset uicontextmenu and tab titles
-        % Set UIContextMenu
+        % THIS = SETUIMENU(THIS) adds a contextmenu to the selected tab.
+        % This contextmenu contains a close tab function that fires the
+        % REMOVETAB function.
         function this = setUIMenu(this)
             % set contextmenu to the selected tab
             cmenu = uicontextmenu(this.gui.fig);
@@ -150,7 +157,10 @@ classdef DisplayManager < handle
             this.gui.tab.SelectedTab.UIContextMenu = cmenu;  
         end
 
-        % call the tab plot method
+        % THIS = ADDPLOT(THIS,HDATA,IDXZONE) adds data to the selected tab.
+        % HDATA should be an array of DataUnit and IDXZONE a vector of the
+        % wanted zones with same size as HDATA. Remember that to get the
+        % complete dispersion profile (all zones), IDXZONE needs to be NaN.
         function this = addPlot(this, hData, idxZone)
             % check if it is an empty tab
             if strcmp(class(this.gui.tab.SelectedTab.Children), 'EmptyTab') %#ok<STISA>
@@ -180,7 +190,11 @@ classdef DisplayManager < handle
             end
         end
         
-        % call the tab remove method
+        % THIS = REMOVEPLOT(THIS,HDATA,IDXZONE) remove data from the 
+        % selected tab corresponding to the HDATA and IDXZONE input.
+        % HDATA should be an array of DataUnit and IDXZONE a vector of the
+        % wanted zones with same size as HDATA. Remember that to remove the
+        % complete dispersion profile (all zones), IDXZONE needs to be NaN.
         function this = removePlot(this, hData, idxZone)
             % check if empty tab
             if strcmp(class(this.gui.tab.SelectedTab.Children), 'EmptyTab') %#ok<STISA>
@@ -192,20 +206,29 @@ classdef DisplayManager < handle
             end
         end
         
-        % Wrapper to get data from current tab
+        % [HDATA, IDXZONE] = GETDATA(THIS) returned the data contained in
+        % the selected tab. HDATA is an array of DataUnit and IDXZONE a 
+        % vector of the plotted zones with same size as HDATA.
         function [hData, idxZone] = getData(this)
             % get data
             hData = this.gui.tab.SelectedTab.Children.hData;
             idxZone = this.gui.tab.SelectedTab.Children.idxZone;
         end %getData
         
-        % Wrapper to get legend from current tab (avoid fit)
+        % LEG = GETLEGEND(THIS) returned the legend input of the selected
+        % tab. LEG is a cell array of string containing the legend of the
+        % displayed data. Fit legend is not returned.
+        % If no legend is available, LEG is empty.
         function leg = getLegend(this)
             leg = getLegend(this.gui.tab.SelectedTab.Children);
         end
         
-        % Wrapper to throw messages in the console or in the terminal in
-        % function of FitLike input.
+        % THIS = THROWWRAPMESSAGE(THIS, TXT) allows to return messages. TXT
+        % should be a char. If FitLike is available, this function throws
+        % an event and notify else it prints the message in the command
+        % window.
+        % Remember to add '\n' at the end of your message if you want to
+        % return to the next line.
         function this = throwWrapMessage(this, txt)
             % check FitLike
             if ~isa(this.FitLike,'FitLike')
@@ -215,7 +238,10 @@ classdef DisplayManager < handle
             end
         end % throwWrapMessage
         
-        % Wrapper to set mask
+        % THIS = SETMASK(THIS, SRC, EVENT) allows to mask data or to
+        % propagate the event depending on the FitLike state. If FitLike is
+        % available this function propagates the event. Else it modifies
+        % the data by calling setMask() method from DataUnit container.
         function this = setMask(this, src, event)
             % check if FitLike is available
             if isa(this.FitLike,'FitLike')
@@ -230,21 +256,24 @@ classdef DisplayManager < handle
                     for k = 1:numel(event.Data)
                         event.Data(k) = setMask(event.Data(k), event.idxZone(k),...
                             [xmin xmax], [ymin ymax]);
-                        % notify
-                        %notify(event.Data(k), 'DataUpdate', EventFileManager('idxZone',event.idxZone(k)))
                     end
                 elseif strcmp(event.Action,'ResetMask')
                     % reset mask
                     for k = 1:numel(event.Data)
                         event.Data(k) = setMask(event.Data(k), event.idxZone(k));
-                        % notify
-                        %notify(event.Data(k), 'DataUpdate', EventFileManager('idxZone',event.idxZone(k)))
                     end
                 end
             end
         end %setMask
         
-        % mouse move
+        % THIS = MOVEMOUSE(THIS) is fired when the mouse is moved on the 
+        % figure. It then fires the MOVEMOUSE() method of the selected tab.
+        % Usually it is used to return the position of the mouse on the
+        % axis (X/Y position).
+        % Note (03/2019): This function is fired multiple times possibly
+        % without any good reason (if no axis is available at the mouse
+        % position) but I didnt find a way to do this directly in the
+        % children tab.
         function moveMouse(this)
             % check the selected tab
             tab = this.gui.tab.SelectedTab;

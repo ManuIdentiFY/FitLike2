@@ -1,17 +1,19 @@
 classdef DispersionTab < EmptyTab
     %
-    % Class that design containers for dispersion data
+    % Class that design containers for dispersion data. Only Dispersion
+    % object can be added to this tab class.
     %
     % SEE ALSO EMPTYTAB, DISPLAYMANAGER, DISPERSION
-    
+    %
+    %
     % Note: Plotting data requires lot of time, especially because
     % we need to dynamically update the legend (50% maybe) and the axis
     % (10%). Could be improved.
     %
-    % To do:
-    % - add a method to handle axis configuration
-    % - change sortChildren() method (also name maybe?)
-    % - check the legend!!
+    % Note2: Code is quite complex and could probably be simplify by
+    % creating new classes of graphical object that linked Dispersion
+    % object to the graphical object. In this case, listeners that respond
+    % to the data update could be simplified.
     %
     % M.Petit - 11/2018
     % manuel.petit@inserm.fr
@@ -38,7 +40,6 @@ classdef DispersionTab < EmptyTab
     
     % Axis properties
     properties (Access = public, SetObservable) %%??? [Manu]
-        axe
         AxePosition = [0.09 0.09 0.86 0.86]; %position of the main axis
     end
     
@@ -67,11 +68,7 @@ classdef DispersionTab < EmptyTab
             this.Parent.Title = 'Dispersion';
             this.inputType = 'Dispersion';
             % change the main axis into a subplot
-            this.axe = axes('Parent', uicontainer('Parent',this.box),...
-                        'FontSize',8,...
-                        'ActivePositionProperty', 'outerposition',...
-                        'Position',[0.09 0.09 0.86 0.86],...
-                        'NextPlot','Add');
+            this.axe.Visible = 'on';
             this.axe = subplot(3,2,1:6, this.axe);
             this.axe.Position = this.AxePosition; %reset Position
             
@@ -132,7 +129,11 @@ classdef DispersionTab < EmptyTab
     end
     
     methods (Access = public)        
-        % Add plot. 
+        % THIS = ADDPLOT(THIS, HDATA, IDXZONE) adds new dispersion data to
+        % the main axis. HDATA should be a Dispersion object and IDXZONE a
+        % scalar indicating the wanted zone. Remember that IDXZONE should
+        % be NaN if all the zone are displayed (case for dispersion
+        % profile).
         function this = addPlot(this, hData, idxZone)
             % check input
             if ~isa(hData, this.inputType); return; end
@@ -191,7 +192,11 @@ classdef DispersionTab < EmptyTab
             setLabel(this, hData);
         end %addPlot
         
-        % Remove plot.
+        % THIS = DELETEPLOT(THIS, HDATA, IDXZONE) removes dispersion data
+        % from the main axis. HDATA should be a Dispersion object and IDXZONE a
+        % scalar indicating the wanted zone. Remember that IDXZONE should
+        % be NaN if all the zone are deleted (case for dispersion
+        % profile).
         function this = deletePlot(this, hData, idxZone)
             % check input
             tf = this.hData == hData;
@@ -234,7 +239,11 @@ classdef DispersionTab < EmptyTab
             notify(this, 'UpdateHist');
         end %deletePlot    
                         
-        % Reset data
+        % THIS = UPDATEDATA(THIS, ~, EVENT) responds to callback to update
+        % the current displayed data. See ADDPLOT where listeners are set
+        % that activated this function.
+        % Brifly, data are update if X, Y, DY or process object are
+        % modified in the handle object (Dispersion object).
         function this = updateData(this, ~, event)
             % get all plots corresponding to the source
             src = event.AffectedObject;
@@ -415,24 +424,28 @@ classdef DispersionTab < EmptyTab
             drawnow;
         end %updateData
         
-        % Update legend: if filename changed
-        function this = updateLegend(this, src, event)
-            % get the plot
-            tf_data = contains(get(this.axe.Children,'Tag'), src.fileID);
-            hPlot = this.axe.Children(tf_data);
-            % replace their legend
-            for k = 1:numel(hPlot)
-                % check if displayName
-                if ~isempty(hPlot(k).DisplayName)
-                   hPlot(k).DisplayName = strrep(hPlot(k).DisplayName,...
-                                                event.OldName, event.NewName);                   
-                end
-            end            
-        end %updateLegend
+%         % THIS = UPDATELEGEND(THIS, SRC, EVENT) 
+%         function this = updateLegend(this, src, event)
+%             % get the plot
+%             tf_data = contains(get(this.axe.Children,'Tag'), src.fileID);
+%             hPlot = this.axe.Children(tf_data);
+%             % replace their legend
+%             for k = 1:numel(hPlot)
+%                 % check if displayName
+%                 if ~isempty(hPlot(k).DisplayName)
+%                    hPlot(k).DisplayName = strrep(hPlot(k).DisplayName,...
+%                                                 event.OldName, event.NewName);                   
+%                 end
+%             end            
+%         end %updateLegend
     end
     
     % Respond to the display options callback
     methods 
+        % THIS = SHOWDATA(THIS) respond to checkbox callback (show data) or
+        % to ADDPLOT(). Depending on the checkbox state it deletes or
+        % displays the dispersion data. Duplicates are avoided by checking
+        % the presence of the wanted dispersion data in the main axis.
         function this = showData(this)
             % check input
             if this.optsButton.DataCheckButton.Value
@@ -478,6 +491,10 @@ classdef DispersionTab < EmptyTab
             showLegend(this);
         end %showData
         
+        % THIS = SHOWERROR(THIS) respond to checkbox callback (show error) or
+        % to SHOWDATA(). Depending on the checkbox state it deletes or
+        % displays the dispersion data error. No errors are displayed if
+        % the dispersion data plot are missing.
         function this = showError(this)
             % check input
             if this.optsButton.ErrorCheckButton.Value
@@ -498,6 +515,10 @@ classdef DispersionTab < EmptyTab
             drawnow;
         end %showError
         
+        % THIS = SHOWFIT(THIS) respond to checkbox callback (show fit) or
+        % to ADDPLOT(). Depending on the checkbox state it deletes or
+        % displays the dispersion fit. Duplicates are avoided by checking
+        % the presence of the wanted dispersion fit in the main axis.
         function this = showFit(this)
             % check input
             if this.optsButton.FitCheckButton.Value
@@ -536,6 +557,10 @@ classdef DispersionTab < EmptyTab
             showLegend(this);
         end %showFit
         
+        % THIS = SHOWMASK(THIS) respond to checkbox callback (show mask) or
+        % to SHOWDATA(). Depending on the checkbox state it deletes or
+        % displays the dispersion masked data. Duplicates are avoided by checking
+        % the presence of the wanted dispersion masked data in the main axis.
         function this = showMask(this)
             % check input
             if this.optsButton.MaskCheckButton.Value
@@ -562,6 +587,12 @@ classdef DispersionTab < EmptyTab
             drawnow;
         end %showMask
         
+        % THIS = SHOWRESIDUAL(THIS) respond to checkbox callback (show residual) or
+        % to SHOWDATA(). Depending on the checkbox state it deletes or
+        % displays the dispersion fit residuals. 
+        % This function fires also the creation and update of the histogram
+        % residual plot.
+        % Residual plot required the presence of fit data.
         function this = showResidual(this)
             % check input
             if this.optsButton.ResidualCheckButton.Value
@@ -607,6 +638,9 @@ classdef DispersionTab < EmptyTab
             drawnow;
         end %showResidual
         
+        % THIS = SHOWLEGEND(THIS) respond to checkbox callback (show legend) or
+        % to SHOWDATA(). Depending on the checkbox state it deletes or
+        % displays the legend.
         function this = showLegend(this)
            if this.optsButton.LegendCheckButton.Value
                % check if children
@@ -623,8 +657,10 @@ classdef DispersionTab < EmptyTab
     end
     
     % Plot methods: residuals
-    methods (Access = public)               
-        % Create residual axis
+    methods (Access = public)  
+        % THIS = CREATERESIDUALAXIS(THIS) creates two axis for the residual
+        % plot. The second axis (histogram axis) is linked to the first one
+        % for X axis scale and limit.
         function this = createResidualAxis(this)
             % move the main axis
             if isempty(this.axezone)
@@ -652,7 +688,9 @@ classdef DispersionTab < EmptyTab
             addlistener(this, 'UpdateHist', @(~,~) makeResidualHistogram(this));
         end %createResidualAxis
         
-        % Add an histogram of the residuals
+        % THIS = MAKERESIDUALHISTOGRAM(THIS) fills the histogram axis to
+        % display the distribution of the residuals. A normality test is
+        % also applied and set as title.
         function this = makeResidualHistogram(this)
             % check existence
             if isempty(this.axeres); return; end
@@ -687,8 +725,13 @@ classdef DispersionTab < EmptyTab
             end
         end %makeResidualHistogram
         
-        % Add fast visualisation of parent object if clicking on any data
-        % point in main axis
+        % THIS = SELECTDATA(THIS,S,E) responds to the selection of one data
+        % point (dispersion data). 
+        % If a point is selected, SELECTDATA creates a new axis where
+        % zone data of the selected point are displayed. If the axis
+        % already axists SELECTDATA updates automaticaly the zone data
+        % according to the new selected point. If the same point is clicked
+        % again, SELECTDATA deletes the axis.
         function this = selectData(this, src, e)
             % check source 
             if strcmp(src.Tag, 'SelectedPoint')
@@ -715,7 +758,6 @@ classdef DispersionTab < EmptyTab
                 src.Tag = 'SelectedPoint';
                 selectData(this, src, []);
                 return
-                src = e.AffectedObject;
             end
             
             % get the associated data
@@ -832,20 +874,20 @@ classdef DispersionTab < EmptyTab
                 return
             end
         end % selectData
-                    
-        function clearSelectedPoint(this)
-            % call selectData like if user hit the selected point
-            src.Tag = 'SelectedPoint';
-            selectData(this, src, []);
-        end
+         
+%         function clearSelectedPoint(this)
+%             % call selectData like if user hit the selected point
+%             src.Tag = 'SelectedPoint';
+%             selectData(this, src, []);
+%         end
     end
     
     % Other function
     methods (Access = public)
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Change for legend sorting [Manu]
-        % this function sort the axis children according to their tag
-        % as well as their type (data1 fit1 data2 fit2 ...)
+        % THIS = SORTCHILDREN(THIS) sorts the current axis children
+        % (dispersion plots) according to their type and tag (i.e. plotID).
+        % Because legend is automaticaly updated according to this order,
+        % SORTCHILDREN sorts also the legend input.
         function this = sortChildren(this)
             % Check if several plot
             if numel(this.axe.Children) > 1
@@ -858,57 +900,56 @@ classdef DispersionTab < EmptyTab
                 this.axe.Children = this.axe.Children(flipud(idx));
             end
         end %sortChildren
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        % This function check the legend and check for duplicates from hData. If
-        % duplicates are found, the displayName property is added to the
-        % input. If this property is not longer required (no duplicate), it
-        % is removed.
-        function this = checkLegend(this, hData)
-            % check children number
-            if numel(this.hData) < 2
-                return
-            end
-            % to help: will be removed latter [M.Petit]
-            type = {'Data','Fit','Mask'};
-            plottype = {'ErrorBar','Line','Scatter'};
-            % check if other hData are coming from same file
-            fileID = arrayfun(@(x) getRelaxProp(x, 'fileID'),...
-                                           this.hData, 'Uniform', 0);
-            idx = find(strcmp(fileID, getRelaxProp(hData, 'fileID')));
-
-            % change legend
-            if numel(idx) > 1
-                tf = contains(get(this.axe.Children,'Tag'),...
-                    getRelaxProp(hData, 'fileID'));
-                hPlot = this.axe.Children(tf);
-                % check if multiple plot with same legend
-                if numel(hPlot) > 1 && ~all(strcmpi(get(hPlot,'Type'),...
-                                            hPlot(1).Type) == 0)
-                    extend = 1;
-                else
-                    extend = 0;
-                end
-                % loop over the plot
-                for j = 1:numel(hPlot)
-                    % get idxZone
-                    idxZone = strsplit(hPlot(j).Tag,'@');
-                    idxZone = str2double(idxZone{end});
-                    % get type
-                    tf = strcmpi(plottype, hPlot(j).Type);
-                    % assign legend: simplify or extend
-                    leg = getLegend(hData, idxZone, type{tf}, extend);
-                    if ~strcmp(hPlot(j).DisplayName, leg)
-                        hPlot(j).DisplayName = leg;
-                    end
-                end
-            end
-        end %checkLegend
+%         % This function check the legend and check for duplicates from hData. If
+%         % duplicates are found, the displayName property is added to the
+%         % input. If this property is not longer required (no duplicate), it
+%         % is removed.
+%         function this = checkLegend(this, hData)
+%             % check children number
+%             if numel(this.hData) < 2
+%                 return
+%             end
+%             % to help: will be removed latter [M.Petit]
+%             type = {'Data','Fit','Mask'};
+%             plottype = {'ErrorBar','Line','Scatter'};
+%             % check if other hData are coming from same file
+%             fileID = arrayfun(@(x) getRelaxProp(x, 'fileID'),...
+%                                            this.hData, 'Uniform', 0);
+%             idx = find(strcmp(fileID, getRelaxProp(hData, 'fileID')));
+% 
+%             % change legend
+%             if numel(idx) > 1
+%                 tf = contains(get(this.axe.Children,'Tag'),...
+%                     getRelaxProp(hData, 'fileID'));
+%                 hPlot = this.axe.Children(tf);
+%                 % check if multiple plot with same legend
+%                 if numel(hPlot) > 1 && ~all(strcmpi(get(hPlot,'Type'),...
+%                                             hPlot(1).Type) == 0)
+%                     extend = 1;
+%                 else
+%                     extend = 0;
+%                 end
+%                 % loop over the plot
+%                 for j = 1:numel(hPlot)
+%                     % get idxZone
+%                     idxZone = strsplit(hPlot(j).Tag,'@');
+%                     idxZone = str2double(idxZone{end});
+%                     % get type
+%                     tf = strcmpi(plottype, hPlot(j).Type);
+%                     % assign legend: simplify or extend
+%                     leg = getLegend(hData, idxZone, type{tf}, extend);
+%                     if ~strcmp(hPlot(j).DisplayName, leg)
+%                         hPlot(j).DisplayName = leg;
+%                     end
+%                 end
+%             end
+%         end %checkLegend
         
-        % This function set the color, the marker and the style for the
-        % hDispersion object according to the possible Color, Marker and
-        % Style defined in properties.
-        % All these properties are stored in a structure.
+        % THIS = GETPLOTSPEC(THIS, HDATA) updates the current PlotSpec
+        % structure according to the input HDATA. HDATA is a Dispersion
+        % object. PlotSpec is an array of structure containing the plot
+        % specification (Color, Marker) for each graphical object.
         function this = getPlotSpec(this, hData)
             % set properties
             if isempty(this.hData)
@@ -946,7 +987,8 @@ classdef DispersionTab < EmptyTab
             end
         end % setPlotSpec  
         
-        % set label
+        % THIS = SETLABEL(THIS, HDATA) sets the X and Y labels of the main
+        % axis according to the input HDATA. HDATA is a Dispersion object.
         function this = setLabel(this, hData)
             % check axis
             if isempty(this.axe.XLabel.String)
@@ -972,7 +1014,9 @@ classdef DispersionTab < EmptyTab
     
     % Data Options methods
     methods
-        % Display the mouse position
+        % MOVEMOUSE(THIS) updates the X/Y position over the main axis
+        % according to the position of the mouse. If the mouse is outside
+        % the main axis then position are reset (empty).
         function moveMouse(this)
             % get the current position
             C = get(this.axe,'CurrentPoint');
@@ -990,7 +1034,8 @@ classdef DispersionTab < EmptyTab
             drawnow;
         end %moveMouse
         
-        % Change axis scaling
+        % SETAXIS(THIS, SRC) updates the axis scaling according to the
+        % state of the popup menu.
         function setAxis(this, src)
             % check which axis need to be update
             if strcmp(src.Tag,'XAxisPopup')
@@ -1000,7 +1045,11 @@ classdef DispersionTab < EmptyTab
             end           
         end %setAxis
         
-        % Mask data
+        % MASKDATA(THIS) responds to the pushbutton 'mask data','reset
+        % mask' and create a draggable rectangle to select the data to
+        % mask. Double-click on the draggable rectangle to validate the
+        % selection.
+        % If masked data are selected, they are unmasked.
         function maskData(this)
             % check if data are displayed
             if ~this.optsButton.DataCheckButton.Value || isempty(this.hData)
@@ -1050,8 +1099,10 @@ classdef DispersionTab < EmptyTab
             setMask(this.DisplayManager, this, eventdata);
         end % resetMaskData
         
-        % clearGroup invalid handle in the hGroup structure. If hGroup is
-        % provide, clearGroup is applied only on these group(s)
+        % CLEARGROUP(THIS, HGROUP) check the handle validity of the HGROUP
+        % input. HGROUP should be a structure containing graphical objects.
+        % If no HGROUP are specified, CLEARGROUP check the HGROUP property
+        % structure stored in the tab.
         function this = clearGroup(this, hGroup)
             if nargin < 2
                % loop over the structure and remove the invalid handle
@@ -1067,7 +1118,11 @@ classdef DispersionTab < EmptyTab
             end
         end
         
-        % add graphical object to a specific group
+        % THIS = ADDPLOTOBJ(THIS, IDXGROUP, HPLOT) adds graphical object
+        % handles HPLOT to the hGroup structure property specified by IDXGROUP.
+        % HPLOT should be an array of graphical object (line, errorbar,...) 
+        % and HPLOT a scalar indicating the index of the array of structure hGroup
+        % where object are inserted.
         function this = addPlotObj(this, idxGroup, hPlot)
             % check input 
             if isempty(idxGroup) || isempty(hPlot); return; end
@@ -1075,7 +1130,8 @@ classdef DispersionTab < EmptyTab
             this.hGroup(idxGroup).hPlot = [this.hGroup(idxGroup).hPlot hPlot];
         end %addPlotObj
         
-        % get legend: avoid fit
+        % THIS = GETLEGEND(THIS) returned the current legend of the main
+        % axis. Fit legend input (dispersion fit object) are avoided.
         function leg = getLegend(this)
             % get the data plotted
             hData = findobj(this.axe.Children,'Type','ErrorBar');
