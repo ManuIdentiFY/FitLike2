@@ -15,12 +15,9 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         y@double = [];              % main measure Y ('R1','fid',...)
         dy@double = [];             % error bars on Y
         mask@logical = true(0);     % mask the X and Y arrays
-    end   
-    
-    properties (Access = public)
         xLabel@char = '';           % name of the  variable X ('time','Bevo',...)
         yLabel@char = '';           % name of the variable Y ('R1','fid',...)
-    end
+    end   
     
     % file processing
     properties (Access = public, SetObservable)
