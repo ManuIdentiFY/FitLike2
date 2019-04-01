@@ -38,15 +38,15 @@ function export_data(hFile, path)
 % 2 Monoexp     Monoexp          ...
 %
 % DATA
-% X   Y1  Y2  Y3...
-% ... ... ... ... ...
-% ... ... ... ... ...
-% ... ... ... ... ...
+% X [Unit]  Y1 [Unit]  Y2 [Unit] ...
+%   ...        ...        ...    ...
+%   ...        ...        ...    ...
+%   ...        ...        ...    ...
 %
 % ERROR
-% X   DY1 DY2 DY3...
-% ... ... ... ... ...
-% ... ... ... ... ...
+% X [Unit]   DY1 [Unit] DY2 [Unit] ...
+%   ...          ...       ...     ...
+%   ...          ...       ...     ...
 %
 % Note: number (1,2,3,...) corresponds to the header index (dataset,
 % filename,...) i.e. Y1 corresponds to dataset{1}, sequence{1},... Same
@@ -151,6 +151,13 @@ for k = 1:n
     DY(idx,k) = dy;
 end %for loop
 
+% get units
+x_units = arrayfun(@(x) regexp(x.xLabel,'(?<=\()\S+(?=\))','match'), dispersion, 'Uniform', 0);
+y_units = arrayfun(@(x) regexp(x.yLabel,'(?<=\()\S+(?=\))','match'), dispersion, 'Uniform', 0);
+
+x_units = cellfun(@(x) x{end}, x_units, 'Uniform', 0); % last matching
+y_units = cellfun(@(x) x{end}, y_units, 'Uniform', 0); % last matching
+
 % struct processing output
 processing = [vertcat({'Dispersion index:'},...
     cellfun(@num2str, num2cell(1:size(processing,1)-1)', 'Uniform', 0)), processing];
@@ -180,11 +187,11 @@ end
 % set data
 % + Y values
 fprintf(fid,'\r\nDATA:,\r\n');
-fprintf(fid,'%8s,\t','X');
+fprintf(fid,'%8s,\t',['X [',x_units{1},']']);
 for k = 1:size(Y,2)-1
-    fprintf(fid,'%8s,\t',['Y',num2str(k)]);
+    fprintf(fid,'%8s,\t',['Y',num2str(k),' [',y_units{k},']']);
 end
-fprintf(fid,'%8s,\r\n',['Y',num2str(size(Y,2))]);
+fprintf(fid,'%8s,\r\n',['Y',num2str(size(Y,2)),' [',y_units{end},']']);
 
 format = [repmat('%8f,\t',1,size(Y,2)),'%8f,\r\n'];
 for k = 1:numel(X) %line by line to avoid NaN problem
@@ -193,11 +200,11 @@ end
 
 % + DY values
 fprintf(fid,'\r\nERROR:,\r\n');
-fprintf(fid,'%8s,\t','X');
+fprintf(fid,'%8s,\t',['X [',x_units{1},']']);
 for k = 1:size(DY,2)-1
-    fprintf(fid,'%8s,\t',['DY',num2str(k)]);
+    fprintf(fid,'%8s,\t',['DY',num2str(k),' [',y_units{k},']']);
 end
-fprintf(fid,'%8s,\r\n',['DY',num2str(size(DY,2))]);
+fprintf(fid,'%8s,\r\n',['DY',num2str(size(Y,2)),' [',y_units{end},']']);
 
 format = [repmat('%8f,\t',1,size(DY,2)),'%8f,\r\n'];
 for k = 1:numel(X) %line by line to avoid NaN problem
