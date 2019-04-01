@@ -26,6 +26,10 @@ addFile(fig, data(2:10)); pause(0.01); %add data again
 checkFile(fig, data(2)); %manually check some files, you can do this directly in the window!
 getSelectedFile(fig)
 
+%% Change the selected data tree. 
+% Again, you can do this directly in the window by selected another tab.
+setTree(fig, 'Zone'); % change to the Zone tab
+
 %% Get the selected data. 
 % Selection of data can be done directly in the window by clicking on the
 % checkboxes in the data tree.
@@ -35,10 +39,6 @@ zone = getData(data(2),'Zone'); % just for the example, get zone data
 checkData(fig, zone, 1, 1); %quite complex here, just for the example
 
 [hData, idxZone] = getSelectedData(fig)
-
-%% Change the selected data tree. 
-% Again, you can do this directly in the window by selected another tab.
-setTree(fig, 'Zone'); % change to the Zone tab
 
 %% Reset the file tree: unchecked all nodes
 reset(fig);
