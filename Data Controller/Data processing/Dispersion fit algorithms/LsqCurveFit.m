@@ -34,32 +34,35 @@ classdef LsqCurveFit < FitAlgorithm
                             'FunctionTolerance',this.options.FunctionTolerance,...
                             'MaxIterations',this.options.MaxIterations,...
                             'StepTolerance',this.options.StepTolerance);
+            
+            % If Levenberg-Marquadt remove boundaries
+            if strcmp(opts.Algorithm,'levenberg-marquardt')
+                lb = []; ub = [];
+            end
                         
             % try/catch structure
             try
                 % check the weight options
                 switch this.options.Weight
                     case 'none'
-                        % apply fit 
-                        [coeff,resnorm,residuals,exitflag,~,~,jacobian] = lsqcurvefit(fun,...
+                        % apply fit
+                        [coeff,resnorm,residuals,~,~,~,jacobian] = lsqcurvefit(fun,...
                             x0, xdata, ydata, lb, ub, opts);
                     case 'data'
                         % apply fit with 1./(dydata.^2) weight
-                        [coeff,resnorm,residuals,exitflag,~,~,jacobian] = lsqnonlin(@wfun,...
-                            x0, ub, lb, opts, xdata, ydata, 1./(dydata.^2)); 
+                        [coeff,resnorm,residuals,~,~,~,jacobian] = lsqnonlin(@wfun,...
+                            x0, ub, lb, opts, xdata, ydata, 1./(dydata.^2));
                     otherwise
                         % apply robust fit:
                         % FEX function from J.-A. Adrian (JA)
                         % see https://github.com/JAAdrian/MatlabRobustNonlinLsq/blob/master/robustlsqcurvefit.m
-                        [coeff,resnorm,residuals,exitflag,~,~,jacobian] = robustlsqcurvefit(fun,...
-                            x0, xdata, ydata,lb, ub,...
-                            this.options.Weight, opts);
+                        [coeff,resnorm,residuals,~,~,~,jacobian] = robustlsqcurvefit(fun,...
+                            x0, xdata, ydata,lb, ub, this.options.Weight, opts);
                 end           
             catch ME
                 coeff = x0;
                 error = nan(size(x0));
                 gof = struct('sse',[],'rsquare',[],'adjrsquare',[],'RMSE',[]);
-                exitflag = -1;
                 disp(ME)
                 return
             end
