@@ -2,7 +2,6 @@ classdef DataFit < ProcessDataUnit%DataModel
     %DATAFIT Summary of this class goes here
     %   Detailed explanation goes here
     
-    
     properties (Abstract)
         modelName;          % character string, name of the model, as appearing in the figure legend
         modelEquation;      % character string, equation that relates the Larmor frequency (Hz) to the parameters to R1 (s^{-1})
@@ -75,13 +74,8 @@ classdef DataFit < ProcessDataUnit%DataModel
             % gather data and make output structure
             new_data = formatFitData(this, res);            
 %             
-%             % update best values (take care of the fixed parameters)
-%             this.bestValue = this.startPoint;
-%             this.bestValue(~this.isFixed) = res.bestValue;
-%             
 %             % update sub-models (if any)
-%             this = updateSubModel(this);
-            
+%             this = updateSubModel(this);          
         end %applyProcess
                    
         % format output fit data (if childObj is created from fit results)
@@ -196,20 +190,6 @@ classdef DataFit < ProcessDataUnit%DataModel
         
         % set the fixed parameters for a given 
         function fhfixed = setFixedParameter(this, fh)
-%             paramlist = '';
-%             n = 0;
-%             for i = 1:length(this.isFixed)
-%                 if ~this.isFixed(i)
-%                     n = n+1;
-%                     paramlist = [paramlist 'c(' num2str(n) ')'];
-%                 else
-%                     paramlist = [paramlist num2str(this.startPoint(i))];
-%                 end
-%                 if i ~=length(this.isFixed)
-%                     paramlist = [paramlist ','];
-%                 end
-%             end
-%             fhfixed = eval(['@(c,x) fh([' paramlist '],x)']);
             
             fhfixed = @(c,x)localFunction(c,x);
             
