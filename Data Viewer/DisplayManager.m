@@ -24,6 +24,7 @@ classdef DisplayManager < handle
     
     events
         PlotError
+        SelectTab
     end
     
     methods (Access = public)
