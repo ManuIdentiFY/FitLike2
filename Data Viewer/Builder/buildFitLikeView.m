@@ -47,7 +47,7 @@ uimenu(viewMenu, 'Label', 'Create Figure','Accelerator','F','Tag','Create_Fig');
 
 % +Tools menu
 filterMenu = uimenu( fig, 'Label', 'Tools');
-% uimenu( filterMenu, 'Label', 'Filter','Tag','Filter');
+uimenu( filterMenu, 'Label', 'Change data units','Tag','Units');
 % uimenu( filterMenu, 'Label', 'Mean','Tag','Mean');
 % uimenu( filterMenu, 'Label', 'Normalise','Tag','Normalise');
 % uimenu( filterMenu, 'Label', 'Boxplot','Tag','Boxplot');

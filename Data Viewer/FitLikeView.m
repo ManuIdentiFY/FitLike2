@@ -71,7 +71,9 @@ classdef FitLikeView < handle
             set(this.gui.Create_Fig, 'callback', ...
                 @(src, event) this.FitLike.createFig());
             %% Tool Menu
-            % Filter function
+            % Change units function
+            set(this.gui.Units, 'callback',...
+                @(src, event) this.FitLike.changeUnits());
             
             % Mean function
             

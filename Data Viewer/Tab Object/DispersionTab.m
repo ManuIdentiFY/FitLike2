@@ -13,7 +13,7 @@ classdef DispersionTab < EmptyTab
     % Note2: Code is quite complex and could probably be simplify by
     % creating new classes of graphical object that linked Dispersion
     % object to the graphical object. In this case, listeners that respond
-    % to the data update could be simplified.
+    % to the data updates could be simplified.
     %
     % M.Petit - 11/2018
     % manuel.petit@inserm.fr
@@ -38,13 +38,9 @@ classdef DispersionTab < EmptyTab
         SelectedPoint
     end
     
-    % Axis properties
-    properties (Access = public, SetObservable) %%??? [Manu]
-        AxePosition = [0.09 0.09 0.86 0.86]; %position of the main axis
-    end
-    
     % Axis and Control properties
     properties (Access = public)
+        AxePosition = [0.09 0.09 0.86 0.86]; %position of the main axis
         optsButton % all the display/data options uicontrol
         axezone  % axis to visualise quickly zone data
         axeres   % axis for the scatter plot (residuals)
@@ -166,10 +162,12 @@ classdef DispersionTab < EmptyTab
                 end
 
                 % add listener 
-                l(1,1) = addlistener(hData,{'y','dy','mask','processingMethod'},...
+                l(1,1) = addlistener(hData,{'x','y','dy','mask','processingMethod'},...
                             'PostSet', @(src, event) updateData(this, src, event));
                 l(2,1) = addlistener(hData,'DataDeletion',...
                             @(src, event) deletePlot(this, src));
+                l(3,1) = addlistener(hData,{'xLabel','yLabel'},...
+                            'PostSet', @(src, event) setLabel(this, src, event));
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % Need to solve this issue: How to add listener to
                 % underlined relaxObj. [Manu]
@@ -189,7 +187,7 @@ classdef DispersionTab < EmptyTab
             showResidual(this);
             
             % + axis
-            setLabel(this, hData);
+            setLabel(this, hData, []);
         end %addPlot
         
         % THIS = DELETEPLOT(THIS, HDATA, IDXZONE) removes dispersion data
@@ -295,7 +293,8 @@ classdef DispersionTab < EmptyTab
                     elseif isempty(src.y(src.mask))
                         % remove plot
                         delete(hPlot); this = clearGroup(this, this.hGroup(idx(k)));
-                    elseif ~isequal(src.y(src.mask), hPlot.YData')
+                    elseif ~isequal(src.y(src.mask), hPlot.YData') ||...
+                            ~isequal(src.x(src.mask), hPlot.XData')
                         % update
                         hPlot.XData = src.x(src.mask);
                         hPlot.YData = src.y(src.mask);
@@ -331,7 +330,8 @@ classdef DispersionTab < EmptyTab
                     elseif isempty(src.y(~src.mask))
                         % remove plot
                         delete(hPlot); this = clearGroup(this, this.hGroup(idx(k)));
-                    elseif ~isequal(src.y(~src.mask), hPlot.YData')
+                    elseif ~isequal(src.y(~src.mask), hPlot.YData')  ||...
+                            ~isequal(src.x(~src.mask), hPlot.XData')
                         % update
                         hPlot.XData = src.x(~src.mask);
                         hPlot.YData = src.y(~src.mask);
@@ -989,7 +989,13 @@ classdef DispersionTab < EmptyTab
         
         % THIS = SETLABEL(THIS, HDATA) sets the X and Y labels of the main
         % axis according to the input HDATA. HDATA is a Dispersion object.
-        function this = setLabel(this, hData)
+        % SETLABEL responds also to changes in DataUnit objects on the
+        % xLabel, yLabel properties.
+        function this = setLabel(this, hData, event)
+            % check if event
+            if ~isempty(event)
+                hData = event.AffectedObject; %respond to listener
+            end
             % check axis
             if isempty(this.axe.XLabel.String)
                 % set name defined in hData
@@ -1001,12 +1007,14 @@ classdef DispersionTab < EmptyTab
                 if ~strcmp(xName, hData.xLabel)
                     txt = 'Warning: A new label for x-axis is detected!\n';
                     throwWrapMessage(this.DisplayManager, txt)
+                    xlabel(this.axe, hData.xLabel,'FontSize',10)
                 end
                 
                 yName = this.axe.YLabel.String;
                 if ~strcmp(yName, hData.yLabel)
                     txt = 'Warning: A new label for y-axis is detected!\n';
                     throwWrapMessage(this.DisplayManager, txt)
+                    ylabel(this.axe, hData.yLabel,'FontSize',10)
                 end               
             end
         end %setLabel

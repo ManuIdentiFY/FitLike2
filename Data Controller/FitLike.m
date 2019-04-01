@@ -527,6 +527,20 @@ classdef FitLike < handle
             createFig(h.Children);
         end %createFig          
         
+        %%% Tool Menu
+        % CHANGEUNITS(this) allows to change units of the data. 
+        function this = changeUnits(this)
+            % get the selected data
+            [dataObj, ~] = getSelectedData(this.FileManager);
+            % check if empty
+            if ~isempty(dataObj)
+                % change all object (even if only one zone is selected)
+                dataObj = unique(dataObj);
+                % create a dialog box to change units
+                gui_change_units(dataObj);
+            end
+        end %changeUnits
+        
         %%% Display Menu
         % Show/Hide FileManager, DisplayManager, Processing Manager,...
         function showWindow(this, src)
@@ -540,7 +554,6 @@ classdef FitLike < handle
             end
         end %showWindow
 
-        
         %%% Help Menu
         % Documentation function: allow to open the user documentation
         function help(this)
