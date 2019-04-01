@@ -66,7 +66,7 @@ end
 % ask user a path if needed
 if nargin < 2
     path = uigetdir(pwd, 'Export Dispersion data');   
-    if isempty(path); return; end
+    if isequal(path,0); return; end
 end
 
 % check if files contains dispersion data
