@@ -20,7 +20,7 @@ classdef LsqCurveFit < FitAlgorithm
             this = this@FitAlgorithm;
             
             % create default options
-            this.options = LsqCurveFit.getOptions('default');
+            this.options = getOptions(this, 'default');
         end
     end
     
@@ -30,7 +30,7 @@ classdef LsqCurveFit < FitAlgorithm
             % create option structure 
             opts = optimoptions(@lsqcurvefit,...
                             'Algorithm',this.options.Algorithm,...
-                            'Display',this.options.Display,...
+                            'Display','off',...
                             'FunctionTolerance',this.options.FunctionTolerance,...
                             'MaxIterations',this.options.MaxIterations,...
                             'StepTolerance',this.options.StepTolerance);
@@ -83,9 +83,7 @@ classdef LsqCurveFit < FitAlgorithm
         end % applyFit
     end
     
-    methods (Static)
-        
-        
+    methods (Static)       
         % Calculate the goodness of fit: rsquare, adjrsquare, RMSE, SSE
         function gof = getGOF(coeff, ydata, residual, resnorm)
             % calculate the sum of square total and error
@@ -99,34 +97,46 @@ classdef LsqCurveFit < FitAlgorithm
             gof.adjrsquare = 1 - ((nData-1)/(nData - nCoeff))*(sse/sst); 
             gof.RMSE = sqrt(resnorm);
         end %getGOF  
-        
-        % Create the options structure (default) or get the possible input
-        % for the option structure
-        function options = getOptions(flag)
+    end
+    
+    % Set/Get options
+    methods               
+        % Get solver options. Possible flag are:
+        % 'default': get the default options
+        % 'all': get all the possible options
+        % 'format': get the format of the options (if uitable)
+        % 'current': get the current options
+        function options = getOptions(this, flag)
             % check input
             if strcmp(flag,'default')
                 % create a structure with default option
                 options = struct('Algorithm','levenberg-marquardt',...
-                    'Display','off',...
                     'FunctionTolerance',1e-6,...
                     'MaxIterations',400,...
                     'StepTolerance',1e-6,...
                     'Weight','none');
-            else
+            elseif strcmp(flag,'all')
                 % create a structure with all possible string and default numeric option
                 options = struct('Algorithm',{{'trust-region-reflective','levenberg-marquardt'}},...
-                    'Display',{{'off','none','iter','final'}},...
                     'FunctionTolerance',1e-6,...
                     'MaxIterations',400,...
                     'StepTolerance',1e-6,...
                     'Weight',{{'none','data','andrews','bisquare','cauchy','fair',...
-                                'huber','logistic','ols','talwar','welsch'}});                
+                                'huber','logistic','ols','talwar','welsch'}});   
+            elseif strcmp(flag,'format')
+                % create a structure with the format the options
+                options = {{'trust-region-reflective','levenberg-marquardt'};...
+                    'numeric';...
+                    'numeric';...
+                    'numeric';...
+                    {'none','data','andrews','bisquare','cauchy','fair',...
+                           'huber','logistic','ols','talwar','welsch'}};                 
+            else
+                % create a structure with the current options
+                options = this.options;
             end
         end %getOptions
-    end
-    
-    % Set/Get options
-    methods
+        
         % Set options
         function this = setOptions(this, fld, val)  
             % check input
@@ -144,30 +154,23 @@ classdef LsqCurveFit < FitAlgorithm
                         else
                             this.options.Algorithm = val;
                         end
-                    case 'Display'
-                        if ~any(strcmp({'off','none','iter','final'},val))
-                            warning('LsqCurveFit: wrong display')
-                            return
-                        else
-                            this.options.Display = val;
-                        end
                     case 'FunctionTolerance'
                         if ~isnumeric(val) || val < 0
-                            warning('LsqCurveFit: wrong function tolerance')
+                            warndlg('LsqCurveFit: wrong function tolerance')
                             return
                         else
                             this.options.FunctionTolerance = val;
                         end
                     case 'MaxIterations'
                         if ~isnumeric(val) || val < 0
-                            warning('LsqCurveFit: wrong max iterations')
+                            warndlg('LsqCurveFit: wrong max iterations')
                             return
                         else
                             this.options.MaxIterations = val;
                         end
                     case 'StepTolerance'
                         if ~isnumeric(val) || val < 0
-                            warning('LsqCurveFit: wrong step tolerance')
+                            warndlg('LsqCurveFit: wrong step tolerance')
                             return
                         else
                             this.options.StepTolerance = val;
