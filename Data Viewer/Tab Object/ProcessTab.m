@@ -134,9 +134,8 @@ classdef ProcessTab < uix.Container & handle
        function this = removeProcess(this, src)
            % get index of the selected button from the HBox matching
            tf = src.Parent.Parent.Children == src.Parent; 
-           idx = find(flip(tf))-1;
            % remove the process
-           this.ProcessArray(idx) = [];
+           this.ProcessArray(find(tf)-1) = [];
            % remove this line
            cellfun(@(x) delete(x.Children(tf)), this.vbox, 'Uniform', 0);
            
