@@ -8,6 +8,10 @@ classdef ProcessingManager < handle
         FitLike % Presenter
     end
     
+    properties (Hidden)
+        hFile@RelaxObj %handle to the RelaxObj stored in ProcessingManager.
+    end
+    
     methods
         % Constructor
         function this = ProcessingManager(FitLike)
@@ -180,6 +184,59 @@ classdef ProcessingManager < handle
                 src.Value = 1; % always select one item
             end
         end %switchProcessMode
+        
+        % Apply process pipeline
+        function this = applyProcess(this)
+            % check input
+            if isempty(this.hFile)
+                throwWrapMessage(this, 'No file to process!\n');
+                return
+            end
+            % check the type of pipeline to achieved
+            if this.gui.SimulationRadioButton.Value
+                % TO DO
+            elseif this.gui.BatchRadioButton.Value
+                tab = this.gui.tab.SelectedTab.Children; %selected tab
+                % check if pipeline is empty
+                if isempty(tab.ProcessArray)
+                    throwWrapMessage(this, 'No process to apply!\n');
+                    return
+                end
+                % check the current pipeline
+                if tab.checkProcess(this)
+                    % create the pipeline from the input
+                    % TO DO
+                    % apply the pipeline to the data stored
+                    % TO DO
+                end
+            else
+                throwWrapMessage(this, 'Unknown type of processing!\n');
+            end
+        end %applyProcess
+        
+        % ADDFILE(THIS, RELAXOBJ) adds files to the ProcessingManager.
+        % These files are used for the applyProcess() method.
+        % RELAXOBJ should be an array of RelaxObj.
+        function this = addFile(this, relaxObj)
+            % check input
+            if isempty(relaxObj)
+                throwWrapMessage(this, 'No file to add!\n');
+            elseif ~isa(relaxObj, 'RelaxObj')
+                throwWrapMessage(this, 'Files added should be RelaxObj array!\n');
+            else
+                this.hFile = [this.hFile, relaxObj];
+            end
+        end %addFile
+        
+        % GETFILE(this) returned the files added to ProcessingManager.
+        function relaxObj = getFile(this)
+            % check if files
+            if isempty(this.hFile)
+                relaxObj = [];
+            else
+                relaxObj = this.hFile;
+            end
+        end %getFile
         
         % Wrapper to throw messages in the console or in the terminal in
         % function of FitLike input.

@@ -4,6 +4,6 @@ function launcher()
 setup();
 
 % Create application
-this = FitLike();
+FitLike();
 end % launcher
 
