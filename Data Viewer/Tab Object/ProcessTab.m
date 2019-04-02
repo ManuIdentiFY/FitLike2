@@ -15,6 +15,7 @@ classdef ProcessTab < uix.Container & handle
        ArrowIconUp % arrow up
        ArrowIconDown %arrow down
        DeleteIcon %delete 
+       SettingIcon %setting
     end
     
     methods
@@ -47,9 +48,6 @@ classdef ProcessTab < uix.Container & handle
             this.vbox{4} = uix.VButtonBox( 'Parent', this.hbox,...
                 'VerticalAlignment','top','Padding', 2,...
                 'ButtonSize',[150 22]);
-            this.vbox{5} = uix.VButtonBox( 'Parent', this.hbox,...
-                'VerticalAlignment','top','Padding', 2,...
-                'ButtonSize',[150 22]);
             
             % create titles for the boxes
             uicontrol( 'Parent', this.vbox{1}, 'Style', 'text', 'String', 'Name',...
@@ -58,9 +56,7 @@ classdef ProcessTab < uix.Container & handle
                 'FontName','Helvetica','FontSize',8,'FontWeight','bold');
             uicontrol( 'Parent', this.vbox{3}, 'Style', 'text', 'String', 'Output',...
                 'FontName','Helvetica','FontSize',8,'FontWeight','bold');
-            uicontrol( 'Parent', this.vbox{4}, 'Style', 'text', 'String', 'Parameter',...
-                'FontName','Helvetica','FontSize',8,'FontWeight','bold');
-            uix.Empty( 'Parent', this.vbox{5});
+            uix.Empty( 'Parent', this.vbox{4});
             
             % add "add" pushbutton and empty space
             uicontrol( 'Parent', this.vbox{1},...
@@ -71,22 +67,22 @@ classdef ProcessTab < uix.Container & handle
             uix.Empty( 'Parent', this.vbox{2});
             uix.Empty( 'Parent', this.vbox{3});
             uix.Empty( 'Parent', this.vbox{4});
-            uix.Empty( 'Parent', this.vbox{5});
 
             % set width
-            this.hbox.Widths = [-1.8 -0.8 -0.8 -2 -0.7]; 
+            this.hbox.Widths = [-1.8 -1.2 -1.2 -1]; 
             drawnow;
             % get the icons
             icons = load('icon.mat');
             this.ArrowIconUp = icons.arrow_up;
             this.ArrowIconDown = icons.arrow_down;
             this.DeleteIcon = icons.delete_ico;
+            this.SettingIcon = icons.setting_ico;
         end %ProcessTab
     end
     
     methods (Access = public)
        % Add new line
-       function this = addLine(this, name, intype, outtype, parameter)
+       function this = addLine(this, name, intype, outtype)
            % check if this process already exists
            if isempty(this.ProcessArray)
                % just continue
@@ -101,13 +97,12 @@ classdef ProcessTab < uix.Container & handle
                 'FontName','Helvetica','FontSize',8);
             uicontrol( 'Parent', this.vbox{3}, 'Style', 'text', 'String', outtype,...
                 'FontName','Helvetica','FontSize',8);
-            if ~isempty(parameter)
-                % TO DO
-            else
-                uix.Empty( 'Parent', this.vbox{4});
-            end
+
             % add some buttons
-            h = uix.HButtonBox( 'Parent', this.vbox{5}, 'ButtonSize',[20 20]);
+            h = uix.HButtonBox( 'Parent', this.vbox{4}, 'ButtonSize',[20 20]);
+            uicontrol( 'Parent', h, 'Style', 'pushbutton',...
+                'CData', this.SettingIcon, 'Tag', 'Parameter',...
+                'Callback',@(src, event) changeSettings(this, src));
             uicontrol( 'Parent', h, 'Style', 'pushbutton',...
                 'CData', this.ArrowIconUp, 'Tag', 'Up',...
                 'Callback',@(src, event) moveProcess(this, src));
@@ -115,7 +110,8 @@ classdef ProcessTab < uix.Container & handle
                 'CData', this.ArrowIconDown, 'Tag', 'Down',...
                 'Callback',@(src, event) moveProcess(this, src));
             uicontrol( 'Parent', h, 'Style', 'pushbutton',...
-                'CData', this.DeleteIcon, 'Callback',@(src, event) removeProcess(this, src));
+                'CData', this.DeleteIcon,'Tag', 'Delete',...
+                'Callback',@(src, event) removeProcess(this, src));
             % reorganize object
             cellfun(@(x) uistack(x.Children(1),'down'), this.vbox, 'Uniform', 0);
             drawnow;
@@ -124,11 +120,11 @@ classdef ProcessTab < uix.Container & handle
        % Add new process
        function this = addProcess(this)
            % call the process selector
-           [name, intype, outtype, parameter, processObj] = ProcessTab.processdlg();
+           [name, intype, outtype, processObj] = ProcessTab.processdlg();
            % check if empty and add the process
            if ~isempty(name)
                 % add new line
-                addLine(this, name, intype, outtype, parameter);
+                addLine(this, name, intype, outtype);
                 % add processObj
                 this.ProcessArray = [processObj this.ProcessArray];
            end
@@ -187,10 +183,9 @@ classdef ProcessTab < uix.Container & handle
     
     methods (Static = true, Access = public)
         % Display a window where the user can select a process
-        function [name, intype, outtype, parameter, processObj] = processdlg()
+        function [name, intype, outtype, processObj] = processdlg()
             % define subclass to list
-%             PROCESS_CLASS = {'Bloc2Bloc','Bloc2Zone','Zone2Zone','Zone2Disp','Disp2Disp','Disp2Exp','Exp2Exp'}; %name of the class to list
-            PROCESS_CLASS = {'Bloc2Zone','Bloc2Bloc','Zone2Disp','Zone2Zone','Disp2Disp'};
+            PROCESS_CLASS = {'Bloc2Zone','Bloc2Bloc','Zone2Disp','Zone2Zone','Disp2Disp'};%name of the class to list
             process_tb = [];
             fitlikeDir = fileparts(which('FitLike.m'));
             % loop 
@@ -245,12 +240,11 @@ classdef ProcessTab < uix.Container & handle
                 name = process_tb.displayName{indx};
                 intype = process_tb.from{indx};
                 outtype = process_tb.to{indx};
-                parameter = []; %TO DO
                 % create the process object using its name
                 funcProcess = str2func(process_tb.names{indx});
                 processObj = funcProcess();
             else
-                name = [];  intype = []; outtype = []; parameter = []; processObj = [];
+                name = [];  intype = []; outtype = []; processObj = [];
             end
         end %processdlg()     
         
@@ -296,16 +290,15 @@ classdef ProcessTab < uix.Container & handle
            n = length(this.vbox{2}.Children) - 2;
            % if not empty table
            if n < 1
-               name = {}; from = {}; to = {}; parameter = {};
-               tb = table(name, from, to, parameter);
+               name = {}; from = {}; to = {};
+               tb = table(name, from, to);
            else
                % get data
                name = {this.vbox{1}.Children(2:end-1).String}';
                from = {this.vbox{2}.Children(2:end-1).String}';
                to   = {this.vbox{3}.Children(2:end-1).String}';
-               parameter   = repmat({''},length(to),1); % TO DO
                % set table
-               tb = table(name, from, to, parameter);
+               tb = table(name, from, to);
            end
        end %getPipelineAsTable
     end
@@ -322,7 +315,7 @@ classdef ProcessTab < uix.Container & handle
            
            % fill the pipeline from the last process to the first.
            for k = height(tb):-1:1
-               addLine(this, tb.name{k}, tb.from{k}, tb.to{k}, tb.parameter{k});
+               addLine(this, tb.name{k}, tb.from{k}, tb.to{k});
            end
        end %setPipelineFromTable
     end

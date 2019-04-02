@@ -26,11 +26,7 @@ classdef ProcessingManager < handle
             % Set the UI ContextMenu
             setUIMenu(this);
             drawnow;
-            %%-------------------------CALLBACK--------------------------%%
-            % Replace the close function by setting the visibility to off
-            set(this.gui.fig,  'closerequestfcn', ...
-                @(src, event) this.FitLike.hideWindowPressed(src));    
-            
+            %%-------------------------CALLBACK--------------------------%%           
             % Set SelectionChangedFcn callback for tab
             set(this.gui.tab, 'SelectionChangedFcn',...
                 @(src, event) selectPipeline(this));
@@ -44,6 +40,17 @@ classdef ProcessingManager < handle
             % Set callback for the run pushbutton
             set(this.gui.RunPushButton, 'Callback',...
                 @(src, event) this.FitLike.runProcess());
+            
+            if ~isa(this.FitLike, 'FitLike')
+                % replace the close function and set the visibility to on
+                set(this.gui.fig, 'closerequestfcn', ...
+                    @(src, event) deleteWindow(this));
+                set(this.gui.fig,'Visible','on')
+            else
+                % Replace the close function by setting the visibility to off
+                set(this.gui.fig,  'closerequestfcn', ...
+                    @(src, event) this.FitLike.hideWindowPressed(src));
+            end
         end %ProcessingManager
         
         % Destructor
