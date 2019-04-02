@@ -132,26 +132,22 @@ classdef ProcessTab < uix.Container & handle
        
        % Remove process
        function this = removeProcess(this, src)
-           % get the index of the selected delete button
-           hChildren = src.Parent;
-           hParent = hChildren.Parent;
-           indx = hParent.Children == hChildren;
-           % remove the processObj
-           tf = strcmp(this.vbox{1}.Children(indx).String,...
-               {this.ProcessArray.functionName});
-           this.ProcessArray(tf) = [];
+           % get index of the selected button from the HBox matching
+           tf = src.Parent.Parent.Children == src.Parent; 
+           idx = find(flip(tf))-1;
+           % remove the process
+           this.ProcessArray(idx) = [];
            % remove this line
-           cellfun(@(x) delete(x.Children(indx)), this.vbox, 'Uniform', 0);
+           cellfun(@(x) delete(x.Children(tf)), this.vbox, 'Uniform', 0);
            
        end %removeProcess
        
        % Move process
        function this = moveProcess(this, src)
-           % get the current position
-           hChildren = src.Parent;
-           hParent = hChildren.Parent;
-           indx = find(hParent.Children == hChildren);
-           n = numel(hParent.Children);
+           % get index of the selected button from the HBox matching
+           tf = src.Parent.Parent.Children == src.Parent; 
+           indx = find(tf);
+           n = numel(tf);
            % check which button was pressed
            if strcmp(src.Tag, 'Up')
                % check if we can move the line
@@ -179,6 +175,14 @@ classdef ProcessTab < uix.Container & handle
                end
            end
        end %moveProcess
+       
+       % Change settings
+       function this = changeSettings(this, src)
+           % get index of the selected button from the HBox matching
+           tf = src.Parent.Parent.Children(2:end-1) == src.Parent; 
+           % call the gui of the processed object
+           this.ProcessArray(tf) = changeProcessParameter(this.ProcessArray(tf));
+       end %changeSettings
     end
     
     methods (Static = true, Access = public)

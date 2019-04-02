@@ -14,7 +14,6 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
     end
     
     properties
-        parameter@struct        % structure containing parameters associated with the process (weighted, robust fit, log,...)
         globalProcess@logical = false;  % set to 0 if the algorithm is distributed to each acquisition independently, 1 if the algorithm is applied to the entire dataset provided as an input
     end
     
@@ -47,9 +46,8 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
             end
             
             % check if process was already applied: same process &
-            % parameter
+            % parameter (do it for parameter)
             if strcmp(class(this), class(parentObj.processingMethod)) &&...
-                    isequal(this.parameter, parentObj.processingMethod.parameter) &&...
                 ~isempty(parentObj.children)
                 tf = 0;
             end
@@ -109,8 +107,7 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
                 tf = 0; return
             end
             % compare the class of the input and their parameters
-            if ~strcmp(class(this), class(processObj)) ||...
-                    ~isequal(this.parameter, processObj.parameter)
+            if ~strcmp(class(this), class(processObj))
                 tf = 0;
             else
                 tf = 1;
@@ -133,6 +130,25 @@ classdef ProcessDataUnit < matlab.mixin.Heterogeneous% < handle
                 [childObj.legendTag] = this.legendTag{:};
             end
         end %addOtherProp
+        
+        % THIS = CHANGEPROCESSPARAMETER(THIS) creates a small gui to
+        % modify the process parameter. 
+        % If you want to use this function, you need to create a
+        % changeSettings method in the wanted derived classes.
+        % changeSettings need to handle the GUI creation (fill the figure)
+        % See DataFit class for example.
+        function this = changeProcessParameter(this)
+            % check if parameter are available
+            if all(strcmp(methods(this), 'changeSettings') == 0)
+                return % no parameter
+            end
+            % create the figure
+            fig = figure('Name',[this.functionName,' settings'],...
+                'NumberTitle','off','MenuBar','none','ToolBar','none',...
+                'Units','normalized','Position',[0.3 0.45 0.4 0.2]);
+            % call the custom method
+            this = changeSettings(this, fig);
+        end %changeProcessParameter
     end
     
     methods (Abstract)

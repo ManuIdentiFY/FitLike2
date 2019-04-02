@@ -36,9 +36,6 @@ classdef DataFit < ProcessDataUnit%DataModel
             this.solver = LsqCurveFit();
             % make function handle
             this = makeFunctionHandle(this);    
-            % add some properties to the property 'parameters'. allow the
-            % user to dynamically update process/model
-            this = addParameter(this);
         end        
     end
     
@@ -207,8 +204,7 @@ classdef DataFit < ProcessDataUnit%DataModel
                     
             end
         end
-        
-        
+               
         % update the sub models with the best fit values found from the
         % main model
         function self = updateSubModel(self)
@@ -261,16 +257,98 @@ classdef DataFit < ProcessDataUnit%DataModel
             y = evaluate(this,x);
         end
         
-        % link parameter to the main parameter structure
-        function this = addParameter(this)
-            % add model options
-            modelOption = struct('modelName','0','isFixed',[],'minValue',[],...
-                                                    'maxValue',[], 'startPoint',[]); 
-            % add fit options
-            this.parameter = struct('fitAlgorithm', this.solver.options,...
-                                    'modelOption', modelOption);           
-        end %addParameter
-        
+        % CHANGESETTINGS(THIS, FIG) create a GUI where parameters
+        % can be modified. Two tabs are created:
+        % 1. Fit Option: a table where fit parameters can be customed
+        % (minValue, maxValue, isFixed, startPoint)
+        % 2. Solver Option: a table where solver parameters can be customed
+        % (see the wanted solver for parameter details).
+        % 
+        function this = changeSettings(this, fig)
+            % +uitabgroup
+            tab = uitabgroup(fig);
+            % + tab to change fit options
+            tb = uitab(tab, 'Title', 'Fit Options');
+            pos = getpixelposition(tb);
+            % uitable
+            t = uitable(tb, 'Data', [num2cell(logical(this.isFixed')),...
+                        num2cell(this.minValue'), num2cell(this.maxValue'), num2cell(this.startPoint')],...
+                'ColumnName',{'isFixed','minValue','maxValue','startPoint'},...
+                'ColumnFormat',{'logical','numeric','numeric','numeric'},...
+                'ColumnWidth', repmat({(pos(3)-100)/4}, 1, 4),...
+                'ColumnEditable',true(1,4), 'RowName',this.parameterName,...
+                'CellEditCallback',@(src,event) checkParameter_callback(src, event));
+            t.Position = [20 20 t.Extent(3) t.Extent(4)];
+            % check size
+            tb.Units = 'pixel';
+            if t.Position(4)+t.Position(1) > tb.Position(4)
+                % increase fig size
+                n = t.Position(4)+t.Position(1)-tb.Position(4);
+                set(fig,'Units','pixel')
+                fig.Position(2) = fig.Position(2) - (n+20)/2;
+                fig.Position(4) = fig.Position(4) + n + 20;
+            end
+            %                
+            % + tab to change solver options
+            tb = uitab(tab, 'Title', 'Solver Options');
+            % uitable
+            data = struct2cell(this.solver.options)';
+            t = uitable(tb, 'Data', data,...
+                'ColumnFormat', getOptions(this.solver,'format')',...
+                'ColumnEditable',true(size(data)),...
+                'ColumnName',fieldnames(this.solver.options),...
+                'ColumnWidth',repmat({(pos(3)-130)/size(data,2)}, size(data)),...
+                'RowName',{'Parameter'},...
+                'CellEditCallback',@(src,event) checkParameter_callback(src, event));  
+            t.Position = [20 (pos(4)-50)/2 t.Extent(3) t.Extent(4)];
+            
+            waitfor(fig); %wait until the figure is deleted
+            
+            % Nested function to check parameter modifications
+            function checkParameter_callback(src, event)
+                % check the option type
+                if strcmp(src.Parent.Title,'Fit Options')
+                    % check the index
+                    switch event.Indices(2)
+                        case 1 %isFixed
+                            this.isFixed(event.Indices(1)) = event.NewData;
+                        case 2 %minValue
+                            % check that minValue < startPoint
+                            if event.NewData > this.startPoint(event.Indices(1))
+                                warndlg('minValue need to be lower than startPoint')
+                                src.Data{event.Indices(1), event.Indices(2)} = event.PreviousData;
+                            else
+                                this.minValue(event.Indices(1)) = event.NewData;
+                            end
+                        case 3 %maxValue
+                            % check that maxValue > startPoint
+                            if event.NewData < this.startPoint(event.Indices(1))
+                                warndlg('maxValue need to be higher than startPoint')
+                                src.Data{event.Indices(1), event.Indices(2)} = event.PreviousData;
+                            else
+                                this.maxValue(event.Indices(1)) = event.NewData;
+                            end
+                        otherwise %startPoint
+                            % check that maxValue > startPoint > minValue
+                            if event.NewData > this.maxValue(event.Indices(1)) ||...
+                                    event.NewData < this.minValue(event.Indices(1))
+                                warndlg('startPoint need to be between minValue and maxValue')
+                                src.Data{event.Indices(1), event.Indices(2)} = event.PreviousData;
+                            else
+                                this.startPoint(event.Indices(1)) = event.NewData;
+                            end
+                    end
+                else
+                    % call solver option method
+                    fld = t.ColumnName{event.Indices(2)}; 
+                    this.solver = setOptions(this.solver, fld, event.NewData);
+                    % check output
+                    if this.solver.options.(fld) ~= event.NewData
+                        src.Data{event.Indices(1), event.Indices(2)} = event.PreviousData;
+                    end
+                end
+            end %checkParameter_callback
+        end %changeSettings        
         
         % make a list of all the boudaries for each parameter
         function this = gatherBoundaries(this)
@@ -289,8 +367,7 @@ classdef DataFit < ProcessDataUnit%DataModel
         end
     end
     
-    methods (Sealed)
-        
+    methods (Sealed)        
         % add a DispersionModel object to the list of contributions
         function self = addModel(self,subModel)
 %             if ~isequal(class(subModel),'DispersionModel')
@@ -304,6 +381,21 @@ classdef DataFit < ProcessDataUnit%DataModel
             self = wrapSubModelList(self); % update the function handles
         end
         
+        % THIS = UPDATEPROP(THIS, FLD, VAL) updates the property
+        % specified by FLD and assign the value VAL. If the property is
+        % not found, UPDATEPROP calls the same function for the solver.
+        function this = updateProp(this, fld, val)
+            % search the property
+            fld_list = fieldnames(this);
+            tf = strcmp(fld_list, fld);
+            % check result
+            if all(tf == 0)
+                % call updateProp for solver
+                this.solver = updateProp(this.solver, fld, val);
+            else
+                this.(fld_list{tf}) = val;
+            end
+        end
                 
         % Create the sum of all the contributions by wrapping the function
         % handles into standard function handles (parameter array, variable
@@ -358,7 +450,6 @@ classdef DataFit < ProcessDataUnit%DataModel
         end
         
     end
-    
         
         % should be in Pipeline probably
 %         function numberOfInputs(this)
