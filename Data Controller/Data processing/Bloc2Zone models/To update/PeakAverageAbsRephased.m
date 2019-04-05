@@ -1,6 +1,8 @@
 classdef PeakAverageAbsRephased < Bloc2Zone & ProcessDataUnit
     
     properties
+        InputChildClass@char; 	% defined in DataUnit2DataUnit
+        OutputChildClass@char;	% defined in DataUnit2DataUnit
         functionName@char = 'Average FFT peak magnitude rephased';     % character string, name of the model, as appearing in the figure legend
         labelY@char = 'Average magnitude (A.U.)';       % string, labels the Y-axis data in graphs
         labelX@char = 'Evolution time (s)';             % string, labels the X-axis data in graphs
