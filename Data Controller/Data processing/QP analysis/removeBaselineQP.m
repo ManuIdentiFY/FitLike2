@@ -29,6 +29,16 @@ if ~isa(hDispersion, 'Dispersion') || isempty(hDispersion)
     error('Data should be Dispersion class unit')
 end
 
+% check if relaxObj (RelaxObj) is attached to the Dispersionobject
+tf_relax = arrayfun(@(x) isa(x.relaxObj,'RelaxObj'), hDispersion);
+if all(tf_relax == 0)
+    error('No RelaxObj is linked to the Dispersion objects (see the relaxObj property in DataUnit).')
+elseif any(tf_relax == 0)
+    warning('Some Dispersion objects are not linked to RelaxObj. They have been ignored.');
+    hDispersion = hDispersion(tf_relax);
+end
+    
+
 if numel(qp_range) ~= 2 
     error('Range should contain both boundaries!')
 elseif qp_range(1) > qp_range(2)
@@ -192,7 +202,7 @@ waitfor(fig)
         % plot data in the first axis
         errorbar(ax1, obj.x(obj.mask), obj.y(obj.mask), obj.dy(obj.mask),...
             'LineStyle','none','Marker','o','MarkerSize',6,...
-            'MarkerFaceColor','auto','tag','Dispersion','DisplayName',obj.filename);
+            'MarkerFaceColor','auto','tag','Dispersion','DisplayName',getRelaxProp(obj,'filename'));
         % set axis
         dx = diff(obj.x(obj.mask));
         if max(abs(dx - dx(1))) > 0.1
@@ -215,8 +225,6 @@ waitfor(fig)
         % get the baseline position and find the equation ax+b
         a = (log(pos(2,2)) - log(pos(1,2)))/(pos(2,1)-pos(1,1));
         b = log(pos(1,2)) - a*pos(1,1);
-%         a = (pos(2,2) - pos(1,2))/(pos(2,1)-pos(1,1));
-%         b = pos(1,2) - a*pos(1,1);
         % update the QP axis
         plotQP(a,b)
     end
@@ -249,14 +257,13 @@ waitfor(fig)
         if isempty(ax2.Children)
             % get the data and create a new Dispersion object
             obj_qp = Dispersion('x',x,'y',y,'dy',dy,...
-                'dataset',obj.dataset,'sequence',obj.sequence,...
-                'filename',obj.filename,'xLabel',obj.xLabel,...
-                'yLabel',obj.yLabel,'parameter',obj.parameter,...
-                'legendTag',obj.legendTag, 'displayName',obj.displayName);                
+                            'xLabel',obj.xLabel, 'yLabel',obj.yLabel,'parameter',obj.parameter,...
+                            'relaxObj',obj.relaxObj,'legendTag',obj.legendTag,...
+                            'displayName',obj.displayName);                
             % plot
             hPlotQP = errorbar(ax2, x, y_plot, [], dy,...
                 'LineStyle','none','Marker','o','MarkerSize',6,...
-                'MarkerFaceColor','auto','Tag','QP','DisplayName',obj_qp.filename);
+                'MarkerFaceColor','auto','Tag','QP','DisplayName',getRelaxProp(obj_qp,'filename'));
             % set axis
             dx = diff(x);
             if max(abs(dx - dx(1))) > 0.1
@@ -325,16 +332,13 @@ waitfor(fig)
         hFit = findobj(ax2.Children,'type','line');
         if ~isempty(hFit)
             delete(hFit);
-        end
-        % apply fit
-        fitobj = DispersionLsqCurveFit2;
-        fitobj = addModel(fitobj, mdl);
-        assignProcessingFunction(obj_qp, fitobj);
-        % for the fit only: get absolute y-values
+        end        
+        % for the fit only: get absolute y-values (avoid errors)
         s = sign(obj_qp.y);
         obj_qp.y = abs(obj_qp.y);
+        % apply fit
         try
-            processData(obj_qp); 
+            processData(obj_qp, mdl); 
         catch
             obj_qp.y = s.*obj_qp.y;
             warndlg('Fit did not succeed!')
@@ -342,47 +346,47 @@ waitfor(fig)
         end
         
         %%% ----- Small test ---------- %%%
-        % cast logical
-        mdl.isFixed = logical(mdl.isFixed);
-        fo = fitoptions('Method','NonlinearLeastSquares',...
-                        'Lower',mdl.minValue(~mdl.isFixed),...
-                        'Upper',mdl.maxValue(~mdl.isFixed),...
-                        'StartPoint',mdl.startPoint(~mdl.isFixed));
-        ft = fittype([mdl.modelEquation ],...
-                       'independent',mdl.variableName,...                           
-                       'coefficients',mdl.parameterName(~mdl.isFixed),...
-                       'problem',mdl.parameterName(mdl.isFixed),...
-                       'options',fo);
-        if size(obj_qp.x,2)>1; x = obj_qp.x'; else x = obj_qp.x; end
-        if size(obj_qp.y,2)>1; y = obj_qp.y'; else y = obj_qp.y; end
-        
-        [fitres, gof] = fit(x, y,ft,...
-            'problem',num2cell(mdl.startPoint(mdl.isFixed)),'Robust','bisquare');
-            %'Weights',1./(obj_qp.dy.^2)); 
-        
-        mdl.bestValue(~mdl.isFixed) = coeffvalues(fitres)';
-        mdl.bestValue(mdl.isFixed) = mdl.startPoint(mdl.isFixed);
-        
-        err = bsxfun(@minus, confint(fitres)', mdl.bestValue(~mdl.isFixed)');
-        mdl.errorBar(~mdl.isFixed,:) = err; 
-        mdl.errorBar(mdl.isFixed,:) = NaN(length(find(mdl.isFixed)),2);     
-        
-        mdl.gof = gof;
-        mdl.fitobj = fitres;
+%         % cast logical
+%         mdl.isFixed = logical(mdl.isFixed);
+%         fo = fitoptions('Method','NonlinearLeastSquares',...
+%                         'Lower',mdl.minValue(~mdl.isFixed),...
+%                         'Upper',mdl.maxValue(~mdl.isFixed),...
+%                         'StartPoint',mdl.startPoint(~mdl.isFixed));
+%         ft = fittype([mdl.modelEquation ],...
+%                        'independent',mdl.variableName,...                           
+%                        'coefficients',mdl.parameterName(~mdl.isFixed),...
+%                        'problem',mdl.parameterName(mdl.isFixed),...
+%                        'options',fo);
+%         if size(obj_qp.x,2)>1; x = obj_qp.x'; else x = obj_qp.x; end
+%         if size(obj_qp.y,2)>1; y = obj_qp.y'; else y = obj_qp.y; end
+%         
+%         [fitres, gof] = fit(x, y,ft,...
+%             'problem',num2cell(mdl.startPoint(mdl.isFixed)),'Robust','bisquare');
+%             %'Weights',1./(obj_qp.dy.^2)); 
+%         
+%         mdl.bestValue(~mdl.isFixed) = coeffvalues(fitres)';
+%         mdl.bestValue(mdl.isFixed) = mdl.startPoint(mdl.isFixed);
+%         
+%         err = bsxfun(@minus, confint(fitres)', mdl.bestValue(~mdl.isFixed)');
+%         mdl.errorBar(~mdl.isFixed,:) = err; 
+%         mdl.errorBar(mdl.isFixed,:) = NaN(length(find(mdl.isFixed)),2);     
+%         
+%         mdl.gof = gof;
+%         mdl.fitobj = fitres;
         %%% --------------------------- %%%    
         obj_qp.y = s.*obj_qp.y;      
-        obj_qp.processingMethod.subModel = mdl;
-        obj_qp.processingMethod.model.bestValue = mdl.bestValue;
-        obj_qp.processingMethod.model.errorBar = mdl.errorBar;
-        obj_qp.processingMethod.model.gof = mdl.gof;
+%         obj_qp.processingMethod.subModel = mdl;
+%         obj_qp.processingMethod.model.bestValue = mdl.bestValue;
+%         obj_qp.processingMethod.model.errorBar = mdl.errorBar;
+%         obj_qp.processingMethod.model.gof = mdl.gof;
         % plot result
-        fitname = sprintf('QP Fit (R^2 = %.3f)', obj_qp.processingMethod.model.gof.rsquare);
+        fitname = sprintf('QP Fit (R^2 = %.3f)', obj_qp.processingMethod.gof.rsquare);
         plot(ax2, obj_qp.x, evaluate(obj_qp.processingMethod, obj_qp.x),...
             'LineStyle','-','Marker','none',...
             'Color',[0.8500    0.3250    0.0980],...
             'DisplayName',fitname,'Tag','Fit');
         % update result
-        setModelRes(obj_qp.processingMethod.model)
+        setModelRes(obj_qp.processingMethod)
     end %applyFit
 
     function setStartPoint(source, ~)
