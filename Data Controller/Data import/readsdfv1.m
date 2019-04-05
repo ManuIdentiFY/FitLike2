@@ -199,9 +199,16 @@ parameter = ParamV1(parameter);
 for k = 1:numel(parameter)
     % repeating single experiments may lead to problems with BRLX, this fixes it
     if numel(parameter(k).paramList.BRLX)~=size(data.real{k},3)
+        % This issue should not be corrected without sending a warning to
+        % the user. 
+        warning('Error occurs with %s sequence: number of magnetic field does not match the data size.')
         parameter(k).paramList.BRLX = repmat(parameter(k).paramList.BRLX,1,size(data.real{k},3));
     end
-    parameter(k).paramList.BRLX = parameter(k).paramList.BRLX*1.6; % convert from MHz to Hz
+    % This conversion should be avoided since a unit converter exists to do
+    % this later avoiding any confusion for users.
+    % See gui_change_units function (Data Controller/Data formating
+    % Or use it in FitLike with Tools/Change data units.
+%    parameter(k).paramList.BRLX = parameter(k).paramList.BRLX*1.6; % convert from MHz to Hz
     parameter(k).paramList.BR = parameter(k).paramList.BRLX;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
