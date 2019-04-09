@@ -370,15 +370,17 @@ classdef DataFit < ProcessDataUnit%DataModel
     methods (Sealed)        
         % add a DispersionModel object to the list of contributions
         function self = addModel(self,subModel)
-%             if ~isequal(class(subModel),'DispersionModel')
-%                 error('Wrong class of model, must be a DispersionModel.')
-%             end
-            if isempty(self.subModel)
-                self.subModel = subModel;
-            else
-                self.subModel = [self.subModel subModel];
+            if ~isa(subModel,'DataFit')
+                error('Wrong class of model, must be a DataFit object.')
             end
-            self = wrapSubModelList(self); % update the function handles
+            if isempty(self.subModel)
+                % first add the current model
+                self.subModel = self;
+            end
+            % add the new model
+            self.subModel = [self.subModel subModel];
+            % update the function handles
+            self = wrapSubModelList(self); 
         end
         
         % THIS = UPDATEPROP(THIS, FLD, VAL) updates the property
