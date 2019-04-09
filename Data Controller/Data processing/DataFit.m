@@ -353,8 +353,9 @@ classdef DataFit < ProcessDataUnit%DataModel
         % make a list of all the boudaries for each parameter
         function this = gatherBoundaries(this)
             % init
-%             this.model = struct('minValue',[],'maxValue',[],...
-%                 'startPoint',[],'isFixed',[],'bestValue',[],'errorBar',[]);
+            this.minValue = []; this.maxValue = [];
+            this.startPoint = []; this.isFixed = [];
+            this.bestValue = []; this.errorBar = [];
             
             for i = 1:length(this.subModel)
                 this.minValue = [this.minValue, this.subModel(i).minValue(:)']; %#ok<*AGROW>
@@ -368,7 +369,7 @@ classdef DataFit < ProcessDataUnit%DataModel
     end
     
     methods (Sealed)        
-        % add a DispersionModel object to the list of contributions
+        % add a model object to the list of contributions
         function self = addModel(self,subModel)
             if ~isa(subModel,'DataFit')
                 error('Wrong class of model, must be a DataFit object.')
@@ -377,11 +378,51 @@ classdef DataFit < ProcessDataUnit%DataModel
                 % first add the current model
                 self.subModel = self;
             end
-            % add the new model
-            self.subModel = [self.subModel subModel];
+            % loop over the input
+            for k = 1:numel(subModel)
+                % check if duplicates
+                tf = arrayfun(@(x) strcmp(class(x), class(subModel(k))), self.subModel);
+                if any(tf == 1)
+                    % change the model name
+                    subModel(k).modelName = strcat(subModel(k).modelName,'_',num2str(sum(tf)+1));
+                    if sum(tf) == 1 %if first duplicate
+                        self.subModel(tf).modelName = strcat(self.subModel(tf).modelName,'_1');
+                    end
+                end
+                % add the new model
+                self.subModel = [self.subModel subModel];
+            end
             % update the function handles
             self = wrapSubModelList(self); 
         end
+        
+        % remove a model from the list of contributions
+        function self = removeModel(self, idx)
+            % check subModel
+            if isempty(self.subModel); return; end
+            % check input
+            if idx < 1 || idx > numel(self.subModel)
+                return
+            end
+            % check duplicates before deletion
+            idx_list = find(arrayfun(@(x) strcmp(class(x), class(self.subModel(idx))), self.subModel));
+
+            if numel(idx_list) == 2
+                % remove indexing
+                self.subModel(idx_list(idx_list~=idx)).modelName = self.subModel(idx_list(idx_list~=idx)).modelName(1:end-2);
+            elseif numel(idx_list) > 2
+                % decrease indexing
+                st = find(idx_list == idx);
+                for k = st+1:numel(idx_list)
+                    self.subModel(idx_list(k)).modelName = strcat(self.subModel(idx_list(k)).modelName(1:end-1), num2str(st));
+                end
+            end
+            % remove model
+            self.subModel = self.subModel([1:idx-1 idx+1:end]);
+
+            % update the function handles
+            self = wrapSubModelList(self);
+        end %removeModel
         
         % THIS = UPDATEPROP(THIS, FLD, VAL) updates the property
         % specified by FLD and assign the value VAL. If the property is
