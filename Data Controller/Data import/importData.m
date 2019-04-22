@@ -1,7 +1,7 @@
 function [filelist, sequence, data, parameter] = importData(varargin)
 %
 % [DATA, PARAMETERS] = IMPORTDATA(FILENAME) is a function dedicated to the
-% data importation for FitLike software. It helps user to select the imported
+% data import for FitLike software. It helps user to select the imported
 % files as well as selecting particular sequences contained inside these files.
 %
 % IMPORTDATA can be initialise with filenames but this is not required. 
@@ -47,10 +47,26 @@ function [filelist, sequence, data, parameter] = importData(varargin)
 % M.Petit - 02/2019
 % manuel.petit@inserm.fr
 
+% default options
+autoload = false;
+
 % check input
 if nargin > 1
-    error('importData: too many input arguments')
-elseif nargin == 1
+    % check the options (works by pairs)
+    for indargin = 2:2:nargin
+        % make sure that the option is followed by a value
+        if nargin < indargin+1
+            error('importData: wrong number of arguments')
+        end
+        switch(varargin{indargin})
+            case 'autoload'
+                autoload = isequal(varargin{indargin+1},true);                
+            otherwise
+                error('importData: unknown argument')
+        end
+    end
+end
+if nargin > 0
     % check that input is string or cell array of string of .sdf or .sef
     % files
     filelist = varargin{1};
@@ -93,7 +109,7 @@ if exist('filelist','var')
         % read file
         [rawdata{k}, param{k}, nExp{k}] = readFile(filelist{k}, ext);
         % get sequence
-        [seq{k},~] = getParam(filelist{k});
+        [seq{k},~] = getParam(filelist{k},param{k});
     end
     
     % check empty data
@@ -111,7 +127,7 @@ else
 end
 
 %% Create GUI
-fig = figure('Name','FitLike Importation','NumberTitle','off',...
+fig = figure('Name','FitLike Import','NumberTitle','off',...
              'MenuBar','none','ToolBar','none','DockControls','off',...
              'Units','normalized','Position',[0.2 0.25 0.6 0.5],...
              'CloseRequestFcn',@exit);
@@ -120,7 +136,7 @@ fig = figure('Name','FitLike Importation','NumberTitle','off',...
 hp1 = uipanel('Title','Information','Parent',fig,...
     'Units','normalized','Position',[0.01 0.68 0.98,0.32],'FontSize',9);
 uicontrol('Parent',hp1,'Style','text','String',...
-    sprintf(['This importation window will help you to select your ',...
+    sprintf(['This import window will help you to select your ',...
     'imported files and data. You can access some details about the imported ',...
     'files concerning sequences, size, or type by selecting one.\nStart by importing files with "Add Files". ',...
     'You can select the wanted sequences for each file. Click on a file to see the sequences ',...
@@ -178,6 +194,11 @@ selectFile(); %initialise the button group
 if ~strcmp(filelist, 'Add files!')
     updateGlobalSequence();
 end      
+
+if autoload
+    drawnow
+    import; % if autoload is active, push the import button for the user.
+end
 
 waitfor(fig); %wait the deletion of the figure to return
 
@@ -409,13 +430,50 @@ waitfor(fig); %wait the deletion of the figure to return
     end
     
     function updateGlobalSequence(action, data)
+        if nargin==0
+            action = '';
+        end
         % check action
-        if strcmp(action,'add')
-            n = numel(data);
-            % need to reset position of the current buttons
-            if ~isempty(bg2.Children)
-                n = n + numel(bg2.Children);
-                % calculate new height and position
+        switch action
+            case 'add'
+                n = numel(data);
+                % need to reset position of the current buttons
+                if ~isempty(bg2.Children)
+                    n = n + numel(bg2.Children);
+                    % calculate new height and position
+                    h = (0.98-0.01*(n-1))/n;
+                    pos = 0.99-h:-h-0.01:0;
+                    % set new position
+                    for i = 1:numel(bg2.Children)
+                        bg2.Children(i).Position(2) = pos(i);
+                        bg2.Children(i).Position(4) = h;
+                    end
+                    pos = pos(i+1:end);
+                else
+                    h = (0.98-0.01*(n-1))/n;
+                    pos = 0.99-h:-h-0.01:0;
+                end
+
+                % add new buttons
+                for i = 1:numel(data)
+                    % create radiobutton
+                    uicontrol('Parent',bg2,'Style','radiobutton',...
+                        'String', data{i},...
+                        'Units','normalized',...
+                        'FontSize',7,...
+                        'Value',1,...
+                        'Position', [0.01 pos(i) 0.98 h],...
+                        'Callback',@selectSequence);
+                end
+            case 'remove'
+                % remove old sequences
+                hbt = bg2.Children;
+                [~,idx] = setdiff({hbt.String}, unique([sequence{:}]));
+                % remove buttons
+                delete(bg2.Children(idx));
+                % reset position
+                n = numel(bg2.Children);
+
                 h = (0.98-0.01*(n-1))/n;
                 pos = 0.99-h:-h-0.01:0;
                 % set new position
@@ -423,40 +481,7 @@ waitfor(fig); %wait the deletion of the figure to return
                     bg2.Children(i).Position(2) = pos(i);
                     bg2.Children(i).Position(4) = h;
                 end
-                pos = pos(i+1:end);
-            else
-                h = (0.98-0.01*(n-1))/n;
-                pos = 0.99-h:-h-0.01:0;
-            end
-            
-            % add new buttons
-            for i = 1:numel(data)
-                % create radiobutton
-                uicontrol('Parent',bg2,'Style','radiobutton',...
-                    'String', data{i},...
-                    'Units','normalized',...
-                    'FontSize',7,...
-                    'Value',1,...
-                    'Position', [0.01 pos(i) 0.98 h],...
-                    'Callback',@selectSequence);
-            end
-        elseif strcmp(action,'remove')
-            % remove old sequences
-            hbt = bg2.Children;
-            [~,idx] = setdiff({hbt.String}, unique([sequence{:}]));
-            % remove buttons
-            delete(bg2.Children(idx));
-            % reset position
-            n = numel(bg2.Children);
-            
-            h = (0.98-0.01*(n-1))/n;
-            pos = 0.99-h:-h-0.01:0;
-            % set new position
-            for i = 1:numel(bg2.Children)
-                bg2.Children(i).Position(2) = pos(i);
-                bg2.Children(i).Position(4) = h;
-            end
-        else %update state
+            otherwise %update state
             
         end
     end %updateGlobalSequence
