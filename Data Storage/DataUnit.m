@@ -607,15 +607,17 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
             lengthList = arrayfun(@(o)length(o.(fieldName)),self.subUnitList);
             endList = cumsum(lengthList);
             startList = [1 endList(1:end-1)+1];
-            s = arrayfun(@(o,s,e)setfield(o,fieldName,value(s:e)),self.subUnitList,startList,endList,'UniformOutput',0); 
-            self.subUnitList = [s{:}];
+            if ~isempty(endList)
+                s = arrayfun(@(o,s,e)setfield(o,fieldName,value(s:e)),self.subUnitList,startList,endList,'UniformOutput',0); 
+                self.subUnitList = [s{:}];
+            end
         end
         
         % functions used to make sure that merged objects behave
         % consistently with their own object type. (see Matlab help on
         % 'Modify Property Values with Access Methods')
         function self = set.x(self,value)
-            if ~isempty(self.subUnitList)
+            if ~isempty(self.subUnitList)||numel(self.subUnitList)==0
                 % distribute the values to the sub-units
                 self = distributeSubData(self,'x',value);
             end
@@ -623,7 +625,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
         end
         
         function x = get.x(self)
-            if ~isempty(self.subUnitList)
+            if ~isempty(self.subUnitList)||numel(self.subUnitList)==0   % empty objects are not considered empty, so another test is needed using the length.
                 x = gatherSubData(self,'x');
             else
                 x = self.x;
@@ -633,7 +635,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 
         
         function y = get.y(self)
-            if ~isempty(self.subUnitList)
+            if ~isempty(self.subUnitList)||numel(self.subUnitList)==0
                 y = gatherSubData(self,'y');
             else
                 y = self.y;
@@ -643,7 +645,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 
         
         function dy = get.dy(self)
-            if ~isempty(self.subUnitList)
+            if ~isempty(self.subUnitList)||numel(self.subUnitList)==0
                 dy = gatherSubData(self,'dy');
             else
                 dy = self.dy;
@@ -653,7 +655,7 @@ classdef DataUnit < handle & matlab.mixin.Heterogeneous
 
         
         function mask = get.mask(self)            
-            if ~isempty(self.subUnitList)
+            if ~isempty(self.subUnitList)||numel(self.subUnitList)==0
                 mask = gatherSubData(self,'mask');
             else
                 mask = self.mask;
