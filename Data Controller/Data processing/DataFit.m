@@ -203,6 +203,20 @@ classdef DataFit < ProcessDataUnit%DataModel
                 end
                     
             end
+            
+%             function y = localFunction(c,x)
+%                 par = this.startPoint;
+%                 sc = size(c); % deal with the case when multiple data sets are provided (such as zone objects)
+%                 for indobj = 1:sc(1)
+%                     par(~this.isFixed) = c(indobj,:);
+%                     parc = num2cell(par);
+%                     if nargin(fh)==2
+%                         y(indobj,:) = fh([parc{:}],x);
+%                     else
+%                         y(indobj,:) = fh(parc{:},x);
+%                     end
+%                 end
+%             end
         end
                
         % update the sub models with the best fit values found from the

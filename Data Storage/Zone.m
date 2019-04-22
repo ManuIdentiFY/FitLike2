@@ -44,7 +44,7 @@ classdef Zone < DataUnit
         % evaluate the fit function if present, for display purposes
         function y = evaluate(this, idxZone, x)
             model = this.processingMethod.modelHandle;
-            x = [num2cell(this.processingMethod.bestValue(idxZone,:)), {x}];
+            x = [num2cell(this.processingMethod.bestValue(idxZone,:)), {x(:,idxZone)}];
             y = model(x{:});
         end
         
