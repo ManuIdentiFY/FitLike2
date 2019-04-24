@@ -388,10 +388,6 @@ classdef DataFit < ProcessDataUnit%DataModel
             if ~isa(subModel,'DataFit')
                 error('Wrong class of model, must be a DataFit object.')
             end
-%             if isempty(self.subModel)
-%                 % first add the current model
-%                 self.subModel = self;
-%             end
             % loop over the input
             for k = 1:numel(subModel)
                 % check if duplicates
