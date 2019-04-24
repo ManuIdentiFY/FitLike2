@@ -136,9 +136,8 @@ for acquisitionNumber = 1:length(posExpHeader)-1  % last element of posExpHeader
         % saved independantly, but when using the loop tab the format is
         % different. Here we try to unify everything.
         % detecting the use of profile wizard:
-%         if 
-        BlocSize = parameter(acquisitionNumber).paramList.BS;
-        ZoneSize = parameter(acquisitionNumber).paramList.NBLK;
+        BlocSize = round(parameter(acquisitionNumber).paramList.BS);  % for some reasons BS may be non-integer. This is a problem from the software that records the raw data, it is fixed by rounding the number.
+        ZoneSize = round(parameter(acquisitionNumber).paramList.NBLK);
         for indDisp = 1:length(d)
             dataContent.(columns{nField}){acquisitionNumber}(:,:,indDisp) = reshape(d{indDisp}{nField},BlocSize,ZoneSize);
         end

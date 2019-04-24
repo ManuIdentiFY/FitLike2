@@ -146,7 +146,8 @@ classdef FitLike < handle
                             else
                                 [data, parameter] = readsdfv2(filename);
                             end
-                        catch
+                        catch ME
+                            event.txt = ME;
                             event.txt = ['Error while importing file ' filename '. File not loaded.\n'];
                             throwMessage(this, [], event);
                             continue
@@ -893,7 +894,11 @@ classdef FitLike < handle
             end
             
             % intersect
-            [~,~,idx] = intersect({this.RelaxData.fileID},{relaxObj.fileID});
+            if ~isempty(relaxObj)
+                [~,~,idx] = intersect({this.RelaxData.fileID},{relaxObj.fileID});
+            else
+                idx = [];
+            end
             if ~isempty(idx)
                 % generate new ID
                 for k = 1:numel(idx)
