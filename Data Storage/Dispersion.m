@@ -59,7 +59,7 @@ classdef Dispersion < DataUnit
                 this.processingMethod.bestValue = this.processingMethod.bestValue{1};
             end
             x = [num2cell(this.processingMethod.bestValue), {x}];
-            y = model(x{1:end-1},x{end});
+            y = model([x{1:end-1}],x{end});
         end
         
         % get the dispersion fit data
