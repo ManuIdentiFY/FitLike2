@@ -374,7 +374,11 @@ classdef DispersionTab < EmptyTab
                         else
                             % update
                             hPlot.XData = xfit;
-                            hPlot.YData = yfit;
+                            hPlot.YData = real(yfit);
+                            if ~isreal(yfit)
+%                                 event.txt = 'WARNING: complex values found for the fit.';
+                                disp('WARNING: complex values found for the fit.') % cannot use event.txt as event is redefined within this function. Using disp for now.
+                            end
                             % +legend
                             if ~strcmp(hPlot.DisplayName,leg)
                                 hPlot.DisplayName = leg;
