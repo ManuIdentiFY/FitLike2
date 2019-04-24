@@ -200,7 +200,7 @@ classdef ModelManager < handle
             end
 
             % check if data are available          
-            if isempty(this.SelectedData.processingMethod); return; end
+            if isempty({this.SelectedData.processingMethod}); return; end
             
             processObj = this.SelectedData.processingMethod;            
             % add new results
