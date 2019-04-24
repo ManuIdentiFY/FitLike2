@@ -389,7 +389,9 @@ classdef FitLike < handle
             if strcmp(src.Label,'Add Label')
                 % ask user
                 answer = inputdlg({'Enter a label:'},'Label',[1 40],{'0'});
-                if isempty(answer{1})
+                if isempty(answer) % version 2018a returns empty array on cancel
+                    return
+                elseif isempty(answer{1})
                     return
                 else
                     % check if duplicate
