@@ -435,11 +435,12 @@ classdef FitLike < handle
             % get the list of label
             hLabel = src.Parent.Children;
             
-            if numel(hLabel) < 3
+            if (numel(hLabel) < 3)
                 event.txt = 'Error: No label to delete!';
                 throwMessage(this, [], event);
+                return % avoid creating empty figures if there is nothing to do.
             end
-            
+                        
             % ask user which item to delete
             indx = listdlg('PromptString','Select a label to delete:',...
                            'SelectionMode','single',...
