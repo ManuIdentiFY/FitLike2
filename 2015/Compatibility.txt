@@ -1,0 +1,1 @@
+This script overwrites the function 'contains.m' in Matlab version 2015 (and probably earlier) to make FitLike to work on these version, at least to some extent. However, overloading this function on later version just prevents matlab to function altogether, so those who need version 2015 need to rename this script and remove the underscore.
