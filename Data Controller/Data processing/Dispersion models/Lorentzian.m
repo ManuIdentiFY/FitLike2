@@ -26,22 +26,22 @@ classdef Lorentzian < DispersionModel
     end
     
     methods
-        % function that allows estimating the start point.
-        function this = evaluateStartPoint(this, xdata, ydata)
-            % make sure the data is sorted
-            [xdata,ord] = sort(xdata);
-            ydata = ydata(ord);
-            % estimate tau from the half-peak value
-            if length(ydata)>10
-                yLowFreq = 10^median(log10(ydata(1:10)));
-            else
-                yLowFreq = ydata(1);
-            end
-            [~,indm] = min(abs(ydata-yLowFreq/2));
-            tau = 1/xdata(indm);
-            % then rhh is estimated from the low-frequency limit
-            rhh = (1.2e-23)^(1/3)/(yLowFreq/(5*tau)*2/3)^(1/6);
-            this.startPoint = [rhh,tau];
-        end
+%         % function that allows estimating the start point.
+%         function this = evaluateStartPoint(this, xdata, ydata)
+%             % make sure the data is sorted
+%             [xdata,ord] = sort(xdata);
+%             ydata = ydata(ord);
+%             % estimate tau from the half-peak value
+%             if length(ydata)>10
+%                 yLowFreq = 10^median(log10(ydata(1:10)));
+%             else
+%                 yLowFreq = ydata(1);
+%             end
+%             [~,indm] = min(abs(ydata-yLowFreq/2));
+%             tau = 1/xdata(indm);
+%             % then rhh is estimated from the low-frequency limit
+%             rhh = (1.2e-23)^(1/3)/(yLowFreq/(5*tau)*2/3)^(1/6);
+%             this.startPoint = [rhh,tau];
+%         end
     end
 end
